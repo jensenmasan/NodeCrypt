@@ -81,8 +81,8 @@ import {
 	initFlipCard          // 初始化翻转卡片功能 / Initialize flip card functionality
 } from './ui.js';
 
-// Import message recall functionality
-import { setupMessageRecall } from './util.recall.js';
+// Import message swipe gesture functionality (replaces recall)
+import { setupMessageSwipe, clearQuote } from './util.swipe.js';
 
 // 设置全局配置参数
 // Set global configuration parameters
@@ -173,8 +173,8 @@ window.addEventListener('DOMContentLoaded', () => {
 	// Setup image paste functionality
 	const imagePasteHandler = setupImagePaste('.input-message-input');
 
-	// Setup message recall with long-press
-	setupMessageRecall();
+	// Setup message swipe gestures (quote and recall)
+	setupMessageSwipe();
 
 	if (input) {
 		input.focus(); // 自动聚焦 / Auto focus
@@ -336,6 +336,7 @@ window.addEventListener('DOMContentLoaded', () => {
 			if (imagePasteHandler && typeof imagePasteHandler.refreshPlaceholder === 'function') {
 				imagePasteHandler.refreshPlaceholder(); // 更新 placeholder 状态
 			}
+			clearQuote(); // Clear quote preview
 			autoGrowInput(); // 调整输入框高度
 		}
 	}

@@ -2167,3 +2167,131 @@ h2 {
 .chat-destruct-btn {
 	position: relative;
 }
+
+/* Swipe gesture styles */
+.bubble-other-wrap,
+.bubble.me {
+	position: relative;
+	will-change: transform;
+}
+
+.swipe-indicator {
+	position: absolute;
+	top: 50%;
+	transform: translateY(-50%);
+	padding: 8px 16px;
+	border-radius: 20px;
+	font-size: 14px;
+	font-weight: 500;
+	pointer-events: none;
+	white-space: nowrap;
+	z-index: 5;
+	opacity: 0.9;
+	animation: swipe-pulse 0.3s ease;
+}
+
+.swipe-indicator.swipe-recall {
+	right: -80px;
+	background: linear-gradient(135deg, #ff6b6b 0%, #ee5a6f 100%);
+	color: white;
+	box-shadow: 0 2px 8px rgba(255, 107, 107, 0.3);
+}
+
+.swipe-indicator.swipe-quote {
+	left: -80px;
+	background: linear-gradient(135deg, #4facfe 0%, #00f2fe 100%);
+	color: white;
+	box-shadow: 0 2px 8px rgba(79, 172, 254, 0.3);
+}
+
+@keyframes swipe-pulse {
+	0% {
+		transform: translateY(-50%) scale(0.8);
+		opacity: 0;
+	}
+
+	100% {
+		transform: translateY(-50%) scale(1);
+		opacity: 0.9;
+	}
+}
+
+/* Quote preview styles */
+.quote-preview {
+	background: #f8f9fa;
+	border-left: 3px solid #30a8f7;
+	margin: 0 30px 10px 30px;
+	padding: 12px 16px;
+	border-radius: 8px;
+	display: flex;
+	align-items: center;
+	gap: 12px;
+	opacity: 0;
+	transform: translateY(-10px);
+	transition: opacity 0.3s ease, transform 0.3s ease;
+	position: relative;
+	z-index: 2;
+}
+
+.quote-preview.show {
+	opacity: 1;
+	transform: translateY(0);
+}
+
+.quote-content {
+	flex: 1;
+	overflow: hidden;
+}
+
+.quote-sender {
+	font-size: 13px;
+	font-weight: 600;
+	color: #30a8f7;
+	margin-bottom: 4px;
+}
+
+.quote-message {
+	font-size: 14px;
+	color: #666;
+	overflow: hidden;
+	text-overflow: ellipsis;
+	white-space: nowrap;
+}
+
+.quote-close {
+	background: none;
+	border: none;
+	font-size: 24px;
+	color: #999;
+	cursor: pointer;
+	padding: 0 8px;
+	line-height: 1;
+	transition: color 0.2s ease, transform 0.2s ease;
+}
+
+.quote-close:hover {
+	color: #e74c3c;
+	transform: scale(1.2);
+}
+
+.quote-close:active {
+	transform: scale(1);
+}
+
+/* Improve message touch targets for swiping */
+.bubble {
+	touch-action: pan-y;
+	/* Allow vertical scrolling */
+	user-select: none;
+	/* Prevent text selection during swipe */
+}
+
+.bubble-other-wrap {
+	touch-action: pan-y;
+}
+
+/* Smooth transitions for swipe */
+.bubble.me,
+.bubble-other-wrap {
+	transition: transform 0.3s ease;
+}
