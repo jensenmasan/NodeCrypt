@@ -5,47 +5,108 @@ import { t } from './util.i18n.js';
 
 let longPressTimer = null;
 let contextMenu = null;
+let startX = 0;
+let startY = 0;
+let hasMoved = false;
 
 // Setup message recall with long press
 export function setupMessageRecall() {
     const chatArea = $id('chat-area');
     if (!chatArea) return;
 
-    // Handle long press on bubbles
-    on(chatArea, 'touchstart', handleLongPressStart);
-    on(chatArea, 'mousedown', handleLongPressStart);
-    on(chatArea, 'touchend', clearLongPress);
-    on(chatArea, 'touchmove', clearLongPress);
-    on(chatArea, 'mouseup', clearLongPress);
-    on(chatArea, 'mousemove', clearLongPress);
+    // Use event delegation to avoid blocking normal interactions
+    chatArea.addEventListener('touchstart', handleTouchStart, { passive: true });
+    chatArea.addEventListener('touchmove', handleTouchMove, { passive: true });
+    chatArea.addEventListener('touchend', handleTouchEnd, { passive: true });
+    chatArea.addEventListener('mousedown', handleMouseDown);
+    chatArea.addEventListener('mousemove', handleMouseMove);
+    chatArea.addEventListener('mouseup', handleMouseUp);
 
     // Close context menu on click outside
-    on(document, 'click', hideContextMenu);
+    document.addEventListener('click', hideContextMenu);
+    document.addEventListener('touchstart', (e) => {
+        if (contextMenu && !e.target.closest('.message-context-menu')) {
+            hideContextMenu();
+        }
+    }, { passive: true });
 }
 
-function handleLongPressStart(e) {
+function handleTouchStart(e) {
     const bubble = e.target.closest('.bubble.me, .bubble.other');
     if (!bubble) return;
 
-    // Don't trigger on system messages or buttons
+    // Don't trigger on system messages or interactive elements
     if (bubble.classList.contains('system')) return;
-    if (e.target.closest('button, a, audio, img')) return;
+    if (e.target.closest('button, a, audio, img, video')) return;
+
+    const touch = e.touches[0];
+    startX = touch.clientX;
+    startY = touch.clientY;
+    hasMoved = false;
 
     clearLongPress();
 
-    const startX = e.clientX || e.touches?.[0]?.clientX;
-    const startY = e.clientY || e.touches?.[0]?.clientY;
-
     longPressTimer = setTimeout(() => {
-        // Check if we haven't moved (for mouse events)
-        const currentX = e.clientX || startX;
-        const currentY = e.clientY || startY;
-        const distance = Math.sqrt(Math.pow(currentX - startX, 2) + Math.pow(currentY - startY, 2));
-
-        if (distance < 10) { // Threshold 10px
+        if (!hasMoved) {
             showContextMenu(e, bubble);
         }
-    }, 500); // 500ms long press
+    }, 600); // 600ms for mobile to avoid conflicts with scrolling
+}
+
+function handleTouchMove(e) {
+    if (!longPressTimer) return;
+
+    const touch = e.touches[0];
+    const deltaX = Math.abs(touch.clientX - startX);
+    const deltaY = Math.abs(touch.clientY - startY);
+
+    // If user moves more than 10px, cancel long press
+    if (deltaX > 10 || deltaY > 10) {
+        hasMoved = true;
+        clearLongPress();
+    }
+}
+
+function handleTouchEnd(e) {
+    clearLongPress();
+}
+
+function handleMouseDown(e) {
+    const bubble = e.target.closest('.bubble.me, .bubble.other');
+    if (!bubble) return;
+
+    // Don't trigger on system messages or interactive elements
+    if (bubble.classList.contains('system')) return;
+    if (e.target.closest('button, a, audio, img, video')) return;
+
+    startX = e.clientX;
+    startY = e.clientY;
+    hasMoved = false;
+
+    clearLongPress();
+
+    longPressTimer = setTimeout(() => {
+        if (!hasMoved) {
+            showContextMenu(e, bubble);
+        }
+    }, 500); // 500ms for desktop
+}
+
+function handleMouseMove(e) {
+    if (!longPressTimer) return;
+
+    const deltaX = Math.abs(e.clientX - startX);
+    const deltaY = Math.abs(e.clientY - startY);
+
+    // If user moves more than 5px, cancel long press
+    if (deltaX > 5 || deltaY > 5) {
+        hasMoved = true;
+        clearLongPress();
+    }
+}
+
+function handleMouseUp(e) {
+    clearLongPress();
 }
 
 function clearLongPress() {
@@ -56,6 +117,9 @@ function clearLongPress() {
 }
 
 function showContextMenu(e, bubble) {
+    // Prevent default only when showing menu
+    e.preventDefault && e.preventDefault();
+
     hideContextMenu(); // Hide any existing menu
 
     const isMyMessage = bubble.classList.contains('me');
@@ -88,8 +152,9 @@ function showContextMenu(e, bubble) {
     document.body.appendChild(contextMenu);
 
     // Position the menu
-    const x = e.clientX || e.touches?.[0]?.clientX;
-    const y = e.clientY || e.touches?.[0]?.clientY;
+    const touch = e.touches ? e.touches[0] : null;
+    const x = touch ? touch.clientX : e.clientX;
+    const y = touch ? touch.clientY : e.clientY;
 
     const menuRect = contextMenu.getBoundingClientRect();
     const viewportWidth = window.innerWidth;
@@ -109,8 +174,6 @@ function showContextMenu(e, bubble) {
     contextMenu.style.left = `${menuX}px`;
     contextMenu.style.top = `${menuY}px`;
     contextMenu.classList.add('show');
-
-    e.preventDefault();
 }
 
 function hideContextMenu() {
