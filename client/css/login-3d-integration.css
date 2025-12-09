@@ -1,0 +1,189 @@
+/* 登录页面与3D粒子背景融合的额外样式 */
+/* Additional Styles for Login Page 3D Particle Integration */
+
+/* 为卡片添加呼吸动画 */
+@keyframes cardBreathing {
+
+    0%,
+    100% {
+        box-shadow:
+            0 8px 32px 0 rgba(0, 0, 0, 0.5),
+            0 4px 16px 0 rgba(0, 200, 255, 0.2),
+            0 1px 3px 0 rgba(0, 0, 0, 0.3),
+            inset 0 0 0 1px rgba(0, 200, 255, 0.2),
+            inset 0 1px 0 rgba(255, 255, 255, 0.1);
+    }
+
+    50% {
+        box-shadow:
+            0 8px 32px 0 rgba(0, 0, 0, 0.5),
+            0 4px 16px 0 rgba(0, 200, 255, 0.4),
+            0 1px 3px 0 rgba(0, 0, 0, 0.3),
+            inset 0 0 0 1px rgba(0, 200, 255, 0.3),
+            inset 0 1px 0 rgba(255, 255, 255, 0.15),
+            0 0 60px rgba(0, 217, 255, 0.3);
+    }
+}
+
+/* 应用呼吸动画到卡片 */
+.flip-card-front,
+.flip-card-back {
+    animation: cardBreathing 4s ease-in-out infinite;
+}
+
+/* 登录页面背景叠加层 */
+.login-container::before {
+    content: '';
+    position: fixed;
+    top: 0;
+    left: 0;
+    right: 0;
+    bottom: 0;
+    background: radial-gradient(ellipse at center,
+            transparent 0%,
+            rgba(0, 0, 0, 0.3) 100%);
+    pointer-events: none;
+    z-index: -1;
+}
+
+/* 输入框聚焦时的发光效果增强 */
+.input-group input:focus {
+    animation: inputGlow 2s ease-in-out infinite;
+}
+
+@keyframes inputGlow {
+
+    0%,
+    100% {
+        box-shadow: 0 0 0 3px rgba(0, 217, 255, 0.2), 0 0 20px rgba(0, 217, 255, 0.3);
+    }
+
+    50% {
+        box-shadow: 0 0 0 3px rgba(0, 217, 255, 0.3), 0 0 30px rgba(0, 217, 255, 0.5);
+    }
+}
+
+/* 按钮脉冲效果 */
+@keyframes buttonPulse {
+
+    0%,
+    100% {
+        box-shadow: 0 4px 20px rgba(0, 217, 255, 0.4);
+    }
+
+    50% {
+        box-shadow: 0 4px 30px rgba(0, 217, 255, 0.6), 0 0 40px rgba(0, 217, 255, 0.4);
+    }
+}
+
+.login-btn {
+    animation: buttonPulse 3s ease-in-out infinite;
+}
+
+/* 帮助按钮脉冲 */
+@keyframes helpPulse {
+
+    0%,
+    100% {
+        box-shadow: 0 0 0 rgba(0, 217, 255, 0);
+    }
+
+    50% {
+        box-shadow: 0 0 15px rgba(0, 217, 255, 0.4);
+    }
+}
+
+.help-btn {
+    animation: helpPulse 2s ease-in-out infinite;
+}
+
+/* 加载状态样式 */
+.login-loading {
+    display: inline-block;
+    width: 20px;
+    height: 20px;
+    border: 3px solid rgba(255, 255, 255, 0.3);
+    border-radius: 50%;
+    border-top-color: #00d9ff;
+    animation: spin 1s ease-in-out infinite;
+}
+
+@keyframes spin {
+    to {
+        transform: rotate(360deg);
+    }
+}
+
+/* 标题闪烁效果 */
+@keyframes titleShimmer {
+    0% {
+        filter: drop-shadow(0 0 10px rgba(0, 217, 255, 0.5));
+    }
+
+    50% {
+        filter: drop-shadow(0 0 20px rgba(0, 217, 255, 0.8)) drop-shadow(0 0 30px rgba(0, 255, 170, 0.5));
+    }
+
+    100% {
+        filter: drop-shadow(0 0 10px rgba(0, 217, 255, 0.5));
+    }
+}
+
+.login-container h1 {
+    animation: titleShimmer 3s ease-in-out infinite;
+}
+
+/* 响应式调整 */
+@media (max-width: 768px) {
+    .flip-card {
+        max-width: 95%;
+    }
+
+    .flip-card-front,
+    .flip-card-back {
+        padding: 36px 28px;
+    }
+
+    .login-container h1 {
+        font-size: 1.6rem;
+    }
+}
+
+/* 平滑出现动画 */
+@keyframes fadeInUp {
+    from {
+        opacity: 0;
+        transform: translateY(30px);
+    }
+
+    to {
+        opacity: 1;
+        transform: translateY(0);
+    }
+}
+
+.flip-card {
+    animation: fadeInUp 0.8s ease-out;
+}
+
+/* 输入框顺序出现动画 */
+.input-group {
+    animation: fadeInUp 0.6s ease-out backwards;
+}
+
+.input-group:nth-child(1) {
+    animation-delay: 0.1s;
+}
+
+.input-group:nth-child(2) {
+    animation-delay: 0.2s;
+}
+
+.input-group:nth-child(3) {
+    animation-delay: 0.3s;
+}
+
+.login-btn {
+    animation: fadeInUp 0.6s ease-out backwards, buttonPulse 3s ease-in-out infinite;
+    animation-delay: 0.4s, 1s;
+}
