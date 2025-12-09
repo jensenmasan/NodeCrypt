@@ -236,13 +236,19 @@ export function addOtherMsg(msg, userName = '', avatar = '', isHistory = false, 
 		}
 	}
 
-	// Handle object payload that might contain autoDestruct
-	if (typeof msg === 'object' && msg.autoDestruct) {
+	// Extract autoDestruct and quote from message object if present
+	let quoteData = null;
+	if (typeof msg === 'object' && msg.autoDestruct !== undefined && autoDestruct === null) {
 		autoDestruct = msg.autoDestruct;
-		// Extract text if it's a wrapped text message
-		if (msg.text && !msg.images && !msg.image && !msg.fileId) { // Check it's not a complex type
-			msg = msg.text;
-		}
+	}
+	if (typeof msg === 'object' && msg.quote) {
+		quoteData = msg.quote;
+	}
+
+	// Extract text content from message object
+	// For text messages wrapped in {text, autoDestruct, quote}
+	if (typeof msg === 'object' && msg.text !== undefined && !msg.images && !msg.image && !msg.fileId && !msg.audio) {
+		msg = msg.text;
 	}
 
 	let expireTime = null;
@@ -258,7 +264,22 @@ export function addOtherMsg(msg, userName = '', avatar = '', isHistory = false, 
 	if (!chatArea) return;
 	const bubbleWrap = createElement('div', {
 		class: 'bubble-other-wrap'
-	}); let contentHtml = ''; if (msgType === 'image' || msgType === 'image_private') {
+	});
+
+	// Render quote if present
+	let quoteHtml = '';
+	if (quoteData) {
+		quoteHtml = `<div class="quoted-message">
+			<div class="quote-line"></div>
+			<div class="quote-content-wrapper">
+				<div class="quote-sender">${escapeHTML(quoteData.sender)}</div>
+				<div class="quote-text">${escapeHTML(quoteData.text)}</div>
+			</div>
+		</div>`;
+	}
+
+	let contentHtml = '';
+	if (msgType === 'image' || msgType === 'image_private') {
 		// Handle image messages (can contain both text and images)
 		if (typeof msg === 'object' && msg.images && Array.isArray(msg.images)) {
 			// New multi-image format: {text: "", images: ["data:image...", "data:image..."]}
@@ -304,10 +325,12 @@ export function addOtherMsg(msg, userName = '', avatar = '', isHistory = false, 
 		// Handle file messages
 		contentHtml = renderFileMessage(msg, false);
 	} else if (msgType === 'voice' || msgType === 'voice_private') {
+		// Render voice message
 		const audioSrc = typeof msg === 'object' ? msg.voice : msg;
 		contentHtml = `<audio controls src="${audioSrc}" class="bubble-audio"></audio>`;
 	} else {
-		contentHtml = textToHTML(msg)
+		// Text message
+		contentHtml = textToHTML(msg);
 	}
 	const safeUserName = escapeHTML(userName);
 	const date = new Date(ts);
@@ -322,7 +345,7 @@ export function addOtherMsg(msg, userName = '', avatar = '', isHistory = false, 
 	if (msgType === 'file' || msgType === 'file_private') {
 		bubbleClasses += ' file-bubble';
 	}
-	bubbleWrap.innerHTML = `<span class="avatar"></span><div class="bubble-other-main"><div class="${bubbleClasses}"><div class="bubble-other-name">${safeUserName}</div><span class="bubble-content">${contentHtml}</span><span class="bubble-meta">${time}</span></div></div>`;
+	bubbleWrap.innerHTML = `<span class="avatar"></span><div class="bubble-other-main"><div class="${bubbleClasses}"><div class="bubble-other-name">${safeUserName}</div>${quoteHtml}<span class="bubble-content">${contentHtml}</span><span class="bubble-meta">${time}</span></div></div>`;
 
 	if (autoDestruct) {
 		const bubble = bubbleWrap.querySelector('.bubble');
