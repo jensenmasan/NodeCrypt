@@ -16,12 +16,12 @@ function arrayBufferToBase64(buffer) {
 	const uint8Array = new Uint8Array(buffer);
 	let binary = '';
 	const chunkSize = 0x8000; // 32KB chunks to avoid call stack limits
-	
+
 	for (let i = 0; i < uint8Array.length; i += chunkSize) {
 		const chunk = uint8Array.subarray(i, i + chunkSize);
 		binary += String.fromCharCode.apply(null, chunk);
 	}
-	
+
 	return btoa(binary);
 }
 
@@ -30,11 +30,11 @@ function arrayBufferToBase64(buffer) {
 function base64ToArrayBuffer(base64) {
 	const binary = atob(base64);
 	const uint8Array = new Uint8Array(binary.length);
-	
+
 	for (let i = 0; i < binary.length; i++) {
 		uint8Array[i] = binary.charCodeAt(i);
 	}
-	
+
 	return uint8Array;
 }
 
@@ -59,16 +59,16 @@ async function calculateHash(data) {
 async function compressFileToVolumes(file, volumeSize = DEFAULT_VOLUME_SIZE) { // 96KB原始数据，base64后约128KB
 	return new Promise((resolve, reject) => {
 		const reader = new FileReader();
-		reader.onload = async function(e) {
+		reader.onload = async function (e) {
 			const arrayBuffer = new Uint8Array(e.target.result);
-			
+
 			try {
 				// Calculate hash of original file for integrity
 				const originalHash = await calculateHash(arrayBuffer);
-				
+
 				// Use single compression pass with balanced compression
 				// 使用单次压缩，平衡压缩率和速度
-				deflate(arrayBuffer, { 
+				deflate(arrayBuffer, {
 					level: 6, // 平衡压缩级别
 					mem: 8    // 合理内存使用
 				}, (err, compressed) => {
@@ -76,14 +76,14 @@ async function compressFileToVolumes(file, volumeSize = DEFAULT_VOLUME_SIZE) { /
 						reject(err);
 						return;
 					}
-					
+
 					// Split compressed data into volumes
 					const volumes = [];
 					for (let i = 0; i < compressed.length; i += volumeSize) {
 						const volume = compressed.slice(i, i + volumeSize);
 						volumes.push(arrayBufferToBase64(volume));
 					}
-					
+
 					resolve({
 						volumes,
 						originalSize: file.size,
@@ -102,57 +102,58 @@ async function compressFileToVolumes(file, volumeSize = DEFAULT_VOLUME_SIZE) { /
 
 // Compress multiple files into a single archive with volumes
 // 将多个文件压缩为单个分卷归档
-async function compressFilesToArchive(files, volumeSize = DEFAULT_VOLUME_SIZE) {	try {
+async function compressFilesToArchive(files, volumeSize = DEFAULT_VOLUME_SIZE) {
+	try {
 		// Create a simple archive format: [file1_size][file1_name_length][file1_name][file1_data][file2_size]...
 		// 创建简单的归档格式
 		const archiveData = [];
 		const fileManifest = [];
-		
+
 		for (const file of files) {
 			const fileBuffer = await readFileAsArrayBuffer(file);
 			const nameBytes = new TextEncoder().encode(file.name);
-			
+
 			// Add file metadata to manifest
 			fileManifest.push({
 				name: file.name,
 				size: file.size,
 				offset: 0 // Will be calculated later
 			});
-			
+
 			// File format: [name_length(4)][name][size(8)][data]
 			// Use separate arrays to avoid alignment issues
 			const nameLengthBytes = new Uint8Array(4);
 			const nameLengthView = new DataView(nameLengthBytes.buffer);
 			nameLengthView.setUint32(0, nameBytes.length, true); // little endian
-			
+
 			const fileSizeBytes = new Uint8Array(8);
 			const fileSizeView = new DataView(fileSizeBytes.buffer);
 			fileSizeView.setBigUint64(0, BigInt(file.size), true); // little endian
-			
+
 			archiveData.push(
 				nameLengthBytes,
 				nameBytes,
 				fileSizeBytes,
 				new Uint8Array(fileBuffer)
 			);
-		}		
+		}
 		// Combine all data
 		const totalLength = archiveData.reduce((sum, part) => sum + part.length, 0);
-		
+
 		const combinedData = new Uint8Array(totalLength);
 		let offset = 0;
-		
+
 		for (const part of archiveData) {
 			combinedData.set(part, offset);
 			offset += part.length;
 		}
-		
+
 		// Calculate hash of the entire archive
 		const archiveHash = await calculateHash(combinedData);
-		
+
 		// Compress the archive
 		return new Promise((resolve, reject) => {
-			deflate(combinedData, { 
+			deflate(combinedData, {
 				level: 6,
 				mem: 8
 			}, (err, compressed) => {
@@ -160,14 +161,14 @@ async function compressFilesToArchive(files, volumeSize = DEFAULT_VOLUME_SIZE) {
 					reject(err);
 					return;
 				}
-				
+
 				// Split compressed data into volumes
 				const volumes = [];
 				for (let i = 0; i < compressed.length; i += volumeSize) {
 					const volume = compressed.slice(i, i + volumeSize);
 					volumes.push(arrayBufferToBase64(volume));
 				}
-				
+
 				resolve({
 					volumes,
 					originalSize: totalLength,
@@ -202,23 +203,23 @@ async function decompressVolumesToFile(volumes, fileName, originalHash = null) {
 		const combinedData = volumes.map(volume => {
 			return base64ToArrayBuffer(volume);
 		});
-		
+
 		const totalLength = combinedData.reduce((sum, arr) => sum + arr.length, 0);
 		const compressed = new Uint8Array(totalLength);
 		let offset = 0;
-		
+
 		for (const data of combinedData) {
 			compressed.set(data, offset);
 			offset += data.length;
 		}
-				// Decompress
+		// Decompress
 		return new Promise((resolve, reject) => {
 			inflate(compressed, async (err, decompressed) => {
 				if (err) {
 					reject(err);
 					return;
 				}
-				
+
 				// Verify hash if provided
 				if (originalHash) {
 					try {
@@ -232,7 +233,7 @@ async function decompressVolumesToFile(volumes, fileName, originalHash = null) {
 						return;
 					}
 				}
-				
+
 				// Create blob and download
 				const blob = new Blob([decompressed]);
 				const url = URL.createObjectURL(blob);
@@ -243,7 +244,7 @@ async function decompressVolumesToFile(volumes, fileName, originalHash = null) {
 				a.click();
 				document.body.removeChild(a);
 				URL.revokeObjectURL(url);
-				
+
 				resolve();
 			});
 		});
@@ -261,16 +262,16 @@ async function decompressArchiveToFiles(volumes, fileManifest, archiveHash = nul
 		const combinedData = volumes.map(volume => {
 			return base64ToArrayBuffer(volume);
 		});
-		
+
 		const totalLength = combinedData.reduce((sum, arr) => sum + arr.length, 0);
 		const compressed = new Uint8Array(totalLength);
 		let offset = 0;
-		
+
 		for (const data of combinedData) {
 			compressed.set(data, offset);
 			offset += data.length;
 		}
-		
+
 		// Decompress archive
 		return new Promise((resolve, reject) => {
 			inflate(compressed, async (err, decompressed) => {
@@ -278,7 +279,7 @@ async function decompressArchiveToFiles(volumes, fileManifest, archiveHash = nul
 					reject(err);
 					return;
 				}
-				
+
 				// Verify archive hash if provided
 				if (archiveHash) {
 					try {
@@ -292,29 +293,29 @@ async function decompressArchiveToFiles(volumes, fileManifest, archiveHash = nul
 						return;
 					}
 				}
-						// Extract files from archive
+				// Extract files from archive
 				let dataOffset = 0;
 				const extractedFiles = [];
-						for (const fileInfo of fileManifest) {
+				for (const fileInfo of fileManifest) {
 					// Read file metadata: [name_length(4)][name][size(8)][data]
 					const nameLengthBytes = decompressed.slice(dataOffset, dataOffset + 4);
 					const nameLengthView = new DataView(nameLengthBytes.buffer);
 					const nameLength = nameLengthView.getUint32(0, true); // little endian
 					dataOffset += 4;
-					
+
 					const nameBytes = decompressed.slice(dataOffset, dataOffset + nameLength);
 					const fileName = new TextDecoder().decode(nameBytes);
 					dataOffset += nameLength;
-					
+
 					// Use DataView to read BigUint64 safely
 					const fileSizeBytes = decompressed.slice(dataOffset, dataOffset + 8);
 					const fileSizeView = new DataView(fileSizeBytes.buffer);
 					const fileSize = Number(fileSizeView.getBigUint64(0, true)); // little endian
 					dataOffset += 8;
-					
+
 					const fileData = decompressed.slice(dataOffset, dataOffset + fileSize);
 					dataOffset += fileSize;
-					
+
 					// Create and download file
 					const blob = new Blob([fileData]);
 					const url = URL.createObjectURL(blob);
@@ -325,13 +326,13 @@ async function decompressArchiveToFiles(volumes, fileManifest, archiveHash = nul
 					a.click();
 					document.body.removeChild(a);
 					URL.revokeObjectURL(url);
-					
+
 					extractedFiles.push(fileName);
-					
+
 					// Add small delay between downloads to avoid overwhelming the browser
 					await new Promise(resolve => setTimeout(resolve, 100));
 				}
-				
+
 				resolve(extractedFiles);
 			});
 		});
@@ -350,23 +351,23 @@ export function setupFileSend({
 	onSend
 }) {
 	const attachBtn = document.querySelector(attachBtnSelector);
-	
+
 	if (attachBtn) {
 		// 点击附件按钮显示文件上传模态框
 		// Click attach button to show file upload modal
 		attachBtn.addEventListener('click', (e) => {
 			e.preventDefault();
 			e.stopPropagation();
-			
-			showFileUploadModal(async (files) => {
-				// 传递 userName 给 onSend
+
+			showFileUploadModal(async (files, autoDestructTime) => {
+				// 传递 userName 和 autoDestructTime 给 onSend
 				const userName = window.roomsData && window.activeRoomIndex >= 0
 					? (window.roomsData[window.activeRoomIndex]?.myUserName || '')
 					: '';
 				await handleFilesUpload(files, (msg) => {
-					// 合并 userName 字段
-					onSend({ ...msg, userName });
-				});
+					// 合并 userName 和 autoDestruct 字段
+					onSend({ ...msg, userName, autoDestruct: autoDestructTime });
+				}, autoDestructTime);
 			});
 		});
 	}
@@ -376,30 +377,30 @@ export function setupFileSend({
 // 处理文件上传
 async function handleFilesUpload(files, onSend) {
 	if (!files || files.length === 0) return;
-	
+
 	const fileId = generateFileId();
-	
+
 	try {
 		// Show compression progress
 		let progressElement = null;
-		
+
 		function showProgress(message) {
 			// 删除系统提示
 		}
-		
+
 		function updateProgress(message) {
 			// 删除系统提示
 		}
-		
+
 		if (files.length === 1) {
 			// Single file upload
 			const file = files[0];
 			showProgress();
-			
+
 			const { volumes, originalSize, compressedSize, originalHash } = await compressFileToVolumes(file);
-			
+
 			updateProgress();
-			
+
 			// Create file transfer state
 			const fileTransfer = {
 				fileId,
@@ -411,9 +412,9 @@ async function handleFilesUpload(files, onSend) {
 				status: 'sending',
 				originalHash
 			};
-			
+
 			window.fileTransfers.set(fileId, fileTransfer);
-			
+
 			// Send file start message
 			onSend({
 				type: 'file_start',
@@ -424,19 +425,19 @@ async function handleFilesUpload(files, onSend) {
 				totalVolumes: volumes.length,
 				originalHash
 			});
-			
+
 			// Send volumes
 			await sendVolumes(fileId, volumes, onSend, updateProgress, file.name);
-			
+
 		} else {
 			// Multiple files upload - create archive
 			const totalSize = files.reduce((sum, file) => sum + file.size, 0);
 			showProgress();
-			
+
 			const { volumes, originalSize, compressedSize, archiveHash, fileCount, fileManifest } = await compressFilesToArchive(files);
-			
+
 			updateProgress();
-			
+
 			// Create file transfer state for archive
 			const fileTransfer = {
 				fileId,
@@ -451,9 +452,9 @@ async function handleFilesUpload(files, onSend) {
 				fileManifest,
 				isArchive: true
 			};
-			
+
 			window.fileTransfers.set(fileId, fileTransfer);
-			
+
 			// Send archive start message
 			onSend({
 				type: 'file_start',
@@ -467,11 +468,11 @@ async function handleFilesUpload(files, onSend) {
 				fileManifest,
 				isArchive: true
 			});
-			
+
 			// Send volumes
 			await sendVolumes(fileId, volumes, onSend, updateProgress, `${files.length} files`);
 		}
-		
+
 	} catch (error) {
 		console.error('File compression error:', error);
 		if (window.addSystemMsg) {
@@ -485,10 +486,10 @@ async function handleFilesUpload(files, onSend) {
 async function sendVolumes(fileId, volumes, onSend, updateProgress, fileName) {
 	const fileTransfer = window.fileTransfers.get(fileId);
 	if (!fileTransfer) return;
-	
+
 	let currentVolume = 0;
 	const batchSize = 5; // 每批发送5个分卷
-	
+
 	function sendNextBatch() {
 		if (currentVolume >= volumes.length) {
 			// 发送完成消息
@@ -496,17 +497,17 @@ async function sendVolumes(fileId, volumes, onSend, updateProgress, fileName) {
 				type: 'file_complete',
 				fileId
 			});
-			
+
 			fileTransfer.status = 'completed';
 			updateFileProgress(fileId);
 			updateProgress(`✓ Sent ${fileName} successfully`);
 			return;
 		}
-		
+
 		// 发送当前批次
 		const batchEnd = Math.min(currentVolume + batchSize, volumes.length);
 		const batch = [];
-		
+
 		for (let i = currentVolume; i < batchEnd; i++) {
 			batch.push({
 				type: 'file_volume',
@@ -516,20 +517,20 @@ async function sendVolumes(fileId, volumes, onSend, updateProgress, fileName) {
 				isLast: i === volumes.length - 1
 			});
 		}
-		
+
 		// 发送批次中的所有分卷
 		batch.forEach(volumeMsg => onSend(volumeMsg));
-		
+
 		// 更新发送进度
 		fileTransfer.sentVolumes = batchEnd;
 		updateFileProgress(fileId);
-		
+
 		currentVolume = batchEnd;
-		
+
 		// 继续发送下一批，使用较短的延迟
 		setTimeout(sendNextBatch, 100);
 	}
-	
+
 	// 开始发送
 	sendNextBatch();
 }
@@ -545,10 +546,10 @@ function updateFileProgress(fileId) {
 		const progressBar = element.querySelector('.file-progress');
 		const statusText = element.querySelector('.file-status');
 		const downloadBtn = element.querySelector('.file-download-btn');
-		
+
 		// 判断是否为发送方（发送方没有volumeData）
 		const isSender = !transfer.volumeData || transfer.volumeData.length === 0;
-		
+
 		if (transfer.status === 'sending') {
 			const progress = (transfer.sentVolumes / transfer.totalVolumes) * 100;
 			if (progressContainer) {
@@ -583,7 +584,7 @@ function updateFileProgress(fileId) {
 					progressContainer.style.display = 'none';
 				}, 400);
 			}
-			
+
 			if (downloadBtn) {
 				// 只有接收方才显示下载按钮
 				if (isSender) {
@@ -614,7 +615,7 @@ function updateFileProgress(fileId) {
 // 处理接收到的文件消息
 export function handleFileMessage(message, isPrivate = false) {
 	const { type, fileId, userName } = message;
-	
+
 	switch (type) {
 		case 'file_start':
 			handleFileStart(message, isPrivate);
@@ -632,7 +633,7 @@ export function handleFileMessage(message, isPrivate = false) {
 // 处理文件开始消息
 function handleFileStart(message, isPrivate) {
 	const { fileId, fileName, originalSize, compressedSize, totalVolumes, originalHash, archiveHash, fileCount, fileManifest, isArchive, userName } = message;
-	
+
 	const fileTransfer = {
 		fileId,
 		fileName,
@@ -649,9 +650,9 @@ function handleFileStart(message, isPrivate) {
 		isArchive,
 		userName // 记录发送者名字
 	};
-	
+
 	window.fileTransfers.set(fileId, fileTransfer);
-	
+
 	// 添加文件消息到聊天
 	if (window.addOtherMsg) {
 		let displayData;
@@ -676,7 +677,7 @@ function handleFileStart(message, isPrivate) {
 				userName
 			};
 		}
-		
+
 		window.addOtherMsg(displayData, userName, userName, false, isPrivate ? 'file_private' : 'file');
 	}
 }
@@ -686,12 +687,12 @@ function handleFileStart(message, isPrivate) {
 function handleFileVolume(message) {
 	const { fileId, volumeIndex, volumeData } = message;
 	const transfer = window.fileTransfers.get(fileId);
-	
+
 	if (!transfer) return;
-	
+
 	transfer.receivedVolumes.add(volumeIndex);
 	transfer.volumeData[volumeIndex] = volumeData;
-	
+
 	updateFileProgress(fileId);
 }
 
@@ -700,9 +701,9 @@ function handleFileVolume(message) {
 function handleFileComplete(message) {
 	const { fileId } = message;
 	const transfer = window.fileTransfers.get(fileId);
-	
+
 	if (!transfer) return;
-	
+
 	// 检查是否所有分卷都已接收
 	if (transfer.receivedVolumes.size === transfer.totalVolumes) {
 		transfer.status = 'completed';
@@ -715,7 +716,7 @@ function handleFileComplete(message) {
 export async function downloadFile(fileId) {
 	const transfer = window.fileTransfers.get(fileId);
 	if (!transfer || transfer.status !== 'completed') return;
-	
+
 	try {
 		if (transfer.isArchive) {
 			// Download archive as multiple files

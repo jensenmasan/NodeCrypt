@@ -31,37 +31,37 @@ window.addEventListener('languageChange', () => {
 // 语言切换时更新模态框文本
 function updateModalTexts() {
 	if (!uploadModal) return;
-	
+
 	// Update modal title
 	const modalTitle = uploadModal.querySelector('.file-upload-header h3');
 	if (modalTitle) {
 		modalTitle.textContent = t('file.upload_files', 'Upload Files');
 	}
-	
+
 	// Update file list title
 	const fileListTitle = uploadModal.querySelector('.file-list-title');
 	if (fileListTitle) {
 		fileListTitle.textContent = t('file.selected_files', 'Selected Files');
 	}
-	
+
 	// Update clear all button
 	const clearAllBtn = uploadModal.querySelector('.file-clear-all-btn');
 	if (clearAllBtn) {
 		clearAllBtn.textContent = t('file.clear_all', 'Clear All');
 	}
-	
+
 	// Update cancel button
 	const cancelBtn = uploadModal.querySelector('.file-upload-cancel-btn');
 	if (cancelBtn) {
 		cancelBtn.textContent = t('file.cancel', 'Cancel');
 	}
-	
+
 	// Update send files button
 	const sendBtn = uploadModal.querySelector('.file-upload-send-btn');
 	if (sendBtn) {
 		sendBtn.textContent = t('file.send_files', 'Send Files');
 	}
-	
+
 	// Update drag drop text
 	const dragDropText = uploadModal.querySelector('.file-drop-text');
 	if (dragDropText) {
@@ -69,14 +69,14 @@ function updateModalTexts() {
 			<p><strong>${t('file.drag_drop', 'Drag and drop files here')}</strong></p>
 			<p>${t('file.or', 'or')} <button class="file-browse-btn" type="button">${t('file.browse_files', 'browse files')}</button></p>
 		`;
-		
+
 		// Re-attach browse button event
 		const browseBtn = dragDropText.querySelector('.file-browse-btn');
 		if (browseBtn) {
 			on(browseBtn, 'click', handleBrowseClick);
 		}
 	}
-	
+
 	// Update summary if files are selected
 	if (selectedFiles.size > 0) {
 		updateFileListDisplay();
@@ -117,6 +117,21 @@ function createUploadModal() {
 					<div class="file-list-summary" id="file-list-summary"></div>
 				</div>
 			</div>
+			<div class="file-upload-options">
+				<div class="file-destruct-option">
+					<label class="file-destruct-label">
+						<input type="checkbox" class="file-destruct-checkbox" id="file-destruct-checkbox">
+						<span>⏱️ 自动销毁</span>
+					</label>
+					<div class="file-destruct-time-selector" id="file-destruct-time" style="display: none;">
+						<button class="time-option" data-time="10000">10秒</button>
+						<button class="time-option active" data-time="30000">30秒</button>
+						<button class="time-option" data-time="60000">1分钟</button>
+						<button class="time-option" data-time="300000">5分钟</button>
+						<button class="time-option" data-time="600000">10分钟</button>
+					</div>
+				</div>
+			</div>
 			<div class="file-upload-footer">
 				<button class="file-upload-cancel-btn" type="button">${t('file.cancel', 'Cancel')}</button>
 				<button class="file-upload-send-btn" type="button" disabled>${t('file.send_files', 'Send Files')}</button>
@@ -136,12 +151,12 @@ export function showFileUploadModal(onSend) {
 
 	onSendCallback = onSend;
 	selectedFiles.clear();
-	
+
 	uploadModal = createUploadModal();
 	document.body.appendChild(uploadModal);
-	
+
 	setupModalEvents();
-	
+
 	// Focus and animation
 	setTimeout(() => {
 		addClass(uploadModal, 'show');
@@ -152,7 +167,7 @@ export function showFileUploadModal(onSend) {
 // 隐藏文件上传模态框
 function hideUploadModal() {
 	if (!uploadModal) return;
-	
+
 	removeClass(uploadModal, 'show');
 	setTimeout(() => {
 		if (uploadModal && uploadModal.parentNode) {
@@ -161,7 +176,7 @@ function hideUploadModal() {
 		uploadModal = null;
 		selectedFiles.clear();
 		onSendCallback = null;
-		
+
 		// 通知主模块重置拖拽标志位
 		window.dispatchEvent(new CustomEvent('fileUploadModalClosed'));
 	}, 300);
@@ -180,6 +195,8 @@ function setupModalEvents() {
 	const fileInput = $('#file-upload-input', uploadModal);
 	const dropZone = $('#file-drop-zone', uploadModal);
 	const clearAllBtn = $('.file-clear-all-btn', uploadModal);
+	const destructCheckbox = $('#file-destruct-checkbox', uploadModal);
+	const destructTimeSelector = $('#file-destruct-time', uploadModal);
 
 	// Close modal events
 	on(overlay, 'click', hideUploadModal);
@@ -197,6 +214,25 @@ function setupModalEvents() {
 
 	// Clear all files
 	on(clearAllBtn, 'click', clearAllFiles);
+
+	// Auto-destruct checkbox
+	on(destructCheckbox, 'change', (e) => {
+		if (e.target.checked) {
+			destructTimeSelector.style.display = 'flex';
+		} else {
+			destructTimeSelector.style.display = 'none';
+		}
+	});
+
+	// Time selector buttons
+	const timeOptions = uploadModal.querySelectorAll('.time-option');
+	timeOptions.forEach(btn => {
+		on(btn, 'click', (e) => {
+			e.preventDefault();
+			timeOptions.forEach(b => removeClass(b, 'active'));
+			addClass(btn, 'active');
+		});
+	});
 
 	// Send files
 	on(sendBtn, 'click', handleSendFiles);
@@ -236,7 +272,7 @@ function handleDrop(e) {
 	e.preventDefault();
 	e.stopPropagation();
 	removeClass(e.currentTarget, 'drag-over');
-	
+
 	const files = Array.from(e.dataTransfer.files);
 	addFiles(files);
 }
@@ -248,7 +284,7 @@ function addFiles(files) {
 		const fileId = generateFileId();
 		selectedFiles.set(fileId, file);
 	});
-	
+
 	updateFileList();
 	updateSendButton();
 }
@@ -290,7 +326,7 @@ function updateFileList() {
 
 	// Update file list
 	fileList.innerHTML = '';
-	
+
 	for (const [fileId, file] of selectedFiles) {
 		const fileItem = createElement('div', {
 			class: 'file-item',
@@ -302,9 +338,9 @@ function updateFileList() {
 			</div>
 			<button class="file-item-remove" type="button" data-file-id="${fileId}">&times;</button>
 		`);
-		
+
 		fileList.appendChild(fileItem);
-		
+
 		// Add remove event
 		const removeBtn = $('.file-item-remove', fileItem);
 		on(removeBtn, 'click', (e) => {
@@ -334,14 +370,23 @@ async function handleSendFiles() {
 	if (selectedFiles.size === 0 || !onSendCallback) return;
 
 	const files = Array.from(selectedFiles.values());
-	
+
+	// Get auto-destruct settings
+	const destructCheckbox = $('#file-destruct-checkbox', uploadModal);
+	const activeTimeOption = uploadModal.querySelector('.time-option.active');
+	let autoDestructTime = null;
+
+	if (destructCheckbox && destructCheckbox.checked && activeTimeOption) {
+		autoDestructTime = parseInt(activeTimeOption.dataset.time);
+	}
+
 	try {
 		// Close modal first
 		hideUploadModal();
-		
-		// Send files through callback
-		await onSendCallback(files);
-		
+
+		// Send files through callback with auto-destruct time
+		await onSendCallback(files, autoDestructTime);
+
 	} catch (error) {
 		console.error('Error sending files:', error);
 		if (window.addSystemMsg) {
@@ -354,7 +399,7 @@ async function handleSendFiles() {
 // 处理键盘事件
 on(document, 'keydown', (e) => {
 	if (!uploadModal) return;
-	
+
 	if (e.key === 'Escape') {
 		hideUploadModal();
 	}
