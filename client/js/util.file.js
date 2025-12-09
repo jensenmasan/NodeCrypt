@@ -375,7 +375,7 @@ export function setupFileSend({
 
 // Handle files upload
 // 处理文件上传
-async function handleFilesUpload(files, onSend) {
+async function handleFilesUpload(files, onSend, autoDestructTime = null) {
 	if (!files || files.length === 0) return;
 
 	const fileId = generateFileId();
@@ -415,7 +415,7 @@ async function handleFilesUpload(files, onSend) {
 
 			window.fileTransfers.set(fileId, fileTransfer);
 
-			// Send file start message
+			// Send file start message with autoDestruct
 			onSend({
 				type: 'file_start',
 				fileId,
@@ -423,7 +423,8 @@ async function handleFilesUpload(files, onSend) {
 				originalSize,
 				compressedSize,
 				totalVolumes: volumes.length,
-				originalHash
+				originalHash,
+				autoDestruct: autoDestructTime
 			});
 
 			// Send volumes
@@ -455,7 +456,7 @@ async function handleFilesUpload(files, onSend) {
 
 			window.fileTransfers.set(fileId, fileTransfer);
 
-			// Send archive start message
+			// Send archive start message with autoDestruct
 			onSend({
 				type: 'file_start',
 				fileId,
@@ -466,7 +467,8 @@ async function handleFilesUpload(files, onSend) {
 				archiveHash,
 				fileCount,
 				fileManifest,
-				isArchive: true
+				isArchive: true,
+				autoDestruct: autoDestructTime
 			});
 
 			// Send volumes
