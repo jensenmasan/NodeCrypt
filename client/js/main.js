@@ -81,6 +81,9 @@ import {
 	initFlipCard          // 初始化翻转卡片功能 / Initialize flip card functionality
 } from './ui.js';
 
+// Import message recall functionality
+import { setupMessageRecall } from './util.recall.js';
+
 // 设置全局配置参数
 // Set global configuration parameters
 window.config = {
@@ -170,6 +173,9 @@ window.addEventListener('DOMContentLoaded', () => {
 	// Setup image paste functionality
 	const imagePasteHandler = setupImagePaste('.input-message-input');
 
+	// Setup message recall with long-press
+	setupMessageRecall();
+
 	if (input) {
 		input.focus(); // 自动聚焦 / Auto focus
 		input.addEventListener('keydown', (e) => {
@@ -182,20 +188,54 @@ window.addEventListener('DOMContentLoaded', () => {
 		});
 	}
 
-	// Auto-destruct toggle
+	// Auto-destruct toggle with time selection
 	const destructBtn = $id('chat-destruct-btn');
 	let isAutoDestruct = false;
+	let autoDestructTime = 30000; // Default 30 seconds
+
 	if (destructBtn) {
-		destructBtn.onclick = function () {
+		// Create time selection dropdown
+		const destructMenu = document.createElement('div');
+		destructMenu.className = 'destruct-time-menu';
+		destructMenu.innerHTML = `
+			<div class="destruct-time-option" data-time="10000">10秒</div>
+			<div class="destruct-time-option" data-time="30000">30秒</div>
+			<div class="destruct-time-option active" data-time="60000">1分钟</div>
+			<div class="destruct-time-option" data-time="300000">5分钟</div>
+			<div class="destruct-time-option" data-time="600000">10分钟</div>
+		`;
+		destructBtn.parentElement.appendChild(destructMenu);
+
+		// Toggle destruct mode
+		destructBtn.onclick = function (e) {
+			e.stopPropagation();
 			isAutoDestruct = !isAutoDestruct;
 			if (isAutoDestruct) {
 				destructBtn.classList.add('active');
-				destructBtn.style.color = '#e74c3c'; // Red color to indicate danger/burn
+				destructBtn.style.color = '#e74c3c';
+				destructMenu.classList.add('show');
 			} else {
 				destructBtn.classList.remove('active');
 				destructBtn.style.color = '';
+				destructMenu.classList.remove('show');
 			}
 		};
+
+		// Handle time selection
+		destructMenu.addEventListener('click', function (e) {
+			e.stopPropagation();
+			const option = e.target.closest('.destruct-time-option');
+			if (option) {
+				autoDestructTime = parseInt(option.dataset.time);
+				destructMenu.querySelectorAll('.destruct-time-option').forEach(opt => opt.classList.remove('active'));
+				option.classList.add('active');
+			}
+		});
+
+		// Close menu when clicking outside
+		document.addEventListener('click', function () {
+			destructMenu.classList.remove('show');
+		});
 	}
 
 	// 发送消息的统一函数
@@ -207,7 +247,7 @@ window.addEventListener('DOMContentLoaded', () => {
 		if (!text && images.length === 0) return; // 如果没有文本且没有图片，则不发送
 		const rd = roomsData[activeRoomIndex]; // 当前房间数据 / Current room data
 
-		const autoDestructTime = isAutoDestruct ? 30000 : null; // 30 seconds
+		const destructDuration = isAutoDestruct ? autoDestructTime : null;
 
 		if (rd && rd.chat) {
 			if (images.length > 0) {
@@ -244,7 +284,7 @@ window.addEventListener('DOMContentLoaded', () => {
 					// 公共频道图片消息发送
 					// Send image message to public channel
 					rd.chat.sendChannelMessage('image', messageContent);
-					addMsg(messageContent, false, 'image', null, autoDestructTime);
+					addMsg(messageContent, false, 'image', null, destructDuration);
 				}
 
 				imagePasteHandler.clearImages(); // 清除所有图片预览
@@ -253,10 +293,10 @@ window.addEventListener('DOMContentLoaded', () => {
 				// Send text-only message
 				// Construct message data
 				let messageData = text;
-				if (autoDestructTime) {
+				if (destructDuration) {
 					messageData = {
 						text: text,
-						autoDestruct: autoDestructTime
+						autoDestruct: destructDuration
 					};
 				}
 
@@ -278,7 +318,7 @@ window.addEventListener('DOMContentLoaded', () => {
 						};
 						const encryptedMessageForServer = rd.chat.encryptServerMessage(serverRelayPayload, rd.chat.serverShared);
 						rd.chat.sendMessage(encryptedMessageForServer);
-						addMsg(text, false, 'text_private', null, autoDestructTime);
+						addMsg(text, false, 'text_private', null, destructDuration);
 					} else {
 						addSystemMsg(`${t('system.private_message_failed', 'Cannot send private message to')} ${rd.privateChatTargetName}. ${t('system.user_not_connected', 'User might not be fully connected.')}`)
 					}
@@ -286,7 +326,7 @@ window.addEventListener('DOMContentLoaded', () => {
 					// 公共频道消息发送
 					// Send public message
 					rd.chat.sendChannelMessage('text', messageData);
-					addMsg(text, false, 'text', null, autoDestructTime);
+					addMsg(text, false, 'text', null, destructDuration);
 				}
 			}
 
@@ -306,6 +346,51 @@ window.addEventListener('DOMContentLoaded', () => {
 	if (sendButton) {
 		sendButton.addEventListener('click', sendMessage);
 	}
+
+	// Setup Voice Recording
+	import('./util.voice.js').then(({ setupVoiceRecording }) => {
+		setupVoiceRecording((voiceData) => {
+			// onSend callback
+			const rd = roomsData[activeRoomIndex];
+			if (rd && rd.chat) {
+				const destructDuration = isAutoDestruct ? autoDestructTime : null; // Re-read global autoDestruct setting
+
+				// Voice message content
+				const messageContent = {
+					voice: voiceData.audio,
+					duration: voiceData.duration,
+					autoDestruct: destructDuration
+				};
+
+				if (rd.privateChatTargetId) {
+					// Private voice
+					const targetClient = rd.chat.channel[rd.privateChatTargetId];
+					if (targetClient && targetClient.shared) {
+						const clientMessagePayload = {
+							a: 'm',
+							t: 'voice_private',
+							d: messageContent
+						};
+						const encryptedClientMessage = rd.chat.encryptClientMessage(clientMessagePayload, targetClient.shared);
+						const serverRelayPayload = {
+							a: 'c',
+							p: encryptedClientMessage,
+							c: rd.privateChatTargetId
+						};
+						const encryptedMessageForServer = rd.chat.encryptServerMessage(serverRelayPayload, rd.chat.serverShared);
+						rd.chat.sendMessage(encryptedMessageForServer);
+						addMsg(messageContent, false, 'voice_private', null, destructDuration);
+					} else {
+						addSystemMsg(`${t('system.private_message_failed', 'Cannot send private message to')} ${rd.privateChatTargetName}.`)
+					}
+				} else {
+					// Public voice
+					rd.chat.sendChannelMessage('voice', messageContent);
+					addMsg(messageContent, false, 'voice', null, destructDuration);
+				}
+			}
+		});
+	});
 
 	// 设置发送文件功能
 	// Setup file sending functionality

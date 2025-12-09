@@ -29,15 +29,15 @@ import {
 
 function handleAutoDestruct(element, expireTime) {
 	if (!element || !expireTime) return;
-	
+
 	const timerDiv = createElement('div', { class: 'destruct-timer' });
 	element.appendChild(timerDiv);
-	
+
 	function updateTimer() {
 		const now = Date.now();
 		const left = Math.max(0, Math.ceil((expireTime - now) / 1000));
 		timerDiv.textContent = `${left}s`;
-		
+
 		if (left <= 0) {
 			// Remove the whole message wrapper if it's an "other" message, or just the bubble if it's "me" but "me" messages are direct children of chatArea so it's fine.
 			// Ideally we remove the parent if it's a bubble-other-wrap, but the element passed here is the bubble itself.
@@ -54,7 +54,7 @@ function handleAutoDestruct(element, expireTime) {
 		}
 		return true; // Continue
 	}
-	
+
 	if (updateTimer()) {
 		const interval = setInterval(() => {
 			if (!updateTimer()) {
@@ -77,7 +77,7 @@ export function renderChatArea() {
 	roomsData[activeRoomIndex].messages.forEach(m => {
 		// Check for expiration
 		if (m.expireTime && Date.now() > m.expireTime) return;
-		
+
 		if (m.type === 'me') addMsg(m.text, true, m.msgType || 'text', m.timestamp, m.autoDestruct);
 		else if (m.type === 'system') addSystemMsg(m.text, true, m.timestamp);
 		else addOtherMsg(m.text, m.userName, m.avatar, true, m.msgType || 'text', m.timestamp, m.autoDestruct)
@@ -89,7 +89,7 @@ export function renderChatArea() {
 export function addMsg(text, isHistory = false, msgType = 'text', timestamp = null, autoDestruct = null) {
 	let ts = isHistory ? timestamp : (timestamp || Date.now());
 	if (!ts) return;
-	
+
 	// Handle object message with autoDestruct (from sendMessage call)
 	if (!isHistory && typeof text === 'object' && text.autoDestruct) {
 		autoDestruct = text.autoDestruct;
@@ -113,16 +113,16 @@ export function addMsg(text, isHistory = false, msgType = 'text', timestamp = nu
 			text,
 			msgType,
 			timestamp: ts,
-			autoDestruct, 
+			autoDestruct,
 			expireTime
 		})
-	}	const chatArea = $id('chat-area');
+	} const chatArea = $id('chat-area');
 	if (!chatArea) return;
 	let className = 'bubble me' + (msgType.includes('_private') ? ' private-message' : '');
 	if (autoDestruct) className += ' destructing';
-	
+
 	const date = new Date(ts);
-	const time = date.getHours().toString().padStart(2, '0') + ':' + date.getMinutes().toString().padStart(2, '0');	let contentHtml = '';	if (msgType === 'image' || msgType === 'image_private') {
+	const time = date.getHours().toString().padStart(2, '0') + ':' + date.getMinutes().toString().padStart(2, '0'); let contentHtml = ''; if (msgType === 'image' || msgType === 'image_private') {
 		// Handle image messages (can contain both text and images)
 		if (typeof text === 'object' && text.images && Array.isArray(text.images)) {
 			// New multi-image format: {text: "", images: ["data:image...", "data:image..."]}
@@ -131,7 +131,7 @@ export function addMsg(text, isHistory = false, msgType = 'text', timestamp = nu
 				const safeImgSrc = escapeHTML(imgData).replace(/javascript:/gi, '');
 				return `<img src="${safeImgSrc}" alt="image" class="bubble-img">`;
 			}).join('');
-					if (messageText && imageElements) {
+			if (messageText && imageElements) {
 				// Mixed content: text + images
 				contentHtml = `<div class="mixed-content">
 					<div class="message-text">${messageText}</div>
@@ -148,7 +148,7 @@ export function addMsg(text, isHistory = false, msgType = 'text', timestamp = nu
 			// Legacy single image format: {text: "", image: "data:image..."}
 			const safeImgSrc = escapeHTML(text.image).replace(/javascript:/gi, '');
 			const messageText = text.text ? textToHTML(text.text) : '';
-			
+
 			if (messageText) {
 				// Mixed content: text + image
 				contentHtml = `<div class="mixed-content">
@@ -169,17 +169,20 @@ export function addMsg(text, isHistory = false, msgType = 'text', timestamp = nu
 		contentHtml = renderFileMessage(text, true);
 		// Add file-bubble class for special timestamp positioning
 		className += ' file-bubble';
+	} else if (msgType === 'voice' || msgType === 'voice_private') {
+		const audioSrc = typeof text === 'object' ? text.voice : text;
+		contentHtml = `<audio controls src="${audioSrc}" class="bubble-audio"></audio>`;
 	} else {
 		contentHtml = textToHTML(text)
 	}
 	const div = createElement('div', {
 		class: className
 	}, `<span class="bubble-content">${contentHtml}</span><span class="bubble-meta">${time}</span>`);
-	
+
 	if (autoDestruct) {
 		handleAutoDestruct(div, expireTime);
 	}
-	
+
 	chatArea.appendChild(div);
 	chatArea.scrollTop = chatArea.scrollHeight
 }
@@ -196,7 +199,7 @@ export function addOtherMsg(msg, userName = '', avatar = '', isHistory = false, 
 			userName = rd.userMap[msg.clientId].userName || rd.userMap[msg.clientId].username || rd.userMap[msg.clientId].name || t('ui.anonymous', 'Anonymous')
 		}
 	}
-	
+
 	// Handle object payload that might contain autoDestruct
 	if (typeof msg === 'object' && msg.autoDestruct) {
 		autoDestruct = msg.autoDestruct;
@@ -205,11 +208,11 @@ export function addOtherMsg(msg, userName = '', avatar = '', isHistory = false, 
 			msg = msg.text;
 		}
 	}
-	
+
 	let expireTime = null;
 	let ts = isHistory ? timestamp : (timestamp || Date.now());
 	if (!ts) return;
-	
+
 	if (autoDestruct) {
 		expireTime = ts + autoDestruct;
 		if (isHistory && Date.now() > expireTime) return;
@@ -219,7 +222,7 @@ export function addOtherMsg(msg, userName = '', avatar = '', isHistory = false, 
 	if (!chatArea) return;
 	const bubbleWrap = createElement('div', {
 		class: 'bubble-other-wrap'
-	});	let contentHtml = '';	if (msgType === 'image' || msgType === 'image_private') {
+	}); let contentHtml = ''; if (msgType === 'image' || msgType === 'image_private') {
 		// Handle image messages (can contain both text and images)
 		if (typeof msg === 'object' && msg.images && Array.isArray(msg.images)) {
 			// New multi-image format: {text: "", images: ["data:image...", "data:image..."]}
@@ -228,7 +231,7 @@ export function addOtherMsg(msg, userName = '', avatar = '', isHistory = false, 
 				const safeImgSrc = escapeHTML(imgData).replace(/javascript:/gi, '');
 				return `<img src="${safeImgSrc}" alt="image" class="bubble-img">`;
 			}).join('');
-					if (messageText && imageElements) {
+			if (messageText && imageElements) {
 				// Mixed content: text + images
 				contentHtml = `<div class="mixed-content">
 					<div class="message-text">${messageText}</div>
@@ -245,7 +248,7 @@ export function addOtherMsg(msg, userName = '', avatar = '', isHistory = false, 
 			// Legacy single image format: {text: "", image: "data:image..."}
 			const safeImgSrc = escapeHTML(msg.image).replace(/javascript:/gi, '');
 			const messageText = msg.text ? textToHTML(msg.text) : '';
-			
+
 			if (messageText) {
 				// Mixed content: text + image
 				contentHtml = `<div class="mixed-content">
@@ -263,7 +266,11 @@ export function addOtherMsg(msg, userName = '', avatar = '', isHistory = false, 
 		}
 	} else if (msgType === 'file' || msgType === 'file_private') {
 		// Handle file messages
-		contentHtml = renderFileMessage(msg, false);	} else {
+		contentHtml = renderFileMessage(msg, false);
+	} else if (msgType === 'voice' || msgType === 'voice_private') {
+		const audioSrc = typeof msg === 'object' ? msg.voice : msg;
+		contentHtml = `<audio controls src="${audioSrc}" class="bubble-audio"></audio>`;
+	} else {
 		contentHtml = textToHTML(msg)
 	}
 	const safeUserName = escapeHTML(userName);
@@ -280,12 +287,12 @@ export function addOtherMsg(msg, userName = '', avatar = '', isHistory = false, 
 		bubbleClasses += ' file-bubble';
 	}
 	bubbleWrap.innerHTML = `<span class="avatar"></span><div class="bubble-other-main"><div class="${bubbleClasses}"><div class="bubble-other-name">${safeUserName}</div><span class="bubble-content">${contentHtml}</span><span class="bubble-meta">${time}</span></div></div>`;
-	
+
 	if (autoDestruct) {
 		const bubble = bubbleWrap.querySelector('.bubble');
 		handleAutoDestruct(bubble, expireTime);
 	}
-	
+
 	const svg = createAvatarSVG(userName);
 	const avatarEl = $('.avatar', bubbleWrap);
 	if (avatarEl) {
@@ -324,7 +331,7 @@ export function updateChatInputStyle() {
 	const chatInputArea = $('.chat-input-area');
 	const placeholder = $('.input-field-placeholder');
 	const inputMessageInput = $('.input-message-input');
-	if (!chatInputArea || !placeholder || !inputMessageInput) return;	if (rd && rd.privateChatTargetId) {
+	if (!chatInputArea || !placeholder || !inputMessageInput) return; if (rd && rd.privateChatTargetId) {
 		addClass(chatInputArea, 'private-mode');
 		addClass(inputMessageInput, 'private-mode');
 		placeholder.textContent = `${t('ui.private_message_to', 'Private Message to')} ${escapeHTML(rd.privateChatTargetName)}`
@@ -340,7 +347,7 @@ export function updateChatInputStyle() {
 // Setup image preview functionality
 // 设置图片预览功能
 export function setupImagePreview() {
-	on($id('chat-area'), 'click', function(e) {
+	on($id('chat-area'), 'click', function (e) {
 		const target = e.target;
 		if (target.tagName === 'IMG' && target.closest('.bubble-content')) {
 			showImageModal(target.src)
@@ -366,10 +373,10 @@ export function showImageModal(src) {
 		lastY = 0;
 	let offsetX = 0,
 		offsetY = 0;
-	img.ondragstart = function(e) {
+	img.ondragstart = function (e) {
 		e.preventDefault()
 	};
-	on(img, 'wheel', function(ev) {
+	on(img, 'wheel', function (ev) {
 		ev.preventDefault();
 		const prevScale = scale;
 		scale += ev.deltaY < 0 ? 0.1 : -0.1;
@@ -385,7 +392,7 @@ export function showImageModal(src) {
 		img.style.transform = `translate(${offsetX}px,${offsetY}px)scale(${scale})`;
 		img.style.cursor = scale > 1 ? (isDragging ? 'grabbing' : 'grab') : 'zoom-in'
 	}
-	on(img, 'mousedown', function(ev) {
+	on(img, 'mousedown', function (ev) {
 		if (scale <= 1) return;
 		isDragging = true;
 		lastX = ev.clientX;
@@ -412,7 +419,7 @@ export function showImageModal(src) {
 	}
 	on(window, 'mousemove', onMouseMove);
 	on(window, 'mouseup', onMouseUp);
-	on(img, 'dblclick', function() {
+	on(img, 'dblclick', function () {
 		scale = 1;
 		offsetX = 0;
 		offsetY = 0;
@@ -439,7 +446,7 @@ function renderFileMessage(fileData, isSender) {
 		fileCount,
 		isArchive
 	} = fileData;
-	
+
 	// For archive files, show file count and total size
 	let displayName, displayMeta;
 	if (isArchive && fileCount) {
@@ -450,7 +457,7 @@ function renderFileMessage(fileData, isSender) {
 		displayName = fileName;
 		displayMeta = formatFileSize(originalSize);
 	}
-	
+
 	const safeDisplayName = escapeHTML(displayName);
 
 	// Check actual file transfer status
@@ -459,7 +466,7 @@ function renderFileMessage(fileData, isSender) {
 	let progressWidth = '0%';
 	let downloadBtnStyle = 'display: none;';
 	let showProgress = false;
-	
+
 	if (transfer) {
 		if (transfer.status === 'sending') {
 			const progress = (transfer.sentVolumes / transfer.totalVolumes) * 100;
@@ -474,7 +481,8 @@ function renderFileMessage(fileData, isSender) {
 		} else if (transfer.status === 'completed') {
 			// 完成时不显示任何状态，只显示下载按钮
 			downloadBtnStyle = isSender ? 'display: none;' : 'display: flex;';
-		}	} else if (isSender) {
+		}
+	} else if (isSender) {
 		// 发送方历史消息，不显示状态和下载按钮
 		downloadBtnStyle = 'display: none;';
 	} else {
@@ -521,7 +529,7 @@ export function autoGrowInput() {
 // 处理粘贴为纯文本
 function handlePasteAsPlainText(element) {
 	if (!element) return;
-	on(element, 'paste', function(e) {
+	on(element, 'paste', function (e) {
 		e.preventDefault();
 		let text = '';
 		if (e.clipboardData || window.clipboardData) {
