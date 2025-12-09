@@ -90,21 +90,18 @@ export function addMsg(text, isHistory = false, msgType = 'text', timestamp = nu
 	let ts = isHistory ? timestamp : (timestamp || Date.now());
 	if (!ts) return;
 
-	// Handle object message with autoDestruct (from sendMessage call)
-	if (!isHistory && typeof text === 'object' && text.autoDestruct) {
+	// Extract autoDestruct from text object if present
+	if (typeof text === 'object' && text.autoDestruct !== undefined && autoDestruct === null) {
 		autoDestruct = text.autoDestruct;
-		// If it's a text message wrapped in object, extract the text
-		if (text.text && !text.images && !text.image) {
-			text = text.text;
-		}
-		// If it's image/file, 'text' is already the object we want, just keep it.
 	}
 
 	let expireTime = null;
-	if (autoDestruct) {
+	if (!isHistory && autoDestruct) {
 		expireTime = ts + autoDestruct;
-		// If loading history and it's already expired, don't show
-		if (isHistory && Date.now() > expireTime) return;
+		const rd = roomsData[activeRoomIndex];
+		if (rd) {
+			rd.messages[rd.messages.length - 1].expireTime = expireTime;
+		}
 	}
 
 	if (!isHistory && activeRoomIndex >= 0) {
@@ -116,7 +113,9 @@ export function addMsg(text, isHistory = false, msgType = 'text', timestamp = nu
 			autoDestruct,
 			expireTime
 		})
-	} const chatArea = $id('chat-area');
+	}
+
+	const chatArea = $id('chat-area');
 	if (!chatArea) return;
 	let className = 'bubble me';
 	if (msgType && msgType.includes('_private')) className += ' private-message';
@@ -129,16 +128,24 @@ export function addMsg(text, isHistory = false, msgType = 'text', timestamp = nu
 	let quoteHtml = '';
 	let messageText = text;
 
-	if (typeof text === 'object' && text.quote) {
-		quoteHtml = `<div class="quoted-message">
-			<div class="quote-line"></div>
-			<div class="quote-content-wrapper">
-				<div class="quote-sender">${escapeHTML(text.quote.sender)}</div>
-				<div class="quote-text">${escapeHTML(text.quote.text)}</div>
-			</div>
-		</div>`;
-		// Extract actual text from the object
-		messageText = text.text || text;
+	// Extract text and quote from object if needed
+	if (typeof text === 'object') {
+		if (text.quote) {
+			quoteHtml = `<div class="quoted-message">
+				<div class="quote-line"></div>
+				<div class="quote-content-wrapper">
+					<div class="quote-sender">${escapeHTML(text.quote.sender)}</div>
+					<div class="quote-text">${escapeHTML(text.quote.text)}</div>
+				</div>
+			</div>`;
+		}
+		// Extract the actual message content
+		if (text.text !== undefined) {
+			messageText = text.text;
+		} else if (text.images || text.image || text.audio) {
+			// Keep the object for image/voice messages
+			messageText = text;
+		}
 	}
 
 	let contentHtml = '';
