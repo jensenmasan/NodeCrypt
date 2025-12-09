@@ -187,3 +187,98 @@
     animation: fadeInUp 0.6s ease-out backwards, buttonPulse 3s ease-in-out infinite;
     animation-delay: 0.4s, 1s;
 }
+
+/* --- 新增：开始界面与入口按钮样式 --- */
+
+.start-screen {
+    position: fixed;
+    top: 0;
+    left: 0;
+    width: 100vw;
+    height: 100vh;
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    z-index: 50;
+    /* 在3D背景之上，登录框之下(如果显示的话) */
+}
+
+.start-login-btn {
+    position: relative;
+    padding: 20px 60px;
+    font-size: 24px;
+    font-weight: 300;
+    letter-spacing: 4px;
+    color: #fff;
+    background: transparent;
+    border: 1px solid rgba(0, 217, 255, 0.5);
+    border-radius: 50px;
+    cursor: pointer;
+    overflow: hidden;
+    transition: all 0.4s cubic-bezier(0.23, 1, 0.32, 1);
+    backdrop-filter: blur(5px);
+    text-transform: uppercase;
+    box-shadow: 0 0 20px rgba(0, 217, 255, 0.2);
+}
+
+/* 按钮内部文字 */
+.start-login-btn span {
+    position: relative;
+    z-index: 2;
+    text-shadow: 0 0 10px rgba(0, 217, 255, 0.8);
+}
+
+/* 按钮悬停效果 */
+.start-login-btn:hover {
+    border-color: #00d9ff;
+    box-shadow: 0 0 40px rgba(0, 217, 255, 0.6), inset 0 0 20px rgba(0, 217, 255, 0.4);
+    transform: scale(1.05);
+    letter-spacing: 6px;
+    background: rgba(0, 217, 255, 0.1);
+}
+
+/* 按钮点击时的爆炸效果前摇 */
+.start-login-btn:active {
+    transform: scale(0.95);
+    box-shadow: 0 0 10px rgba(0, 217, 255, 0.8);
+}
+
+/* 按钮中心的辉光动画 */
+.btn-glow {
+    position: absolute;
+    top: 50%;
+    left: 50%;
+    width: 0;
+    height: 0;
+    background: radial-gradient(circle, rgba(255, 255, 255, 0.8) 0%, rgba(0, 217, 255, 0) 70%);
+    border-radius: 50%;
+    transform: translate(-50%, -50%);
+    transition: width 0.6s, height 0.6s;
+    opacity: 0;
+    z-index: 1;
+}
+
+.start-login-btn:hover .btn-glow {
+    width: 300px;
+    height: 300px;
+    opacity: 0.1;
+}
+
+/* 给按钮添加一个心跳动画，提示用户点击 */
+@keyframes btnHeartbeat {
+    0% {
+        box-shadow: 0 0 20px rgba(0, 217, 255, 0.2);
+    }
+
+    50% {
+        box-shadow: 0 0 35px rgba(0, 217, 255, 0.5);
+    }
+
+    100% {
+        box-shadow: 0 0 20px rgba(0, 217, 255, 0.2);
+    }
+}
+
+.start-login-btn {
+    animation: btnHeartbeat 3s infinite;
+}

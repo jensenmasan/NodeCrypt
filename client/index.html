@@ -70,7 +70,15 @@
 	</div>
 	<div id="canvas-container"></div>
 
-	<div class="login-container" id="login-container">
+	<div id="start-screen" class="start-screen">
+		<button id="start-login-btn" class="start-login-btn">
+			<span>进入系统</span>
+			<div class="btn-glow"></div>
+		</button>
+	</div>
+
+	<!-- 登录容器，默认隐藏，点击按钮后显示 -->
+	<div class="login-container" id="login-container" style="display: none; opacity: 0;">
 		<!-- 翻转卡片容器 -->
 		<div class="flip-card" id="flip-card">
 			<div class="flip-card-inner">
@@ -311,6 +319,34 @@
 			setTimeout(() => {
 				init3DGestureSystem();
 			}, 100);
+
+			// 控制“进入系统”按钮逻辑
+			const startBtn = document.getElementById('start-login-btn');
+			const startScreen = document.getElementById('start-screen');
+			const loginContainer = document.getElementById('login-container');
+
+			if (startBtn && loginContainer) {
+				startBtn.addEventListener('click', () => {
+					// 按钮淡出
+					startBtn.style.transform = 'scale(1.5)';
+					startBtn.style.opacity = '0';
+
+					setTimeout(() => {
+						if (startScreen) startScreen.style.display = 'none';
+
+						// 登录框淡入
+						loginContainer.style.display = 'flex';
+						// 强制重排以触发 transition
+						loginContainer.offsetHeight;
+						loginContainer.style.opacity = '1';
+						loginContainer.style.transition = 'opacity 0.8s ease, transform 0.8s cubic-bezier(0.34, 1.56, 0.64, 1)';
+						loginContainer.style.transform = 'scale(1)';
+					}, 300);
+				});
+
+				// 初始化登录框状态（为了动画）
+				loginContainer.style.transform = 'scale(0.9)';
+			}
 		}
 	</script>
 </body>
