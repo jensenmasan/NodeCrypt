@@ -19,27 +19,38 @@ body {
     top: 0;
     left: 0;
     z-index: -1;
+    background: radial-gradient(ellipse at center, #0a0a1a 0%, #000000 100%);
 }
 
-/* 视频预览窗口 */
+/* 视频预览窗口 - 玻璃态设计 */
 #video-container {
     position: fixed;
-    bottom: 20px;
-    right: 20px;
-    width: 160px;
-    height: 120px;
+    bottom: 30px;
+    right: 30px;
+    width: 200px;
+    height: 150px;
     z-index: 100;
-    border: 2px solid rgba(255, 255, 255, 0.3);
-    border-radius: 8px;
+    border: 2px solid rgba(255, 255, 255, 0.15);
+    border-radius: 16px;
     overflow: hidden;
     transform: scaleX(-1);
     /* 镜像显示 */
-    opacity: 0.7;
-    transition: opacity 0.3s;
+    opacity: 0.6;
+    transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+    backdrop-filter: blur(10px);
+    background: rgba(0, 0, 0, 0.2);
+    box-shadow:
+        0 8px 32px rgba(0, 0, 0, 0.3),
+        0 0 0 1px rgba(255, 255, 255, 0.05);
 }
 
 #video-container:hover {
     opacity: 1;
+    transform: scaleX(-1) scale(1.05);
+    box-shadow:
+        0 12px 48px rgba(0, 0, 0, 0.4),
+        0 0 0 1px rgba(255, 255, 255, 0.1),
+        0 0 40px rgba(0, 200, 255, 0.2);
 }
 
 #input-video {
@@ -48,41 +59,60 @@ body {
     object-fit: cover;
 }
 
-/* UI 层信息 */
+/* UI 层信息 - 高级玻璃态 */
 #ui-layer {
     position: fixed;
-    top: 20px;
-    left: 20px;
-    color: rgba(255, 255, 255, 0.8);
+    top: 30px;
+    left: 30px;
+    color: rgba(255, 255, 255, 0.95);
     z-index: 100;
     pointer-events: none;
-    text-shadow: 0 1px 3px rgba(0, 0, 0, 0.8);
-    font-family: 'Arial', sans-serif;
+    font-family: 'Segoe UI', 'Roboto', 'Arial', sans-serif;
+    padding: 24px;
+    border-radius: 20px;
+    background: linear-gradient(135deg,
+            rgba(255, 255, 255, 0.08),
+            rgba(255, 255, 255, 0.03));
+    backdrop-filter: blur(20px) saturate(180%);
+    border: 1px solid rgba(255, 255, 255, 0.1);
+    box-shadow:
+        0 8px 32px rgba(0, 0, 0, 0.3),
+        inset 0 1px 0 rgba(255, 255, 255, 0.1);
+    min-width: 280px;
 }
 
 #ui-layer h1 {
-    margin: 0;
-    font-size: 24px;
-    text-shadow: 0 0 10px rgba(0, 255, 255, 0.5);
-    /* 覆盖可能的全局样式 */
-    text-align: left;
-    background: none;
-    -webkit-text-fill-color: initial;
-    color: white;
+    margin: 0 0 16px 0;
+    font-size: 28px;
+    font-weight: 700;
+    background: linear-gradient(135deg, #00d9ff 0%, #00ffaa 100%);
+    -webkit-background-clip: text;
+    -webkit-text-fill-color: transparent;
+    background-clip: text;
+    text-shadow: none;
+    letter-spacing: 0.5px;
 }
 
 #ui-layer p {
     font-size: 14px;
-    line-height: 1.5;
-    margin-top: 10px;
-    color: #ddd;
+    line-height: 1.8;
+    margin: 8px 0;
+    color: rgba(255, 255, 255, 0.8);
+    font-weight: 400;
 }
 
 .status {
-    font-weight: bold;
-    color: #00ffcc;
+    font-weight: 600;
+    background: linear-gradient(135deg, #00ffcc 0%, #00aaff 100%);
+    -webkit-background-clip: text;
+    -webkit-text-fill-color: transparent;
+    background-clip: text;
+    padding: 2px 8px;
+    border-radius: 6px;
+    display: inline-block;
 }
 
+/* 加载提示 - 现代化设计 */
 #loading {
     position: absolute;
     top: 50%;
@@ -90,9 +120,62 @@ body {
     transform: translate(-50%, -50%);
     color: white;
     font-size: 20px;
+    font-weight: 500;
     z-index: 50;
-    text-shadow: 0 0 10px rgba(0, 0, 0, 0.5);
-    background: rgba(0, 0, 0, 0.5);
-    padding: 20px;
-    border-radius: 10px;
+    text-shadow: 0 2px 20px rgba(0, 0, 0, 0.5);
+    background: linear-gradient(135deg,
+            rgba(0, 100, 255, 0.15),
+            rgba(100, 0, 255, 0.15));
+    backdrop-filter: blur(20px);
+    padding: 24px 32px;
+    border-radius: 16px;
+    border: 1px solid rgba(255, 255, 255, 0.1);
+    box-shadow:
+        0 8px 32px rgba(0, 0, 0, 0.4),
+        inset 0 1px 0 rgba(255, 255, 255, 0.1);
+    font-family: 'Segoe UI', 'Roboto', sans-serif;
+    letter-spacing: 0.5px;
+    animation: pulse 2s ease-in-out infinite;
+}
+
+@keyframes pulse {
+
+    0%,
+    100% {
+        opacity: 1;
+        box-shadow:
+            0 8px 32px rgba(0, 0, 0, 0.4),
+            inset 0 1px 0 rgba(255, 255, 255, 0.1),
+            0 0 0 rgba(0, 200, 255, 0);
+    }
+
+    50% {
+        opacity: 0.9;
+        box-shadow:
+            0 8px 32px rgba(0, 0, 0, 0.4),
+            inset 0 1px 0 rgba(255, 255, 255, 0.1),
+            0 0 40px rgba(0, 200, 255, 0.3);
+    }
+}
+
+/* 响应式设计 */
+@media (max-width: 768px) {
+    #ui-layer {
+        top: 20px;
+        left: 20px;
+        right: 20px;
+        padding: 20px;
+        min-width: auto;
+    }
+
+    #ui-layer h1 {
+        font-size: 24px;
+    }
+
+    #video-container {
+        bottom: 20px;
+        right: 20px;
+        width: 160px;
+        height: 120px;
+    }
 }

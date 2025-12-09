@@ -85,7 +85,7 @@ export function renderRooms(activeId = 0) {
 		const safeRoomName = escapeHTML(rd.roomName);
 		let unreadHtml = '';
 		if (rd.unreadCount && i !== activeId) {
-			unreadHtml = `<span class="room-unread-badge">${rd.unreadCount>99?'99+':rd.unreadCount}</span>`
+			unreadHtml = `<span class="room-unread-badge">${rd.unreadCount > 99 ? '99+' : rd.unreadCount}</span>`
 		}
 		div.innerHTML = `<div class="info"><div class="title">#${safeRoomName}</div></div>${unreadHtml}`;
 		roomList.appendChild(div)
@@ -113,15 +113,18 @@ export function joinRoom(userName, roomName, password, modal = null, onResult) {
 				closed = true;
 				onResult(false)
 			}
-		},		onServerSecured: () => {
+		}, onServerSecured: () => {
 			if (modal) modal.remove();
 			else {
 				const loginContainer = $id('login-container');
 				if (loginContainer) loginContainer.style.display = 'none';
 				const chatContainer = $id('chat-container');
 				if (chatContainer) chatContainer.style.display = '';
-				
 
+				// 清理3D背景系统
+				if (typeof window.cleanup3DGestureSystem === 'function') {
+					window.cleanup3DGestureSystem();
+				}
 			}
 			if (onResult && !closed) {
 				closed = true;
@@ -190,7 +193,7 @@ export function handleClientSecured(idx, user) {
 	}
 	const isNew = !rd.knownUserIds.has(user.clientId);
 	if (isNew) {
-		rd.knownUserIds.add(user.clientId);		const name = user.userName || user.username || user.name || t('ui.anonymous', 'Anonymous');
+		rd.knownUserIds.add(user.clientId); const name = user.userName || user.username || user.name || t('ui.anonymous', 'Anonymous');
 		const msg = `${name} ${t('system.joined', 'joined the conversation')}`;
 		rd.messages.push({
 			type: 'system',
@@ -253,7 +256,7 @@ export function handleClientMessage(idx, msg) {
 				realUserName = newRd.userMap[msg.clientId].userName || newRd.userMap[msg.clientId].username || newRd.userMap[msg.clientId].name;
 			}
 			const historyMsgType = msgType === 'file_start_private' ? 'file_private' : 'file';
-			
+
 			const fileId = msg.data && msg.data.fileId;
 			if (fileId) { // Only proceed if we have a fileId
 				const messageAlreadyInHistory = newRd.messages.some(
@@ -267,7 +270,7 @@ export function handleClientMessage(idx, msg) {
 						userName: realUserName,
 						avatar: realUserName,
 						msgType: historyMsgType,
-						timestamp: (msg.data && msg.data.timestamp) || Date.now() 
+						timestamp: (msg.data && msg.data.timestamp) || Date.now()
 					});
 				}
 			}

@@ -299,7 +299,11 @@
 	</div>
 	<script type="module" src="./js/main.js"></script>
 	<script type="module">
-		import { init3DGestureSystem } from './js/background-3d.js';
+		import { init3DGestureSystem, cleanup3DGestureSystem } from './js/background-3d.js';
+
+		// 导出到window对象供其他模块使用
+		window.cleanup3DGestureSystem = cleanup3DGestureSystem;
+
 		// 仅在登录页初始化 (检查 login-container)
 		if (document.getElementById('login-container')) {
 			// 稍微延迟确保 DOM 加载

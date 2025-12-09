@@ -1,12 +1,13 @@
-// 3D 粒子手势交互系统
-// 3D Particle Gesture Interaction System
+// 3D 粒子手势交互系统 - 高级版
+// 3D Particle Gesture Interaction System - Premium Edition
 
 // --- 1. 全局变量与初始化 ---
 let scene, camera, renderer;
-let particles;
-let geometry;
-const particleCount = 4000; // 粒子总数
+let particles, stars, connections;
+let geometry, starGeometry, lineGeometry;
+const particleCount = 8000; // 粒子总数 (增加)
 const particleData = []; // 存储每个粒子的物理状态
+let animationFrameId = null; // 用于取消动画循环
 
 // 目标形状的点集
 let targetPositions = [];
@@ -17,20 +18,102 @@ let font;
 // 交互状态
 let currentGesture = 0; // 0=无, 1=Gest1, 2=Gest2, 3=Gest3
 let handSpread = 0; // 0 到 1，控制扩散
-let currentText = "READY"; // 当前文字
+let currentText = "NODECRYPT"; // 当前文字（改为默认显示NODECRYPT）
 
-// 颜色配置
+// 高级颜色配置 - 使用渐变色
 const colorPalette = {
-    1: new THREE.Color(0x00ffff), // 青色
-    2: new THREE.Color(0xff00ff), // 紫色
-    3: new THREE.Color(0xffff00), // 黄色
-    0: new THREE.Color(0xffffff)  // 白色
+    1: {
+        primary: new THREE.Color(0x00d9ff),   // 亮青色
+        secondary: new THREE.Color(0x0088ff), // 蓝色
+        glow: new THREE.Color(0x00ffff)
+    },
+    2: {
+        primary: new THREE.Color(0xff00ff),   // 紫色
+        secondary: new THREE.Color(0xff0088), // 粉紫色
+        glow: new THREE.Color(0xff88ff)
+    },
+    3: {
+        primary: new THREE.Color(0xffaa00),   // 橙色
+        secondary: new THREE.Color(0xffdd00), // 金色
+        glow: new THREE.Color(0xffff00)
+    },
+    0: {
+        primary: new THREE.Color(0x88ccff),   // 天蓝色
+        secondary: new THREE.Color(0xaaddff), // 浅蓝色
+        glow: new THREE.Color(0xffffff)
+    }
 };
 
+// 用于跟踪是否已初始化
+let isInitialized = false;
+
 export function init3DGestureSystem() {
+    if (isInitialized) return;
+    isInitialized = true;
+
     initThree();
     initMediaPipe();
     animate();
+}
+
+// 新增：清理函数，用于登录成功后关闭3D系统
+export function cleanup3DGestureSystem() {
+    console.log('Cleaning up 3D Gesture System...');
+
+    // 取消动画循环
+    if (animationFrameId) {
+        cancelAnimationFrame(animationFrameId);
+        animationFrameId = null;
+    }
+
+    // 清理Three.js资源
+    if (renderer) {
+        renderer.dispose();
+        const container = document.getElementById('canvas-container');
+        if (container && renderer.domElement) {
+            container.removeChild(renderer.domElement);
+        }
+    }
+
+    if (geometry) geometry.dispose();
+    if (starGeometry) starGeometry.dispose();
+    if (lineGeometry) lineGeometry.dispose();
+
+    if (particles) {
+        if (particles.material) particles.material.dispose();
+        scene.remove(particles);
+    }
+    if (stars) {
+        if (stars.material) stars.material.dispose();
+        scene.remove(stars);
+    }
+    if (connections) {
+        if (connections.material) connections.material.dispose();
+        scene.remove(connections);
+    }
+
+    // 隐藏UI元素
+    const uiLayer = document.getElementById('ui-layer');
+    const videoContainer = document.getElementById('video-container');
+    const canvasContainer = document.getElementById('canvas-container');
+
+    if (uiLayer) uiLayer.style.display = 'none';
+    if (videoContainer) videoContainer.style.display = 'none';
+    if (canvasContainer) canvasContainer.style.display = 'none';
+
+    // 停止摄像头
+    const videoElement = document.getElementById('input-video');
+    if (videoElement && videoElement.srcObject) {
+        const stream = videoElement.srcObject;
+        const tracks = stream.getTracks();
+        tracks.forEach(track => track.stop());
+        videoElement.srcObject = null;
+    }
+
+    // 重置标志
+    isInitialized = false;
+
+    console.log('3D Gesture System cleaned up.');
 }
 
 // --- 2. Three.js 场景设置 ---
@@ -40,50 +123,136 @@ function initThree() {
 
     // 场景
     scene = new THREE.Scene();
-    scene.fog = new THREE.FogExp2(0x000000, 0.002);
+    scene.fog = new THREE.FogExp2(0x000000, 0.0008); // 减弱雾效，让粒子更清晰
 
     // 相机
-    camera = new THREE.PerspectiveCamera(75, window.innerWidth / window.innerHeight, 0.1, 1000);
-    camera.position.z = 100;
-    camera.position.y = 0;
+    camera = new THREE.PerspectiveCamera(75, window.innerWidth / window.innerHeight, 0.1, 2000);
+    camera.position.z = 150;
+    camera.position.y = 20;
 
-    // 渲染器
-    renderer = new THREE.WebGLRenderer({ antialias: true, alpha: true });
+    // 渲染器 - 高级配置
+    renderer = new THREE.WebGLRenderer({
+        antialias: true,
+        alpha: true,
+        powerPreference: "high-performance"
+    });
     renderer.setSize(window.innerWidth, window.innerHeight);
-    renderer.setPixelRatio(window.devicePixelRatio);
+    renderer.setPixelRatio(Math.min(window.devicePixelRatio, 2)); // 限制像素比率提升性能
     container.appendChild(renderer.domElement);
+
+    // 初始化星空背景
+    initStarField();
 
     // 初始化粒子系统
     initParticles();
+
+    // 初始化粒子连线
+    initConnections();
 
     // 加载字体 (使用 Three.js 示例中的 Helvetiker 字体)
     const loader = new THREE.FontLoader();
     loader.load('https://threejs.org/examples/fonts/helvetiker_bold.typeface.json', function (loadedFont) {
         font = loadedFont;
         const loadingEl = document.getElementById('loading');
-        if (loadingEl) loadingEl.style.display = 'none';
-        updateTextShape("READY"); // 初始文字
+        if (loadingEl) {
+            loadingEl.style.transition = 'opacity 0.5s';
+            loadingEl.style.opacity = '0';
+            setTimeout(() => loadingEl.style.display = 'none', 500);
+        }
+        updateTextShape("NODECRYPT"); // 初始文字改为NODECRYPT
     });
 
     // 窗口大小调整
     window.addEventListener('resize', onWindowResize, false);
 }
 
+// 新增：创建星空背景
+function initStarField() {
+    const starCount = 2000;
+    starGeometry = new THREE.BufferGeometry();
+    const starPositions = new Float32Array(starCount * 3);
+    const starColors = new Float32Array(starCount * 3);
+
+    for (let i = 0; i < starCount; i++) {
+        // 随机分布在球面上
+        const radius = 300 + Math.random() * 500;
+        const theta = Math.random() * Math.PI * 2;
+        const phi = Math.acos(Math.random() * 2 - 1);
+
+        starPositions[i * 3] = radius * Math.sin(phi) * Math.cos(theta);
+        starPositions[i * 3 + 1] = radius * Math.sin(phi) * Math.sin(theta);
+        starPositions[i * 3 + 2] = radius * Math.cos(phi);
+
+        // 星星颜色 - 白色到淡蓝色
+        const brightness = 0.7 + Math.random() * 0.3;
+        starColors[i * 3] = brightness;
+        starColors[i * 3 + 1] = brightness * (0.9 + Math.random() * 0.1);
+        starColors[i * 3 + 2] = 1;
+    }
+
+    starGeometry.setAttribute('position', new THREE.BufferAttribute(starPositions, 3));
+    starGeometry.setAttribute('color', new THREE.BufferAttribute(starColors, 3));
+
+    const starMaterial = new THREE.PointsMaterial({
+        size: 1.5,
+        vertexColors: true,
+        transparent: true,
+        opacity: 0.6,
+        blending: THREE.AdditiveBlending,
+        depthWrite: false
+    });
+
+    stars = new THREE.Points(starGeometry, starMaterial);
+    scene.add(stars);
+}
+
+// 新增：初始化粒子连线
+function initConnections() {
+    lineGeometry = new THREE.BufferGeometry();
+    const maxConnections = 500;
+    const linePositions = new Float32Array(maxConnections * 2 * 3);
+    const lineColors = new Float32Array(maxConnections * 2 * 3);
+
+    lineGeometry.setAttribute('position', new THREE.BufferAttribute(linePositions, 3));
+    lineGeometry.setAttribute('color', new THREE.BufferAttribute(lineColors, 3));
+
+    const lineMaterial = new THREE.LineBasicMaterial({
+        vertexColors: true,
+        transparent: true,
+        opacity: 0.3,
+        blending: THREE.AdditiveBlending
+    });
+
+    connections = new THREE.LineSegments(lineGeometry, lineMaterial);
+    scene.add(connections);
+}
+
+function onWindowResize() {
+    camera.aspect = window.innerWidth / window.innerHeight;
+    camera.updateProjectionMatrix();
+    renderer.setSize(window.innerWidth, window.innerHeight);
+}
+
 function initParticles() {
     geometry = new THREE.BufferGeometry();
     const positions = new Float32Array(particleCount * 3);
     const colors = new Float32Array(particleCount * 3);
+    const sizes = new Float32Array(particleCount); // 新增：每个粒子的大小
 
     for (let i = 0; i < particleCount; i++) {
-        // 初始随机位置
-        positions[i * 3] = (Math.random() - 0.5) * 200;
-        positions[i * 3 + 1] = (Math.random() - 0.5) * 200;
-        positions[i * 3 + 2] = (Math.random() - 0.5) * 200;
+        // 初始随机位置 - 更大的分布范围
+        positions[i * 3] = (Math.random() - 0.5) * 300;
+        positions[i * 3 + 1] = (Math.random() - 0.5) * 300;
+        positions[i * 3 + 2] = (Math.random() - 0.5) * 300;
 
-        // 初始颜色 (白色)
-        colors[i * 3] = 1;
-        colors[i * 3 + 1] = 1;
-        colors[i * 3 + 2] = 1;
+        // 初始颜色 (天蓝色)
+        const palette = colorPalette[0];
+        colors[i * 3] = palette.primary.r;
+        colors[i * 3 + 1] = palette.primary.g;
+        colors[i * 3 + 2] = palette.primary.b;
+
+        // 随机粒子大小
+        sizes[i] = Math.random() * 2 + 1;
 
         // 初始化物理数据
         particleData.push({
@@ -98,19 +267,43 @@ function initParticles() {
 
     geometry.setAttribute('position', new THREE.BufferAttribute(positions, 3));
     geometry.setAttribute('color', new THREE.BufferAttribute(colors, 3));
+    geometry.setAttribute('size', new THREE.BufferAttribute(sizes, 1));
 
-    // 材质
+    // 升级材质 - 使用ShaderMaterial实现发光效果
     const material = new THREE.PointsMaterial({
-        size: 1.5,
+        size: 2.5,
         vertexColors: true,
         blending: THREE.AdditiveBlending,
         depthTest: false,
         transparent: true,
-        opacity: 0.8
+        opacity: 0.9,
+        sizeAttenuation: true,
+        map: createGlowTexture() // 自定义发光纹理
     });
 
     particles = new THREE.Points(geometry, material);
     scene.add(particles);
+}
+
+// 新增：创建发光纹理
+function createGlowTexture() {
+    const canvas = document.createElement('canvas');
+    canvas.width = 64;
+    canvas.height = 64;
+    const ctx = canvas.getContext('2d');
+
+    // 创建径向渐变
+    const gradient = ctx.createRadialGradient(32, 32, 0, 32, 32, 32);
+    gradient.addColorStop(0, 'rgba(255,255,255,1)');
+    gradient.addColorStop(0.2, 'rgba(255,255,255,0.8)');
+    gradient.addColorStop(0.4, 'rgba(255,255,255,0.4)');
+    gradient.addColorStop(1, 'rgba(255,255,255,0)');
+
+    ctx.fillStyle = gradient;
+    ctx.fillRect(0, 0, 64, 64);
+
+    const texture = new THREE.CanvasTexture(canvas);
+    return texture;
 }
 
 // --- 3. 字体生成逻辑 ---
@@ -278,13 +471,19 @@ function countFingers(landmarks) {
     return fingers;
 }
 
-function updateParticleColor(color) {
+function updateParticleColor(colorConfig) {
     const colors = geometry.attributes.color.array;
     for (let i = 0; i < particleCount; i++) {
-        // 简单的渐变效果，稍微加点随机性
-        colors[i * 3] = color.r + (Math.random() - 0.5) * 0.2;
-        colors[i * 3 + 1] = color.g + (Math.random() - 0.5) * 0.2;
-        colors[i * 3 + 2] = color.b + (Math.random() - 0.5) * 0.2;
+        // 使用渐变色 - 在primary和secondary之间随机混合
+        const mixFactor = Math.random();
+        const r = colorConfig.primary.r * (1 - mixFactor) + colorConfig.secondary.r * mixFactor;
+        const g = colorConfig.primary.g * (1 - mixFactor) + colorConfig.secondary.g * mixFactor;
+        const b = colorConfig.primary.b * (1 - mixFactor) + colorConfig.secondary.b * mixFactor;
+
+        // 加入轻微随机性，让颜色更生动
+        colors[i * 3] = Math.max(0, Math.min(1, r + (Math.random() - 0.5) * 0.1));
+        colors[i * 3 + 1] = Math.max(0, Math.min(1, g + (Math.random() - 0.5) * 0.1));
+        colors[i * 3 + 2] = Math.max(0, Math.min(1, b + (Math.random() - 0.5) * 0.1));
     }
     geometry.attributes.color.needsUpdate = true;
 }
@@ -292,15 +491,19 @@ function updateParticleColor(color) {
 
 // --- 5. 动画与物理循环 ---
 function animate() {
-    requestAnimationFrame(animate);
+    animationFrameId = requestAnimationFrame(animate);
 
     if (!geometry || !particles) return;
 
     const positions = geometry.attributes.position.array;
+    const time = Date.now() * 0.0005; // 减慢时间流速
 
     // 扩散系数：基于手势张开程度
     // 0 = 紧凑, 1 = 爆炸
-    const dispersion = handSpread * 50; // 最大扩散半径 50
+    const dispersion = handSpread * 80; // 最大扩散半径 80
+
+    // 更新粒子连线
+    updateConnections(positions);
 
     for (let i = 0; i < particleCount; i++) {
         const px = positions[i * 3];
@@ -309,29 +512,22 @@ function animate() {
 
         const target = targetPositions[i] || new THREE.Vector3(0, 0, 0);
 
-        // 计算扩散偏移 (基于噪声或随机)
-        // 这里使用简单的随机偏移，每一帧都重新计算会导致剧烈抖动
-        // 所以我们让目标位置加上一个基于 dispersion 的偏移
+        // 优化的噪声函数 - 创建更有机的运动
+        const noiseX = Math.sin(time * 0.5 + i * 0.1) * dispersion;
+        const noiseY = Math.cos(time * 0.7 + i * 0.2) * dispersion;
+        const noiseZ = Math.sin(time * 0.3 + i * 0.15) * dispersion;
 
-        // 物理运动 (Lerp 插值模拟弹簧)
-        // 基础速度
-        const speed = 0.08;
-
-        // 目标位置 + 扩散效果
-        // 如果 handSpread 很大，目标位置就变得随机
-        // 简单的实现：目标 = 原始目标 + 随机向量 * handSpread
-
-        // 优化：不仅仅是随机，而是让粒子带有"呼吸感"
-        // 我们可以利用 sin/cos 时间函数加上 handSpread
-        const time = Date.now() * 0.001;
-        const noiseX = Math.sin(time + i) * dispersion * 2;
-        const noiseY = Math.cos(time + i * 0.5) * dispersion * 2;
-        const noiseZ = Math.sin(time * 0.5 + i) * dispersion * 2;
+        // 平滑插值速度 - 距离越远，速度越快
+        const dx = target.x + noiseX - px;
+        const dy = target.y + noiseY - py;
+        const dz = target.z + noiseZ - pz;
+        const distance = Math.sqrt(dx * dx + dy * dy + dz * dz);
+        const speed = Math.min(0.05 + distance * 0.0008, 0.15); // 自适应速度
 
         // 计算下一步位置
-        const nextX = px + (target.x + noiseX - px) * speed;
-        const nextY = py + (target.y + noiseY - py) * speed;
-        const nextZ = pz + (target.z + noiseZ - pz) * speed;
+        const nextX = px + dx * speed;
+        const nextY = py + dy * speed;
+        const nextZ = pz + dz * speed;
 
         positions[i * 3] = nextX;
         positions[i * 3 + 1] = nextY;
@@ -340,9 +536,87 @@ function animate() {
 
     geometry.attributes.position.needsUpdate = true;
 
-    // 缓慢旋转整个粒子群
-    particles.rotation.y += 0.002;
-    particles.rotation.x += (Math.sin(Date.now() * 0.001) * 0.001);
+    // 粒子群整体旋转 - 更慢、更优雅
+    particles.rotation.y += 0.0008;
+    particles.rotation.x = Math.sin(time * 0.3) * 0.1;
+    particles.rotation.z = Math.cos(time * 0.2) * 0.05;
+
+    // 星空缓慢旋转
+    if (stars) {
+        stars.rotation.y += 0.0002;
+        stars.rotation.x += 0.0001;
+    }
+
+    // 相机轻微移动 - 创建动态感
+    camera.position.x = Math.sin(time * 0.2) * 5;
+    camera.position.y = 20 + Math.cos(time * 0.15) * 3;
+    camera.lookAt(0, 0, 0);
 
     renderer.render(scene, camera);
+}
+
+// 新增：更新粒子连线
+function updateConnections(positions) {
+    if (!lineGeometry || !connections) return;
+
+    const linePositions = lineGeometry.attributes.position.array;
+    const lineColors = lineGeometry.attributes.color.array;
+    const maxDistance = 50; // 最大连线距离
+    let lineIndex = 0;
+    const maxConnections = 500;
+    const step = Math.floor(particleCount / 100); // 只检查部分粒子以提升性能
+
+    for (let i = 0; i < particleCount && lineIndex < maxConnections; i += step) {
+        const x1 = positions[i * 3];
+        const y1 = positions[i * 3 + 1];
+        const z1 = positions[i * 3 + 2];
+
+        for (let j = i + step; j < particleCount && lineIndex < maxConnections; j += step) {
+            const x2 = positions[j * 3];
+            const y2 = positions[j * 3 + 1];
+            const z2 = positions[j * 3 + 2];
+
+            const dx = x2 - x1;
+            const dy = y2 - y1;
+            const dz = z2 - z1;
+            const distance = Math.sqrt(dx * dx + dy * dy + dz * dz);
+
+            if (distance < maxDistance) {
+                // 添加连线
+                linePositions[lineIndex * 6] = x1;
+                linePositions[lineIndex * 6 + 1] = y1;
+                linePositions[lineIndex * 6 + 2] = z1;
+                linePositions[lineIndex * 6 + 3] = x2;
+                linePositions[lineIndex * 6 + 4] = y2;
+                linePositions[lineIndex * 6 + 5] = z2;
+
+                // 连线颜色 - 基于距离的透明度
+                const alpha = 1 - distance / maxDistance;
+                const colors = geometry.attributes.color.array;
+                const color1Index = i * 3;
+                const color2Index = j * 3;
+
+                lineColors[lineIndex * 6] = colors[color1Index] * alpha;
+                lineColors[lineIndex * 6 + 1] = colors[color1Index + 1] * alpha;
+                lineColors[lineIndex * 6 + 2] = colors[color1Index + 2] * alpha;
+                lineColors[lineIndex * 6 + 3] = colors[color2Index] * alpha;
+                lineColors[lineIndex * 6 + 4] = colors[color2Index + 1] * alpha;
+                lineColors[lineIndex * 6 + 5] = colors[color2Index + 2] * alpha;
+
+                lineIndex++;
+            }
+        }
+    }
+
+    // 清除未使用的连线
+    for (let i = lineIndex; i < maxConnections; i++) {
+        for (let j = 0; j < 6; j++) {
+            linePositions[i * 6 + j] = 0;
+            lineColors[i * 6 + j] = 0;
+        }
+    }
+
+    lineGeometry.attributes.position.needsUpdate = true;
+    lineGeometry.attributes.color.needsUpdate = true;
+    lineGeometry.setDrawRange(0, lineIndex * 2);
 }
