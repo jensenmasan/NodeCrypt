@@ -1861,3 +1861,66 @@ flex-direction: column;
 h2{
 	margin: 0%;
 }
+
+/* Auto-destruct button styles */
+.chat-destruct-btn {
+	background: none;
+	border: none;
+	cursor: pointer;
+	color: #808080;
+	display: flex;
+	align-items: center;
+	justify-content: center;
+	margin: 0px 10px 3px 10px;
+	padding-left: unset;
+	padding-right: unset;
+	transition: color 0.2s ease, background-color 0.2s ease, transform 0.2s ease;
+	border-radius: 50%;
+}
+
+.chat-destruct-btn:hover {
+	background: #f5f5f5;
+	color: #e74c3c;
+}
+
+.chat-destruct-btn:active {
+	transform: scale(0.95);
+}
+
+.chat-destruct-btn.active {
+	color: #e74c3c !important;
+	background: #fff6f6;
+}
+
+/* Destruct timer styles */
+.destruct-timer {
+	position: absolute;
+	top: -8px;
+	right: -8px;
+	background: #e74c3c;
+	color: white;
+	font-size: 10px;
+	font-weight: bold;
+	padding: 2px 6px;
+	border-radius: 10px;
+	box-shadow: 0 2px 4px rgba(231, 76, 60, 0.4);
+	animation: pulse-red 2s infinite;
+	z-index: 10;
+	pointer-events: none;
+}
+
+.bubble.destructing {
+	border: 1px dashed #e74c3c;
+}
+
+@keyframes pulse-red {
+	0% {
+		box-shadow: 0 0 0 0 rgba(231, 76, 60, 0.4);
+	}
+	70% {
+		box-shadow: 0 0 0 6px rgba(231, 76, 60, 0);
+	}
+	100% {
+		box-shadow: 0 0 0 0 rgba(231, 76, 60, 0);
+	}
+}

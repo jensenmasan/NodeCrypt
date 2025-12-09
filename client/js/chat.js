@@ -27,6 +27,43 @@ import {
 	t
 } from './util.i18n.js';
 
+function handleAutoDestruct(element, expireTime) {
+	if (!element || !expireTime) return;
+	
+	const timerDiv = createElement('div', { class: 'destruct-timer' });
+	element.appendChild(timerDiv);
+	
+	function updateTimer() {
+		const now = Date.now();
+		const left = Math.max(0, Math.ceil((expireTime - now) / 1000));
+		timerDiv.textContent = `${left}s`;
+		
+		if (left <= 0) {
+			// Remove the whole message wrapper if it's an "other" message, or just the bubble if it's "me" but "me" messages are direct children of chatArea so it's fine.
+			// Ideally we remove the parent if it's a bubble-other-wrap, but the element passed here is the bubble itself.
+			// Let's check parent
+			if (element.parentElement && element.parentElement.classList.contains('bubble-other-main')) {
+				// It's an other message, remove the whole wrap
+				const wrap = element.closest('.bubble-other-wrap');
+				if (wrap) wrap.remove();
+				else element.remove();
+			} else {
+				element.remove();
+			}
+			return false; // Stop
+		}
+		return true; // Continue
+	}
+	
+	if (updateTimer()) {
+		const interval = setInterval(() => {
+			if (!updateTimer()) {
+				clearInterval(interval);
+			}
+		}, 1000);
+	}
+}
+
 // Render the chat area
 // 渲染聊天区域
 export function renderChatArea() {
@@ -38,27 +75,52 @@ export function renderChatArea() {
 	}
 	chatArea.innerHTML = '';
 	roomsData[activeRoomIndex].messages.forEach(m => {
-		if (m.type === 'me') addMsg(m.text, true, m.msgType || 'text', m.timestamp);
+		// Check for expiration
+		if (m.expireTime && Date.now() > m.expireTime) return;
+		
+		if (m.type === 'me') addMsg(m.text, true, m.msgType || 'text', m.timestamp, m.autoDestruct);
 		else if (m.type === 'system') addSystemMsg(m.text, true, m.timestamp);
-		else addOtherMsg(m.text, m.userName, m.avatar, true, m.msgType || 'text', m.timestamp)
+		else addOtherMsg(m.text, m.userName, m.avatar, true, m.msgType || 'text', m.timestamp, m.autoDestruct)
 	})
 }
 
 // Add a message to the chat area
 // 添加消息到聊天区域
-export function addMsg(text, isHistory = false, msgType = 'text', timestamp = null) {
+export function addMsg(text, isHistory = false, msgType = 'text', timestamp = null, autoDestruct = null) {
 	let ts = isHistory ? timestamp : (timestamp || Date.now());
 	if (!ts) return;
+	
+	// Handle object message with autoDestruct (from sendMessage call)
+	if (!isHistory && typeof text === 'object' && text.autoDestruct) {
+		autoDestruct = text.autoDestruct;
+		// If it's a text message wrapped in object, extract the text
+		if (text.text && !text.images && !text.image) {
+			text = text.text;
+		}
+		// If it's image/file, 'text' is already the object we want, just keep it.
+	}
+
+	let expireTime = null;
+	if (autoDestruct) {
+		expireTime = ts + autoDestruct;
+		// If loading history and it's already expired, don't show
+		if (isHistory && Date.now() > expireTime) return;
+	}
+
 	if (!isHistory && activeRoomIndex >= 0) {
 		roomsData[activeRoomIndex].messages.push({
 			type: 'me',
 			text,
 			msgType,
-			timestamp: ts
+			timestamp: ts,
+			autoDestruct, 
+			expireTime
 		})
 	}	const chatArea = $id('chat-area');
 	if (!chatArea) return;
 	let className = 'bubble me' + (msgType.includes('_private') ? ' private-message' : '');
+	if (autoDestruct) className += ' destructing';
+	
 	const date = new Date(ts);
 	const time = date.getHours().toString().padStart(2, '0') + ':' + date.getMinutes().toString().padStart(2, '0');	let contentHtml = '';	if (msgType === 'image' || msgType === 'image_private') {
 		// Handle image messages (can contain both text and images)
@@ -113,13 +175,18 @@ export function addMsg(text, isHistory = false, msgType = 'text', timestamp = nu
 	const div = createElement('div', {
 		class: className
 	}, `<span class="bubble-content">${contentHtml}</span><span class="bubble-meta">${time}</span>`);
+	
+	if (autoDestruct) {
+		handleAutoDestruct(div, expireTime);
+	}
+	
 	chatArea.appendChild(div);
 	chatArea.scrollTop = chatArea.scrollHeight
 }
 
 // Add a message from another user to the chat area
 // 添加来自其他用户的消息到聊天区域
-export function addOtherMsg(msg, userName = '', avatar = '', isHistory = false, msgType = 'text', timestamp = null) {
+export function addOtherMsg(msg, userName = '', avatar = '', isHistory = false, msgType = 'text', timestamp = null, autoDestruct = null) {
 	if (!userName && activeRoomIndex >= 0) {
 		const rd = roomsData[activeRoomIndex];
 		// 优先使用文件消息自带的 userName 字段
@@ -129,9 +196,25 @@ export function addOtherMsg(msg, userName = '', avatar = '', isHistory = false, 
 			userName = rd.userMap[msg.clientId].userName || rd.userMap[msg.clientId].username || rd.userMap[msg.clientId].name || t('ui.anonymous', 'Anonymous')
 		}
 	}
-	userName = userName || t('ui.anonymous', 'Anonymous');
+	
+	// Handle object payload that might contain autoDestruct
+	if (typeof msg === 'object' && msg.autoDestruct) {
+		autoDestruct = msg.autoDestruct;
+		// Extract text if it's a wrapped text message
+		if (msg.text && !msg.images && !msg.image && !msg.fileId) { // Check it's not a complex type
+			msg = msg.text;
+		}
+	}
+	
+	let expireTime = null;
 	let ts = isHistory ? timestamp : (timestamp || Date.now());
 	if (!ts) return;
+	
+	if (autoDestruct) {
+		expireTime = ts + autoDestruct;
+		if (isHistory && Date.now() > expireTime) return;
+	}
+
 	const chatArea = $id('chat-area');
 	if (!chatArea) return;
 	const bubbleWrap = createElement('div', {
@@ -190,10 +273,19 @@ export function addOtherMsg(msg, userName = '', avatar = '', isHistory = false, 
 	if (msgType && msgType.includes('_private')) {
 		bubbleClasses += ' private-message'
 	}
+	if (autoDestruct) {
+		bubbleClasses += ' destructing';
+	}
 	if (msgType === 'file' || msgType === 'file_private') {
 		bubbleClasses += ' file-bubble';
 	}
 	bubbleWrap.innerHTML = `<span class="avatar"></span><div class="bubble-other-main"><div class="${bubbleClasses}"><div class="bubble-other-name">${safeUserName}</div><span class="bubble-content">${contentHtml}</span><span class="bubble-meta">${time}</span></div></div>`;
+	
+	if (autoDestruct) {
+		const bubble = bubbleWrap.querySelector('.bubble');
+		handleAutoDestruct(bubble, expireTime);
+	}
+	
 	const svg = createAvatarSVG(userName);
 	const avatarEl = $('.avatar', bubbleWrap);
 	if (avatarEl) {

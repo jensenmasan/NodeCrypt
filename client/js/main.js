@@ -67,7 +67,8 @@ import {
 
 // 从 ui.js 中导入 UI 界面相关的功能
 // Import user interface functions from ui.js
-import {	renderUserList,       // 渲染用户列表 / Render user list
+import {
+	renderUserList,       // 渲染用户列表 / Render user list
 	renderMainHeader,     // 渲染主标题栏 / Render main header
 	setupMoreBtnMenu,     // 设置更多按钮的下拉菜单 / Setup "more" button menu
 	preventSpaceInput,    // 防止输入空格 / Prevent space input in form fields
@@ -111,7 +112,7 @@ window.addEventListener('DOMContentLoaded', () => {
 	setTimeout(() => {
 		document.body.classList.remove('preload');
 	}, 300);
-	
+
 	// 初始化登录表单 / Initialize login form
 	initLoginForm();
 
@@ -131,20 +132,20 @@ window.addEventListener('DOMContentLoaded', () => {
 	preventSpaceInput($id('userName'));
 	preventSpaceInput($id('roomName'));
 	preventSpaceInput($id('password'));
-	
+
 	// 初始化翻转卡片功能 / Initialize flip card functionality
 	initFlipCard();
-	
+
 	// 初始化辅助功能和界面设置
 	// Initialize autofill, input placeholders, and menus
-	autofillRoomPwd();	setupInputPlaceholder();
+	autofillRoomPwd(); setupInputPlaceholder();
 	setupMoreBtnMenu();
-	setupImagePreview();	setupEmojiPicker();
+	setupImagePreview(); setupEmojiPicker();
 	// 由于我们已经在DOM加载前预先初始化了语言设置，这里不需要重复初始化
 	// initSettings();
 	// updateStaticTexts(); // 在初始化设置后更新静态文本 / Update static texts after initializing settings
 	initTheme(); // 初始化主题 / Initialize theme
-	
+
 	const settingsBtn = $id('settings-btn'); // 设置按钮 / Settings button
 	if (settingsBtn) {
 		settingsBtn.onclick = (e) => {
@@ -164,11 +165,11 @@ window.addEventListener('DOMContentLoaded', () => {
 	// 点击其他地方时关闭设置面板 (已移除，因为现在使用侧边栏形式)
 	// Close settings panel when clicking outside (removed since we now use sidebar format)
 	const input = document.querySelector('.input-message-input'); // 消息输入框 / Message input box
-	
+
 	// 设置图片粘贴功能
 	// Setup image paste functionality
 	const imagePasteHandler = setupImagePaste('.input-message-input');
-	
+
 	if (input) {
 		input.focus(); // 自动聚焦 / Auto focus
 		input.addEventListener('keydown', (e) => {
@@ -180,7 +181,23 @@ window.addEventListener('DOMContentLoaded', () => {
 			}
 		});
 	}
-	
+
+	// Auto-destruct toggle
+	const destructBtn = $id('chat-destruct-btn');
+	let isAutoDestruct = false;
+	if (destructBtn) {
+		destructBtn.onclick = function () {
+			isAutoDestruct = !isAutoDestruct;
+			if (isAutoDestruct) {
+				destructBtn.classList.add('active');
+				destructBtn.style.color = '#e74c3c'; // Red color to indicate danger/burn
+			} else {
+				destructBtn.classList.remove('active');
+				destructBtn.style.color = '';
+			}
+		};
+	}
+
 	// 发送消息的统一函数
 	// Unified function to send messages
 	function sendMessage() {
@@ -189,14 +206,17 @@ window.addEventListener('DOMContentLoaded', () => {
 
 		if (!text && images.length === 0) return; // 如果没有文本且没有图片，则不发送
 		const rd = roomsData[activeRoomIndex]; // 当前房间数据 / Current room data
-		
+
+		const autoDestructTime = isAutoDestruct ? 30000 : null; // 30 seconds
+
 		if (rd && rd.chat) {
 			if (images.length > 0) {
 				// 发送包含图片的消息 (支持多图和文字合并)
 				// Send message with images (supports multiple images and text combined)
 				const messageContent = {
 					text: text || '', // 包含文字内容，如果有的话
-					images: images    // 包含所有图片数据
+					images: images,    // 包含所有图片数据
+					autoDestruct: autoDestructTime
 				};
 
 				if (rd.privateChatTargetId) {
@@ -215,8 +235,8 @@ window.addEventListener('DOMContentLoaded', () => {
 							p: encryptedClientMessage,
 							c: rd.privateChatTargetId
 						};
-						const encryptedMessageForServer = rd.chat.encryptServerMessage(serverRelayPayload, rd.chat.serverShared);						rd.chat.sendMessage(encryptedMessageForServer);
-						addMsg(messageContent, false, 'image_private');
+						const encryptedMessageForServer = rd.chat.encryptServerMessage(serverRelayPayload, rd.chat.serverShared); rd.chat.sendMessage(encryptedMessageForServer);
+						addMsg(messageContent, false, 'image_private', null, autoDestructTime);
 					} else {
 						addSystemMsg(`${t('system.private_message_failed', 'Cannot send private message to')} ${rd.privateChatTargetName}. ${t('system.user_not_connected', 'User might not be fully connected.')}`)
 					}
@@ -224,13 +244,22 @@ window.addEventListener('DOMContentLoaded', () => {
 					// 公共频道图片消息发送
 					// Send image message to public channel
 					rd.chat.sendChannelMessage('image', messageContent);
-					addMsg(messageContent, false, 'image');
+					addMsg(messageContent, false, 'image', null, autoDestructTime);
 				}
-				
+
 				imagePasteHandler.clearImages(); // 清除所有图片预览
 			} else if (text) {
 				// 发送纯文本消息
 				// Send text-only message
+				// Construct message data
+				let messageData = text;
+				if (autoDestructTime) {
+					messageData = {
+						text: text,
+						autoDestruct: autoDestructTime
+					};
+				}
+
 				if (rd.privateChatTargetId) {
 					// 私聊消息加密并发送
 					// Encrypt and send private message
@@ -239,7 +268,7 @@ window.addEventListener('DOMContentLoaded', () => {
 						const clientMessagePayload = {
 							a: 'm',
 							t: 'text_private',
-							d: text
+							d: messageData
 						};
 						const encryptedClientMessage = rd.chat.encryptClientMessage(clientMessagePayload, targetClient.shared);
 						const serverRelayPayload = {
@@ -248,17 +277,19 @@ window.addEventListener('DOMContentLoaded', () => {
 							c: rd.privateChatTargetId
 						};
 						const encryptedMessageForServer = rd.chat.encryptServerMessage(serverRelayPayload, rd.chat.serverShared);
-						rd.chat.sendMessage(encryptedMessageForServer);					addMsg(text, false, 'text_private');
+						rd.chat.sendMessage(encryptedMessageForServer);
+						addMsg(text, false, 'text_private', null, autoDestructTime);
 					} else {
 						addSystemMsg(`${t('system.private_message_failed', 'Cannot send private message to')} ${rd.privateChatTargetName}. ${t('system.user_not_connected', 'User might not be fully connected.')}`)
 					}
 				} else {
 					// 公共频道消息发送
 					// Send public message
-					rd.chat.sendChannelMessage('text', text);
-					addMsg(text);				}
+					rd.chat.sendChannelMessage('text', messageData);
+					addMsg(text, false, 'text', null, autoDestructTime);
+				}
 			}
-			
+
 			// 清空输入框并触发 input 事件
 			// Clear input and trigger input event
 			input.innerHTML = ''; // 清空输入框内容 / Clear input field content
@@ -268,14 +299,14 @@ window.addEventListener('DOMContentLoaded', () => {
 			autoGrowInput(); // 调整输入框高度
 		}
 	}
-	
+
 	// 为发送按钮添加点击事件
 	// Add click event for send button
 	const sendButton = document.querySelector('.send-message-btn');
 	if (sendButton) {
 		sendButton.addEventListener('click', sendMessage);
 	}
-	
+
 	// 设置发送文件功能
 	// Setup file sending functionality
 	setupFileSend({
@@ -305,24 +336,26 @@ window.addEventListener('DOMContentLoaded', () => {
 						};
 						const encryptedMessageForServer = rd.chat.encryptServerMessage(serverRelayPayload, rd.chat.serverShared);
 						rd.chat.sendMessage(encryptedMessageForServer);
-						
+
 						// 添加到自己的聊天记录
 						if (msgWithUser.type === 'file_start') {
 							addMsg(msgWithUser, false, 'file_private');
-						}					} else {
+						}
+					} else {
 						addSystemMsg(`${t('system.private_file_failed', 'Cannot send private file to')} ${rd.privateChatTargetName}. ${t('system.user_not_connected', 'User might not be fully connected.')}`)
 					}
 				} else {
 					// 公共频道文件发送
 					// Send file to public channel
 					rd.chat.sendChannelMessage(msgWithUser.type, msgWithUser);
-					
+
 					// 添加到自己的聊天记录
 					if (msgWithUser.type === 'file_start') {
 						addMsg(msgWithUser, false, 'file');
 					}
 				}
-			}		}
+			}
+		}
 	});
 
 
