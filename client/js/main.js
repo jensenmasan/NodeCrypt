@@ -310,11 +310,16 @@ window.addEventListener('DOMContentLoaded', () => {
 			} else if (text) {
 				// 发送纯文本消息
 				// Send text-only message
-				let messageToSend = {
-					text: text,
-					autoDestruct: destructDuration,
-					quote: quotedMessage
-				};
+				let messageToSend = text;
+
+				// Only wrap in object if there's autoDestruct or quote
+				if (destructDuration || quotedMessage) {
+					messageToSend = {
+						text: text,
+						autoDestruct: destructDuration,
+						quote: quotedMessage
+					};
+				}
 
 				if (rd.privateChatTargetId) {
 					// 私聊文本加密
