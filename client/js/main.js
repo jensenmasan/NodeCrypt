@@ -249,6 +249,20 @@ window.addEventListener('DOMContentLoaded', () => {
 
 		const destructDuration = isAutoDestruct ? autoDestructTime : null;
 
+		// Check if there's a quote
+		const quotePreview = document.querySelector('.quote-preview');
+		let quotedMessage = null;
+		if (quotePreview) {
+			const quoteSender = quotePreview.querySelector('.quote-sender')?.textContent;
+			const quoteText = quotePreview.querySelector('.quote-message')?.textContent;
+			if (quoteSender && quoteText) {
+				quotedMessage = {
+					sender: quoteSender,
+					text: quoteText
+				};
+			}
+		}
+
 		if (rd && rd.chat) {
 			if (images.length > 0) {
 				// 发送包含图片的消息 (支持多图和文字合并)
@@ -256,7 +270,8 @@ window.addEventListener('DOMContentLoaded', () => {
 				const messageContent = {
 					text: text || '', // 包含文字内容，如果有的话
 					images: images,    // 包含所有图片数据
-					autoDestruct: destructDuration
+					autoDestruct: destructDuration,
+					quote: quotedMessage
 				};
 
 				if (rd.privateChatTargetId) {
@@ -281,34 +296,35 @@ window.addEventListener('DOMContentLoaded', () => {
 						addSystemMsg(`${t('system.private_message_failed', 'Cannot send private message to')} ${rd.privateChatTargetName}. ${t('system.user_not_connected', 'User might not be fully connected.')}`)
 					}
 				} else {
-					// 公共频道图片消息发送
-					// Send image message to public channel
-					rd.chat.sendChannelMessage('image', messageContent);
-					addMsg(messageContent, false, 'image', null, destructDuration);
+					// 公开聊天带图片
+					// Public chat with images
+					const payload = {
+						a: 'm',
+						t: 'image',
+						d: messageContent
+					};
+					const encryptedPayload = rd.chat.encryptServerMessage(payload, rd.chat.serverShared);
+					rd.chat.sendMessage(encryptedPayload);
+					addMsg(messageContent, false, 'image', null, destructDuration); // 显示本地发送的图片消息，包括文字 / Show local sent image message including text
 				}
-
-				imagePasteHandler.clearImages(); // 清除所有图片预览
 			} else if (text) {
 				// 发送纯文本消息
 				// Send text-only message
-				// Construct message data
-				let messageData = text;
-				if (destructDuration) {
-					messageData = {
-						text: text,
-						autoDestruct: destructDuration
-					};
-				}
+				let messageToSend = {
+					text: text,
+					autoDestruct: destructDuration,
+					quote: quotedMessage
+				};
 
 				if (rd.privateChatTargetId) {
-					// 私聊消息加密并发送
-					// Encrypt and send private message
+					// 私聊文本加密
+					// Encrypt private text message
 					const targetClient = rd.chat.channel[rd.privateChatTargetId];
 					if (targetClient && targetClient.shared) {
 						const clientMessagePayload = {
 							a: 'm',
 							t: 'text_private',
-							d: messageData
+							d: messageToSend
 						};
 						const encryptedClientMessage = rd.chat.encryptClientMessage(clientMessagePayload, targetClient.shared);
 						const serverRelayPayload = {
@@ -318,15 +334,21 @@ window.addEventListener('DOMContentLoaded', () => {
 						};
 						const encryptedMessageForServer = rd.chat.encryptServerMessage(serverRelayPayload, rd.chat.serverShared);
 						rd.chat.sendMessage(encryptedMessageForServer);
-						addMsg(text, false, 'text_private', null, destructDuration);
+						addMsg(messageToSend, false, 'text_private', null, destructDuration);
 					} else {
 						addSystemMsg(`${t('system.private_message_failed', 'Cannot send private message to')} ${rd.privateChatTargetName}. ${t('system.user_not_connected', 'User might not be fully connected.')}`)
 					}
 				} else {
-					// 公共频道消息发送
-					// Send public message
-					rd.chat.sendChannelMessage('text', messageData);
-					addMsg(text, false, 'text', null, destructDuration);
+					// 公开聊天文本
+					// Public chat text
+					const payload = {
+						a: 'm',
+						t: 'text',
+						d: messageToSend
+					};
+					const encryptedPayload = rd.chat.encryptServerMessage(payload, rd.chat.serverShared);
+					rd.chat.sendMessage(encryptedPayload);
+					addMsg(messageToSend, false, 'text', null, destructDuration);
 				}
 			}
 

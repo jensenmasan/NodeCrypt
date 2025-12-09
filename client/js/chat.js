@@ -122,7 +122,25 @@ export function addMsg(text, isHistory = false, msgType = 'text', timestamp = nu
 	if (autoDestruct) className += ' destructing';
 
 	const date = new Date(ts);
-	const time = date.getHours().toString().padStart(2, '0') + ':' + date.getMinutes().toString().padStart(2, '0'); let contentHtml = ''; if (msgType === 'image' || msgType === 'image_private') {
+	const time = date.getHours().toString().padStart(2, '0') + ':' + date.getMinutes().toString().padStart(2, '0'); let contentHtml = '';
+
+	// Handle quote if present
+	let quoteHtml = '';
+	if (typeof text === 'object' && text.quote) {
+		quoteHtml = `<div class="quoted-message">
+			<div class="quote-line"></div>
+			<div class="quote-content-wrapper">
+				<div class="quote-sender">${escapeHTML(text.quote.sender)}</div>
+				<div class="quote-text">${escapeHTML(text.quote.text)}</div>
+			</div>
+		</div>`;
+		// Extract actual text
+		if (text.text) {
+			text = text.text;
+		}
+	}
+
+	if (msgType === 'image' || msgType === 'image_private') {
 		// Handle image messages (can contain both text and images)
 		if (typeof text === 'object' && text.images && Array.isArray(text.images)) {
 			// New multi-image format: {text: "", images: ["data:image...", "data:image..."]}
@@ -170,14 +188,30 @@ export function addMsg(text, isHistory = false, msgType = 'text', timestamp = nu
 		// Add file-bubble class for special timestamp positioning
 		className += ' file-bubble';
 	} else if (msgType === 'voice' || msgType === 'voice_private') {
-		const audioSrc = typeof text === 'object' ? text.voice : text;
-		contentHtml = `<audio controls src="${audioSrc}" class="bubble-audio"></audio>`;
+		// Handle voice messages
+		if (typeof text === 'object' && text.audio) {
+			contentHtml = `<audio controls class="bubble-audio">
+				<source src="${escapeHTML(text.audio)}" type="audio/webm">
+				Your browser does not support the audio element.
+			</audio>`;
+		} else {
+			contentHtml = textToHTML(text);
+		}
 	} else {
-		contentHtml = textToHTML(text)
+		// Handle text messages
+		contentHtml = textToHTML(text);
+	}
+
+	let bubbleClasses = 'bubble me';
+	if (msgType && msgType.includes('_private')) {
+		bubbleClasses += ' private-message';
+	}
+	if (autoDestruct) {
+		bubbleClasses += ' destructing';
 	}
 	const div = createElement('div', {
-		class: className
-	}, `<span class="bubble-content">${contentHtml}</span><span class="bubble-meta">${time}</span>`);
+		class: bubbleClasses
+	}, `${quoteHtml}<span class="bubble-content">${contentHtml}</span><span class="bubble-meta">${time}</span>`);
 
 	if (autoDestruct) {
 		handleAutoDestruct(div, expireTime);

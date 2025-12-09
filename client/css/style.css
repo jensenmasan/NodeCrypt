@@ -2367,3 +2367,49 @@ h2 {
 .bubble-other-wrap {
 	transition: transform 0.3s ease;
 }
+
+/* Quoted message styles */
+.quoted-message {
+	display: flex;
+	gap: 8px;
+	margin-bottom: 8px;
+	padding: 8px 12px;
+	background: rgba(0, 0, 0, 0.05);
+	border-radius: 8px;
+	position: relative;
+}
+
+.bubble.me .quoted-message {
+	background: rgba(255, 255, 255, 0.2);
+}
+
+.quote-line {
+	width: 3px;
+	background: #30a8f7;
+	border-radius: 2px;
+	flex-shrink: 0;
+}
+
+.quote-content-wrapper {
+	flex: 1;
+	min-width: 0;
+}
+
+.quoted-message .quote-sender {
+	font-size: 12px;
+	font-weight: 600;
+	color: #30a8f7;
+	margin-bottom: 2px;
+}
+
+.quoted-message .quote-text {
+	font-size: 13px;
+	color: #666;
+	overflow: hidden;
+	text-overflow: ellipsis;
+	white-space: nowrap;
+}
+
+.bubble.me .quoted-message .quote-text {
+	color: rgba(255, 255, 255, 0.8);
+}
