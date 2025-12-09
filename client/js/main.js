@@ -256,7 +256,7 @@ window.addEventListener('DOMContentLoaded', () => {
 				const messageContent = {
 					text: text || '', // 包含文字内容，如果有的话
 					images: images,    // 包含所有图片数据
-					autoDestruct: autoDestructTime
+					autoDestruct: destructDuration
 				};
 
 				if (rd.privateChatTargetId) {
@@ -276,7 +276,7 @@ window.addEventListener('DOMContentLoaded', () => {
 							c: rd.privateChatTargetId
 						};
 						const encryptedMessageForServer = rd.chat.encryptServerMessage(serverRelayPayload, rd.chat.serverShared); rd.chat.sendMessage(encryptedMessageForServer);
-						addMsg(messageContent, false, 'image_private', null, autoDestructTime);
+						addMsg(messageContent, false, 'image_private', null, destructDuration);
 					} else {
 						addSystemMsg(`${t('system.private_message_failed', 'Cannot send private message to')} ${rd.privateChatTargetName}. ${t('system.user_not_connected', 'User might not be fully connected.')}`)
 					}
@@ -403,7 +403,8 @@ window.addEventListener('DOMContentLoaded', () => {
 			const rd = roomsData[activeRoomIndex];
 			if (rd && rd.chat) {
 				const userName = rd.myUserName || '';
-				const msgWithUser = { ...message, userName };
+				const destructDuration = isAutoDestruct ? autoDestructTime : null;
+				const msgWithUser = { ...message, userName, autoDestruct: destructDuration };
 				if (rd.privateChatTargetId) {
 					// 私聊文件加密并发送
 					// Encrypt and send private file message
