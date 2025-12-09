@@ -298,13 +298,7 @@ window.addEventListener('DOMContentLoaded', () => {
 				} else {
 					// 公开聊天带图片
 					// Public chat with images
-					const payload = {
-						a: 'm',
-						t: 'image',
-						d: messageContent
-					};
-					const encryptedPayload = rd.chat.encryptServerMessage(payload, rd.chat.serverShared);
-					rd.chat.sendMessage(encryptedPayload);
+					rd.chat.sendChannelMessage('image', messageContent);
 					addMsg(messageContent, false, 'image', null, destructDuration); // 显示本地发送的图片消息，包括文字 / Show local sent image message including text
 				}
 			} else if (text) {
@@ -346,13 +340,7 @@ window.addEventListener('DOMContentLoaded', () => {
 				} else {
 					// 公开聊天文本
 					// Public chat text
-					const payload = {
-						a: 'm',
-						t: 'text',
-						d: messageToSend
-					};
-					const encryptedPayload = rd.chat.encryptServerMessage(payload, rd.chat.serverShared);
-					rd.chat.sendMessage(encryptedPayload);
+					rd.chat.sendChannelMessage('text', messageToSend);
 					addMsg(messageToSend, false, 'text', null, destructDuration);
 				}
 			}
