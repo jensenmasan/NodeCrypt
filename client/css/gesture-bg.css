@@ -1,0 +1,98 @@
+body {
+    background-color: #000 !important;
+    overflow: hidden;
+}
+
+/* 覆盖 .login-page 的背景图 */
+.login-page {
+    background-image: none !important;
+    background: transparent !important;
+    position: relative;
+    z-index: 10;
+}
+
+/* 3D Canvas 背景 */
+#canvas-container {
+    width: 100vw;
+    height: 100vh;
+    position: fixed;
+    top: 0;
+    left: 0;
+    z-index: -1;
+}
+
+/* 视频预览窗口 */
+#video-container {
+    position: fixed;
+    bottom: 20px;
+    right: 20px;
+    width: 160px;
+    height: 120px;
+    z-index: 100;
+    border: 2px solid rgba(255, 255, 255, 0.3);
+    border-radius: 8px;
+    overflow: hidden;
+    transform: scaleX(-1);
+    /* 镜像显示 */
+    opacity: 0.7;
+    transition: opacity 0.3s;
+}
+
+#video-container:hover {
+    opacity: 1;
+}
+
+#input-video {
+    width: 100%;
+    height: 100%;
+    object-fit: cover;
+}
+
+/* UI 层信息 */
+#ui-layer {
+    position: fixed;
+    top: 20px;
+    left: 20px;
+    color: rgba(255, 255, 255, 0.8);
+    z-index: 100;
+    pointer-events: none;
+    text-shadow: 0 1px 3px rgba(0, 0, 0, 0.8);
+    font-family: 'Arial', sans-serif;
+}
+
+#ui-layer h1 {
+    margin: 0;
+    font-size: 24px;
+    text-shadow: 0 0 10px rgba(0, 255, 255, 0.5);
+    /* 覆盖可能的全局样式 */
+    text-align: left;
+    background: none;
+    -webkit-text-fill-color: initial;
+    color: white;
+}
+
+#ui-layer p {
+    font-size: 14px;
+    line-height: 1.5;
+    margin-top: 10px;
+    color: #ddd;
+}
+
+.status {
+    font-weight: bold;
+    color: #00ffcc;
+}
+
+#loading {
+    position: absolute;
+    top: 50%;
+    left: 50%;
+    transform: translate(-50%, -50%);
+    color: white;
+    font-size: 20px;
+    z-index: 50;
+    text-shadow: 0 0 10px rgba(0, 0, 0, 0.5);
+    background: rgba(0, 0, 0, 0.5);
+    padding: 20px;
+    border-radius: 10px;
+}
