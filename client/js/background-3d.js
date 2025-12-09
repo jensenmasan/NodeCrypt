@@ -20,6 +20,16 @@ let currentGesture = 0; // 0=无, 1=Gest1, 2=Gest2, 3=Gest3
 let handSpread = 0; // 0 到 1，控制扩散
 let currentText = "NODECRYPT"; // 当前文字（改为默认显示NODECRYPT）
 
+// 新增功能变量
+let fingerTrail = []; // 手指轨迹，用于画图
+const TRAIL_LENGTH = 50; // 轨迹长度
+let lastHandTime = Date.now(); // 上次检测到手的时间
+let isAutoMode = true; // 是否处于自动演示模式
+let autoTimer = 0; // 自动模式计时器
+const AUTO_SWITCH_INTERVAL = 300; // 自动切换间隔 (帧数)
+const autoTexts = ["NODECRYPT", "FUTURE", "TECH", "ART"];
+let autoTextIndex = 0;
+
 // 高级颜色配置 - 使用渐变色
 const colorPalette = {
     1: {
@@ -380,9 +390,33 @@ function initMediaPipe() {
 function onHandsResults(results) {
     const gestureStatus = document.getElementById('gesture-status');
     const spreadStatus = document.getElementById('spread-status');
+    const uiLayer = document.getElementById('ui-layer');
 
     if (results.multiHandLandmarks && results.multiHandLandmarks.length > 0) {
+        lastHandTime = Date.now();
+        isAutoMode = false;
+
+        // 显示UI面板
+        if (uiLayer) uiLayer.classList.add('visible');
+
         const landmarks = results.multiHandLandmarks[0];
+
+        // --- 记录食指指尖轨迹 (用于绘图) ---
+        const indexTip = landmarks[8];
+        // 转换坐标系: MediaPipe(0~1) -> Three.js(场景坐标)
+        // 视口宽高比例适配
+        const aspect = window.innerWidth / window.innerHeight;
+        const visibleHeight = 150; // 近似可见区域高度
+        const visibleWidth = visibleHeight * aspect;
+
+        const targetX = (indexTip.x - 0.5) * -visibleWidth; // 镜像X
+        const targetY = (indexTip.y - 0.5) * -visibleHeight; // 反转Y
+        const targetZ = 0; // 投影到平面
+
+        fingerTrail.unshift(new THREE.Vector3(targetX, targetY, targetZ));
+        if (fingerTrail.length > TRAIL_LENGTH) {
+            fingerTrail.pop();
+        }
 
         // 1. 计算手势 (简单的手指计数法)
         const fingers = countFingers(landmarks);
@@ -393,11 +427,11 @@ function onHandsResults(results) {
         let gestureName = "未知";
 
         if (fingers[1] && !fingers[2] && !fingers[3] && !fingers[4]) {
-            // 仅食指 -> 手势 1
+            // 仅食指 -> 自由绘图模式
             currentGesture = 1;
-            newText = "FUTURE";
+            // newText 不变，维持现状
             newColor = colorPalette[1];
-            gestureName = "1 (未来)";
+            gestureName = "食指 (绘图)";
         } else if (fingers[1] && fingers[2] && !fingers[3] && !fingers[4]) {
             // 食指+中指 -> 手势 2
             currentGesture = 2;
@@ -411,8 +445,13 @@ function onHandsResults(results) {
             newColor = colorPalette[3];
             gestureName = "3 (艺术)";
         } else {
+            // 其他手势 -> 恢复默认
             currentGesture = 0;
-            gestureName = "自由模式";
+            // newText = "NODECRYPT"; 
+            gestureName = "自由交互";
+            if (currentText !== "NODECRYPT" && currentText !== "FUTURE" && currentText !== "TECH" && currentText !== "ART") {
+                newText = "NODECRYPT";
+            }
         }
 
         if (newText !== currentText) {
@@ -424,25 +463,29 @@ function onHandsResults(results) {
 
         // 2. 计算张合程度 (Thumb Tip 到 Index Tip 的距离)
         const thumbTip = landmarks[4];
-        const indexTip = landmarks[8];
+        // const indexTip = landmarks[8];
         const distance = Math.sqrt(
             Math.pow(thumbTip.x - indexTip.x, 2) +
             Math.pow(thumbTip.y - indexTip.y, 2)
         );
 
         // 归一化距离 (大概范围 0.02 到 0.2)
-        // 捏合时距离小 -> spread 小
-        // 张开时距离大 -> spread 大
-        // 我们放大这个效果：
-        let rawSpread = (distance - 0.05) * 5; // 调整参数
-        handSpread = Math.max(0, Math.min(1, rawSpread)); // 限制在 0-1
+        let rawSpread = (distance - 0.05) * 5;
+        handSpread = Math.max(0, Math.min(1, rawSpread));
 
         if (spreadStatus) spreadStatus.innerText = Math.round(handSpread * 100) + "%";
 
     } else {
-        // 没有检测到手
+        // 没有检测到手 - 检查是否进入自动模式
+        if (Date.now() - lastHandTime > 2000) { // 2秒无操作
+            isAutoMode = true;
+            // 隐藏UI面板
+            if (uiLayer) uiLayer.classList.remove('visible');
+        }
+
         if (gestureStatus) gestureStatus.innerText = "未检测到手";
-        handSpread = 0;
+        // handSpread = 0; // 自动模式下不重置，由动画控制
+        fingerTrail = []; // 清空轨迹
     }
 }
 
@@ -496,35 +539,87 @@ function animate() {
     if (!geometry || !particles) return;
 
     const positions = geometry.attributes.position.array;
-    const time = Date.now() * 0.0005; // 减慢时间流速
+    const time = Date.now() * 0.0005;
 
-    // 扩散系数：基于手势张开程度
-    // 0 = 紧凑, 1 = 爆炸
-    const dispersion = handSpread * 80; // 最大扩散半径 80
+    // --- 自动演示模式逻辑 ---
+    if (isAutoMode) {
+        autoTimer++;
+        // 自动切换文字
+        if (autoTimer > AUTO_SWITCH_INTERVAL) {
+            autoTimer = 0;
+            autoTextIndex = (autoTextIndex + 1) % autoTexts.length;
+            updateTextShape(autoTexts[autoTextIndex]);
+            // 随机切换颜色
+            const randomColorKey = Math.floor(Math.random() * 4);
+            updateParticleColor(colorPalette[randomColorKey] || colorPalette[0]);
+        }
+
+        // 自动模式下的呼吸扩散效果
+        const autoSpread = (Math.sin(time * 2) + 1) * 0.15;
+        handSpread = autoSpread;
+    }
+
+    // 扩散系数
+    const dispersion = handSpread * 80;
 
     // 更新粒子连线
     updateConnections(positions);
 
+    // --- 粒子运动逻辑 ---
     for (let i = 0; i < particleCount; i++) {
         const px = positions[i * 3];
         const py = positions[i * 3 + 1];
         const pz = positions[i * 3 + 2];
 
-        const target = targetPositions[i] || new THREE.Vector3(0, 0, 0);
+        let target;
 
-        // 优化的噪声函数 - 创建更有机的运动
+        // 如果处于绘图模式 (手势1) 且有轨迹，粒子跟随手指
+        if (currentGesture === 1 && fingerTrail.length > 0) {
+            // 将粒子分配到轨迹的不同点上，形成长尾效果
+            // 使用 i % fingerTrail.length 可以让粒子均匀分布在轨迹上
+            const trailIndex = i % fingerTrail.length;
+            const trailPoint = fingerTrail[trailIndex];
+
+            // 为了让线条有体积感，加一点随机抖动
+            const spread = 2.0;
+            target = new THREE.Vector3(
+                trailPoint.x + (Math.random() - 0.5) * spread,
+                trailPoint.y + (Math.random() - 0.5) * spread,
+                trailPoint.z + (Math.random() - 0.5) * spread
+            );
+        } else {
+            // 默认模式：飞向文字目标点
+            target = targetPositions[i] || new THREE.Vector3(0, 0, 0);
+        }
+
+        // 噪声运动
         const noiseX = Math.sin(time * 0.5 + i * 0.1) * dispersion;
         const noiseY = Math.cos(time * 0.7 + i * 0.2) * dispersion;
         const noiseZ = Math.sin(time * 0.3 + i * 0.15) * dispersion;
 
-        // 平滑插值速度 - 距离越远，速度越快
-        const dx = target.x + noiseX - px;
-        const dy = target.y + noiseY - py;
-        const dz = target.z + noiseZ - pz;
-        const distance = Math.sqrt(dx * dx + dy * dy + dz * dz);
-        const speed = Math.min(0.05 + distance * 0.0008, 0.15); // 自适应速度
+        let dx, dy, dz;
 
-        // 计算下一步位置
+        if (isAutoMode) {
+            // 自动模式下增加波浪效果
+            const waveX = Math.sin(time * 2 + py * 0.05) * 10;
+            const waveY = Math.cos(time * 1.5 + px * 0.05) * 10;
+            dx = target.x + noiseX + waveX - px;
+            dy = target.y + noiseY + waveY - py;
+            dz = target.z + noiseZ - pz;
+        } else {
+            dx = target.x + noiseX - px;
+            dy = target.y + noiseY - py;
+            dz = target.z + noiseZ - pz;
+        }
+
+        const distance = Math.sqrt(dx * dx + dy * dy + dz * dz);
+
+        // 绘图模式下速度要快一点，否则跟不上手指
+        let speedFactor = (currentGesture === 1) ? 0.2 : 0.08;
+        if (isAutoMode) speedFactor = 0.05; // 自动模式慢一点
+
+        const speed = Math.min(speedFactor + distance * 0.001, 0.3);
+
         const nextX = px + dx * speed;
         const nextY = py + dy * speed;
         const nextZ = pz + dz * speed;
@@ -536,18 +631,21 @@ function animate() {
 
     geometry.attributes.position.needsUpdate = true;
 
-    // 粒子群整体旋转 - 更慢、更优雅
+    // 粒子群整体旋转
     particles.rotation.y += 0.0008;
-    particles.rotation.x = Math.sin(time * 0.3) * 0.1;
-    particles.rotation.z = Math.cos(time * 0.2) * 0.05;
+    // 绘图模式下减少晃动，方便写字
+    if (currentGesture !== 1) {
+        particles.rotation.x = Math.sin(time * 0.3) * 0.1;
+        particles.rotation.z = Math.cos(time * 0.2) * 0.05;
+    }
 
-    // 星空缓慢旋转
+    // 星空旋转
     if (stars) {
         stars.rotation.y += 0.0002;
         stars.rotation.x += 0.0001;
     }
 
-    // 相机轻微移动 - 创建动态感
+    // 相机移动
     camera.position.x = Math.sin(time * 0.2) * 5;
     camera.position.y = 20 + Math.cos(time * 0.15) * 3;
     camera.lookAt(0, 0, 0);
