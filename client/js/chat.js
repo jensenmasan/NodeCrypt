@@ -118,14 +118,17 @@ export function addMsg(text, isHistory = false, msgType = 'text', timestamp = nu
 		})
 	} const chatArea = $id('chat-area');
 	if (!chatArea) return;
-	let className = 'bubble me' + (msgType.includes('_private') ? ' private-message' : '');
+	let className = 'bubble me';
+	if (msgType && msgType.includes('_private')) className += ' private-message';
 	if (autoDestruct) className += ' destructing';
 
 	const date = new Date(ts);
-	const time = date.getHours().toString().padStart(2, '0') + ':' + date.getMinutes().toString().padStart(2, '0'); let contentHtml = '';
+	const time = date.getHours().toString().padStart(2, '0') + ':' + date.getMinutes().toString().padStart(2, '0');
 
-	// Handle quote if present
+	// Handle quote if present and extract actual message text
 	let quoteHtml = '';
+	let messageText = text;
+
 	if (typeof text === 'object' && text.quote) {
 		quoteHtml = `<div class="quoted-message">
 			<div class="quote-line"></div>
@@ -134,25 +137,24 @@ export function addMsg(text, isHistory = false, msgType = 'text', timestamp = nu
 				<div class="quote-text">${escapeHTML(text.quote.text)}</div>
 			</div>
 		</div>`;
-		// Extract actual text
-		if (text.text) {
-			text = text.text;
-		}
+		// Extract actual text from the object
+		messageText = text.text || text;
 	}
 
+	let contentHtml = '';
 	if (msgType === 'image' || msgType === 'image_private') {
 		// Handle image messages (can contain both text and images)
-		if (typeof text === 'object' && text.images && Array.isArray(text.images)) {
+		if (typeof messageText === 'object' && messageText.images && Array.isArray(messageText.images)) {
 			// New multi-image format: {text: "", images: ["data:image...", "data:image..."]}
-			const messageText = text.text ? textToHTML(text.text) : '';
-			const imageElements = text.images.map(imgData => {
+			const msgText = messageText.text ? textToHTML(messageText.text) : '';
+			const imageElements = messageText.images.map(imgData => {
 				const safeImgSrc = escapeHTML(imgData).replace(/javascript:/gi, '');
 				return `<img src="${safeImgSrc}" alt="image" class="bubble-img">`;
 			}).join('');
-			if (messageText && imageElements) {
+			if (msgText && imageElements) {
 				// Mixed content: text + images
 				contentHtml = `<div class="mixed-content">
-					<div class="message-text">${messageText}</div>
+					<div class="message-text">${msgText}</div>
 					${imageElements}
 				</div>`;
 			} else if (imageElements) {
@@ -160,17 +162,17 @@ export function addMsg(text, isHistory = false, msgType = 'text', timestamp = nu
 				contentHtml = imageElements;
 			} else {
 				// Fallback to text only
-				contentHtml = messageText;
+				contentHtml = msgText;
 			}
-		} else if (typeof text === 'object' && text.image) {
+		} else if (typeof messageText === 'object' && messageText.image) {
 			// Legacy single image format: {text: "", image: "data:image..."}
-			const safeImgSrc = escapeHTML(text.image).replace(/javascript:/gi, '');
-			const messageText = text.text ? textToHTML(text.text) : '';
+			const safeImgSrc = escapeHTML(messageText.image).replace(/javascript:/gi, '');
+			const msgText = messageText.text ? textToHTML(messageText.text) : '';
 
-			if (messageText) {
+			if (msgText) {
 				// Mixed content: text + image
 				contentHtml = `<div class="mixed-content">
-					<div class="message-text">${messageText}</div>
+					<div class="message-text">${msgText}</div>
 					<img src="${safeImgSrc}" alt="image" class="bubble-img">
 				</div>`;
 			} else {
@@ -179,38 +181,31 @@ export function addMsg(text, isHistory = false, msgType = 'text', timestamp = nu
 			}
 		} else {
 			// Legacy format: plain image data URL
-			const safeImgSrc = escapeHTML(text).replace(/javascript:/gi, '');
+			const safeImgSrc = escapeHTML(messageText).replace(/javascript:/gi, '');
 			contentHtml = `<img src="${safeImgSrc}" alt="image" class="bubble-img">`;
 		}
 	} else if (msgType === 'file' || msgType === 'file_private') {
 		// Handle file messages
-		contentHtml = renderFileMessage(text, true);
+		contentHtml = renderFileMessage(messageText, true);
 		// Add file-bubble class for special timestamp positioning
 		className += ' file-bubble';
 	} else if (msgType === 'voice' || msgType === 'voice_private') {
 		// Handle voice messages
-		if (typeof text === 'object' && text.audio) {
+		if (typeof messageText === 'object' && messageText.audio) {
 			contentHtml = `<audio controls class="bubble-audio">
-				<source src="${escapeHTML(text.audio)}" type="audio/webm">
+				<source src="${escapeHTML(messageText.audio)}" type="audio/webm">
 				Your browser does not support the audio element.
 			</audio>`;
 		} else {
-			contentHtml = textToHTML(text);
+			contentHtml = textToHTML(messageText);
 		}
 	} else {
 		// Handle text messages
-		contentHtml = textToHTML(text);
+		contentHtml = textToHTML(messageText);
 	}
 
-	let bubbleClasses = 'bubble me';
-	if (msgType && msgType.includes('_private')) {
-		bubbleClasses += ' private-message';
-	}
-	if (autoDestruct) {
-		bubbleClasses += ' destructing';
-	}
 	const div = createElement('div', {
-		class: bubbleClasses
+		class: className
 	}, `${quoteHtml}<span class="bubble-content">${contentHtml}</span><span class="bubble-meta">${time}</span>`);
 
 	if (autoDestruct) {
