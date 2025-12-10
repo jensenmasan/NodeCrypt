@@ -867,14 +867,25 @@ let lastTouchTime = 0;
 
 function onDocumentTouchStart(event) {
     if (event.touches.length === 1) {
-        event.preventDefault(); // 防止滚动
+        // 检查点击目标是否是交互元素 (按钮、输入框等)
+        const target = event.target;
+        const isInteractive = target.closest('button') ||
+            target.closest('input') ||
+            target.closest('a') ||
+            target.closest('.flip-card') ||
+            target.closest('.start-screen') || // Start screen should allow clicks on button
+            target.closest('.control-panel'); // Control panel buttons
 
-        const now = Date.now();
-        if (now - lastTouchTime < 300) {
-            // 双击检测成功：触发新年模式
-            startNewYearMode();
+        if (!isInteractive) {
+            event.preventDefault(); // 防止滚动 (仅非交互区域)
+
+            const now = Date.now();
+            if (now - lastTouchTime < 300) {
+                // 双击检测成功：触发新年模式 (仅在非交互区域双击)
+                startNewYearMode();
+            }
+            lastTouchTime = now;
         }
-        lastTouchTime = now;
 
         mouse.x = (event.touches[0].clientX / window.innerWidth) * 2 - 1;
         mouse.y = -(event.touches[0].clientY / window.innerHeight) * 2 + 1;
@@ -893,15 +904,28 @@ function onDocumentTouchStart(event) {
             controlPanel.classList.remove('hidden');
             if (uiHideTimer) clearTimeout(uiHideTimer);
             uiHideTimer = setTimeout(() => {
-                if (!controlPanel.matches(':hover')) controlPanel.classList.add('hidden');
+                // 检查 hover 状态可能在移动端不准确，但这里作为辅助
+                if (controlPanel && !controlPanel.matches(':hover')) controlPanel.classList.add('hidden');
             }, UI_HIDE_DELAY);
         }
     }
 }
 
 function onDocumentTouchMove(event) {
+    // 检查是否在可滚动区域
+    const target = event.target;
+    // 允许在登录容器、帮助内容、设置内容中滚动
+    const isScrollable = target.closest('.login-container') ||
+        target.closest('.help-content') ||
+        target.closest('.settings-content') ||
+        target.closest('.chat-area') ||
+        target.closest('.rooms');
+
     if (event.touches.length === 1) {
-        event.preventDefault(); // 防止滚动
+        if (!isScrollable) {
+            event.preventDefault(); // 防止滚动 (仅当不在可滚动区域时)
+        }
+
         mouse.x = (event.touches[0].clientX / window.innerWidth) * 2 - 1;
         mouse.y = -(event.touches[0].clientY / window.innerHeight) * 2 + 1;
         lastMouseMoveTime = Date.now(); // 保持活跃，产生轨迹
