@@ -382,15 +382,17 @@ function createPointsFromCanvas(text, isPattern = false) {
     // 检测是否为移动端 (屏幕宽度小于 800)
     const isMobile = window.innerWidth < 800;
     // 如果是移动端，或者文字特别长且非Pattern模式，强制竖排
-    const useVertical = isMobile || (text.length > 8 && !isPattern && window.innerWidth < 1000);
+    // 如果是移动端，或者文字超过9个字符（如祝福语）且非Pattern模式，强制竖排
+    // 修改：去掉了宽度限制，让PC端长文也竖排
+    const useVertical = isMobile || (text.length > 9 && !isPattern);
 
     // 字体设置
     let fontSize = 40; // PC默认
     if (isPattern) fontSize = isMobile ? 30 : 40; // Pattern模式：手机30，PC 40
     else {
-        // 主标题：如果是在手机上且文字很长，减小字体
-        if (isMobile && text.length > 5 && useVertical) {
-            fontSize = 28; // 缩小字体以适应垂直显示
+        // 主标题：如果竖排且文字较长
+        if (useVertical && text.length > 5) {
+            fontSize = isMobile ? 28 : 45; // 手机28，PC 45 (防止竖排过高)
         } else {
             fontSize = isMobile ? 40 : 60;
         }
