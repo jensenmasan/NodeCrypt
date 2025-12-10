@@ -27,36 +27,60 @@ export const THEMES = [
 	{
 		id: 'theme6',
 		background: 'url(data:image/png;base64,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)'
-	},	{
+	}, {
 		id: 'theme7',
 		background: 'url(data:image/png;base64,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)'
+	},
+	{
+		id: 'theme8',
+		background: 'linear-gradient(135deg, #1a2a6c, #b21f1f, #fdbb2d)' // Sunset Vibes
+	},
+	{
+		id: 'theme9',
+		background: 'linear-gradient(45deg, #11998e, #38ef7d)' // Green Mint
+	},
+	{
+		id: 'theme10',
+		background: 'linear-gradient(to right, #0f2027, #203a43, #2c5364)' // Deep Space
+	},
+	{
+		id: 'theme11',
+		background: 'linear-gradient(to right, #8360c3, #2ebf91)' // Purple Teal
+	},
+	{
+		id: 'theme12',
+		background: 'linear-gradient(to bottom, #323232 0%, #3F3F3F 40%, #1C1C1C 150%), linear-gradient(to top, rgba(255,255,255,0.40) 0%, rgba(0,0,0,0.25) 200%) center bottom' // Metallic Dark
+	},
+	{
+		id: 'theme13',
+		background: 'linear-gradient(to top, #c79081 0%, #dfa579 100%)' // Soft Earth
 	}
 ];
 
 // Get current theme from settings
 // 从设置中获取当前主题
 export function getCurrentTheme() {
-    try {
-        const settings = JSON.parse(localStorage.getItem('settings') || '{}');
-        
-        // If no theme is set (first-time visitor), use theme1 as default
-        // 如果没有设置主题（首次访问），使用 theme1 作为默认
-        if (!settings.theme) {
-            // Save theme1 as default theme to settings
-            // 将 theme1 作为默认主题保存到设置中
-            settings.theme = 'theme1';
-            localStorage.setItem('settings', JSON.stringify(settings));
-            
-            return THEMES[0]; // 返回新的第一个主题（原来的theme2）
-        }
-        
-        const themeId = settings.theme;
-        return THEMES.find(theme => theme.id === themeId) || THEMES[0];
-    } catch {
-        // If there's an error, use theme1 as fallback
-        // 如果出现错误，使用 theme1 作为备选
-        return THEMES[0];
-    }
+	try {
+		const settings = JSON.parse(localStorage.getItem('settings') || '{}');
+
+		// If no theme is set (first-time visitor), use theme1 as default
+		// 如果没有设置主题（首次访问），使用 theme1 作为默认
+		if (!settings.theme) {
+			// Save theme1 as default theme to settings
+			// 将 theme1 作为默认主题保存到设置中
+			settings.theme = 'theme1';
+			localStorage.setItem('settings', JSON.stringify(settings));
+
+			return THEMES[0]; // 返回新的第一个主题（原来的theme2）
+		}
+
+		const themeId = settings.theme;
+		return THEMES.find(theme => theme.id === themeId) || THEMES[0];
+	} catch {
+		// If there's an error, use theme1 as fallback
+		// 如果出现错误，使用 theme1 作为备选
+		return THEMES[0];
+	}
 }
 // Apply theme to the document
 // 应用主题到文档
@@ -66,13 +90,13 @@ export function applyTheme(themeId) {
 		console.warn(`Theme with id "${themeId}" not found`);
 		return false;
 	}
-	
+
 	const mainElement = document.querySelector('.main');
 	if (mainElement) {
 		// Clear any existing background
 		mainElement.style.backgroundImage = '';
 		mainElement.style.background = '';
-		
+
 		// Apply new background
 		if (theme.background.startsWith('url(')) {
 			mainElement.style.backgroundImage = theme.background;
@@ -82,9 +106,9 @@ export function applyTheme(themeId) {
 		} else {
 			mainElement.style.background = theme.background;
 		}
-				// Add transition effect for smooth theme switching		// 添加过渡效果，实现平滑的主题切换
+		// Add transition effect for smooth theme switching		// 添加过渡效果，实现平滑的主题切换
 		mainElement.style.transition = 'background 0.5s ease-in-out, background-image 0.5s ease-in-out';
-		
+
 		return true;
 	} else {
 		console.warn('Main element not found');
