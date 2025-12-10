@@ -269,20 +269,18 @@ function updateTextShape(text) {
                 );
             }
         }
-    } else if (text.startsWith("CUSTOM:")) {
-        // 自定义文字模式 (打字机效果用到)
-        const customText = text.substring(7);
-        const points = createPointsFromCanvas(customText);
+    } else if (text.startsWith("PATTERN:")) {
+        // 新增：满屏重复文字模式
+        const patternText = text.substring(8);
+        const points = createPointsFromCanvas(patternText, true); // true for pattern mode
         const pLen = points.length;
+
         for (let i = 0; i < particleCount; i++) {
             if (i < pLen) {
                 targetPositions[i] = points[i];
             } else {
-                targetPositions[i] = new THREE.Vector3(
-                    (Math.random() - 0.5) * 500,
-                    (Math.random() - 0.5) * 500,
-                    (Math.random() - 0.5) * 500
-                );
+                // 多余粒子参与构图（重复利用点阵）
+                targetPositions[i] = points[i % pLen];
             }
         }
     } else if (text === "NEWYEAR_WISH") {
@@ -298,6 +296,22 @@ function updateTextShape(text) {
                 targetPositions[i] = points[i];
             } else {
                 // 多余的粒子变成背景星空
+                targetPositions[i] = new THREE.Vector3(
+                    (Math.random() - 0.5) * 500,
+                    (Math.random() - 0.5) * 500,
+                    (Math.random() - 0.5) * 500
+                );
+            }
+        }
+    } else if (text.startsWith("CUSTOM:")) {
+        // 自定义文字模式 (打字机效果用到)
+        const customText = text.substring(7);
+        const points = createPointsFromCanvas(customText);
+        const pLen = points.length;
+        for (let i = 0; i < particleCount; i++) {
+            if (i < pLen) {
+                targetPositions[i] = points[i];
+            } else {
                 targetPositions[i] = new THREE.Vector3(
                     (Math.random() - 0.5) * 500,
                     (Math.random() - 0.5) * 500,
@@ -344,50 +358,77 @@ function updateTextShape(text) {
     }
 }
 
-// 新增：从 Canvas 获取文字点阵 (支持中文)
-function createPointsFromCanvas(text) {
+// 新增：从 Canvas 获取文字点阵 (支持中文 + 满屏模式)
+function createPointsFromCanvas(text, isPattern = false) {
     const canvas = document.createElement('canvas');
     const ctx = canvas.getContext('2d');
 
-    // 设置字体 (更大字号)
-    const fontSize = 60;
-    const fontFamily = 'Arial, "Microsoft YaHei", sans-serif'; // 确保支持中文
+    // 如果是 Pattern 模式，使用小号字体
+    const fontSize = isPattern ? 24 : 60;
+    const fontFamily = 'Arial, "Microsoft YaHei", sans-serif';
     ctx.font = `bold ${fontSize}px ${fontFamily}`;
 
-    // 测量宽度
     const metrics = ctx.measureText(text);
     const textWidth = Math.ceil(metrics.width);
     const textHeight = Math.ceil(fontSize * 1.5);
 
-    canvas.width = textWidth + 20;
-    canvas.height = textHeight + 20;
+    if (isPattern) {
+        // 满屏模式：创建一个大画布，循环绘制
+        const screenW = 600; // 映射到3D空间的虚拟宽度
+        const screenH = 400;
+        canvas.width = screenW;
+        canvas.height = screenH;
 
-    // 绘制
-    ctx.font = `bold ${fontSize}px ${fontFamily}`;
-    ctx.fillStyle = '#ffffff';
-    ctx.textAlign = 'center';
-    ctx.textBaseline = 'middle';
-    ctx.fillText(text, canvas.width / 2, canvas.height / 2);
+        ctx.fillStyle = '#ffffff';
+        ctx.font = `bold ${fontSize}px ${fontFamily}`;
+        ctx.textAlign = 'left';
+        ctx.textBaseline = 'top';
+
+        const cols = Math.floor(screenW / (textWidth + 20));
+        const rows = Math.floor(screenH / (textHeight + 10));
+
+        for (let r = 0; r < rows; r++) {
+            for (let c = 0; c < cols; c++) {
+                // 错位排列
+                const offsetX = (r % 2 === 0) ? 0 : (textWidth / 2);
+                ctx.fillText(text, c * (textWidth + 30) + offsetX, r * (textHeight + 20));
+            }
+        }
+    } else {
+        // 普通单行大字
+        canvas.width = textWidth + 20;
+        canvas.height = textHeight + 20;
+
+        ctx.font = `bold ${fontSize}px ${fontFamily}`;
+        ctx.fillStyle = '#ffffff';
+        ctx.textAlign = 'center';
+        ctx.textBaseline = 'middle';
+        ctx.fillText(text, canvas.width / 2, canvas.height / 2);
+    }
 
     // 读取像素
     const imageData = ctx.getImageData(0, 0, canvas.width, canvas.height);
     const data = imageData.data;
     const points = [];
 
-    // 采样步长 (1=最精细，但点也是最多的)
-    // 为了保证马老师能看清，也是拼了，用 1
-    const step = 1;
+    // Pattern 模式可以稍微稀疏一点以覆盖更多区域
+    const step = isPattern ? 2 : 1;
 
     for (let y = 0; y < canvas.height; y += step) {
         for (let x = 0; x < canvas.width; x += step) {
             const index = (y * canvas.width + x) * 4;
-            // 检查 Alpha 通道
             if (data[index + 3] > 128) {
-                // 映射到 3D 坐标
-                // x 轴居中
-                const px = (x - canvas.width / 2) * 2.0; // 放大系数
-                const py = -(y - canvas.height / 2) * 2.0; // Y轴翻转
-                const pz = 0;
+                // 坐标映射
+                let px, py;
+                if (isPattern) {
+                    // 映射回中心
+                    px = (x - canvas.width / 2) * 1.5;
+                    py = -(y - canvas.height / 2) * 1.5;
+                } else {
+                    px = (x - canvas.width / 2) * 2.0;
+                    py = -(y - canvas.height / 2) * 2.0;
+                }
+                const pz = (Math.random() - 0.5) * 10; // 给一点厚度
                 points.push(new THREE.Vector3(px, py, pz));
             }
         }
@@ -634,10 +675,40 @@ function startNewYearMode() {
     if (fireworksInterval) clearInterval(fireworksInterval);
     if (window.typewriterTimer) clearTimeout(window.typewriterTimer);
 
-    // 立即显示全句
     const fullText = "马老师祝大家新年快乐";
-    updateTextShape("CUSTOM:" + fullText);
-    updateParticleColor({ primary: new THREE.Color(0xff0000), secondary: new THREE.Color(0xffd700), glow: new THREE.Color(0xffaa00) });
+    let charIndex = 0;
+
+    // 播放打字机序列
+    function playSequence() {
+        if (charIndex <= fullText.length) {
+            // 阶段1：逐字显示大字
+            const subText = fullText.substring(0, charIndex);
+            if (subText.length > 0) {
+                updateTextShape("CUSTOM:" + subText);
+            }
+            updateParticleColor({ primary: new THREE.Color(0xff0000), secondary: new THREE.Color(0xffd700), glow: new THREE.Color(0xffaa00) });
+            charIndex++;
+            window.typewriterTimer = setTimeout(playSequence, 400);
+        } else {
+            // 阶段2：显示完毕，停留一下
+            window.typewriterTimer = setTimeout(() => {
+                // 阶段3：满屏小号文字
+                updateTextShape("PATTERN:" + fullText);
+
+                // 5秒后循环 or 保持？ 让它保持直到用户双击取消或动鼠标
+                // 为了效果，我们可以让它循环：满屏 -> 收回 -> 满屏
+                /*
+                window.typewriterTimer = setTimeout(() => {
+                    charIndex = 1;
+                    playSequence();
+                }, 5000);
+                */
+            }, 1500);
+        }
+    }
+
+    charIndex = 1;
+    playSequence();
 }
 
 // 鼠标移动事件
