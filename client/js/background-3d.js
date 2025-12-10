@@ -22,12 +22,13 @@ let currentText = "NODECRYPT"; // 当前文字（改为默认显示NODECRYPT）
 
 // 新增功能变量
 let fingerTrail = []; // 手指轨迹，用于画图
-const TRAIL_LENGTH = 50; // 轨迹长度
+const TRAIL_LENGTH = 70; // 增加轨迹长度，写字更连贯
 let lastHandTime = Date.now(); // 上次检测到手的时间
 let isAutoMode = true; // 是否处于自动演示模式
 let autoTimer = 0; // 自动模式计时器
-const AUTO_SWITCH_INTERVAL = 300; // 自动切换间隔 (帧数)
-const autoTexts = ["NODECRYPT", "FUTURE", "TECH", "ART"];
+const AUTO_SWITCH_INTERVAL = 250; // 加快一点切换速度
+// 新年快乐主题内容
+const autoTexts = ["HAPPY", "NEW", "YEAR", "2025", "HEART"];
 let autoTextIndex = 0;
 
 // 高级颜色配置 - 使用渐变色
@@ -51,9 +52,87 @@ const colorPalette = {
         primary: new THREE.Color(0x88ccff),   // 天蓝色
         secondary: new THREE.Color(0xaaddff), // 浅蓝色
         glow: new THREE.Color(0xffffff)
+    },
+    // 新增：新年红
+    4: {
+        primary: new THREE.Color(0xff0033),   // 鲜红
+        secondary: new THREE.Color(0xff6666), // 浅红
+        glow: new THREE.Color(0xffaaaa)
+    },
+    // 新增：流光金
+    5: {
+        primary: new THREE.Color(0xffbb00),   // 金色
+        secondary: new THREE.Color(0xffee88), // 亮金
+        glow: new THREE.Color(0xffffff)
     }
 };
 
+// ... (init3DGestureSystem 等函数保持不变，直到 updateTextShape) ...
+
+// --- 3. 字体生成逻辑 (升级版：支持心形) ---
+function updateTextShape(text) {
+    currentText = text;
+
+    if (text === "HEART") {
+        // 生成 3D 爱心形状
+        for (let i = 0; i < particleCount; i++) {
+            // 使用参数方程生成心形
+            // t 范围 0 到 2PI
+            // 为了生成 3D 效果，我们在不同层生成不同大小的心
+            const t = Math.random() * Math.PI * 2;
+            const yOffset = (Math.random() - 0.5) * 20; // 厚度
+
+            // 基础心形方程 (二维)
+            // x = 16 * sin(t)^3
+            // y = 13 * cos(t) - 5 * cos(2t) - 2 * cos(3t) - cos(4t)
+
+            const scale = 3.5; // 缩放系数
+            const x = 16 * Math.pow(Math.sin(t), 3) * scale;
+            const y = (13 * Math.cos(t) - 5 * Math.cos(2 * t) - 2 * Math.cos(3 * t) - Math.cos(4 * t)) * scale;
+            const z = (Math.random() - 0.5) * 30; // 随机厚度并带有体积感
+
+            // 稍微随机化一点位置，填满内部
+            const randomScale = Math.random();
+
+            targetPositions[i] = new THREE.Vector3(x * randomScale, y * randomScale, z * randomScale);
+        }
+    } else {
+        if (!font) return;
+
+        const textGeo = new THREE.TextGeometry(text, {
+            font: font,
+            size: 20,
+            height: 4, // 增加文字厚度
+            curveSegments: 12, // 更圆滑
+            bevelEnabled: true, // 开启倒角
+            bevelThickness: 1,
+            bevelSize: 0.5,
+            bevelSegments: 3
+        });
+
+        textGeo.center(); // 居中
+
+        const textPoints = textGeo.attributes.position.array;
+        const pointCount = textPoints.length / 3;
+
+        // 更新目标位置
+        for (let i = 0; i < particleCount; i++) {
+            const targetIndex = i % pointCount;
+            const tx = textPoints[targetIndex * 3];
+            const ty = textPoints[targetIndex * 3 + 1];
+            const tz = textPoints[targetIndex * 3 + 2];
+
+            // 增加一点随机偏移，让文字看起来更蓬松
+            const jitter = 0.5;
+            targetPositions[i] = new THREE.Vector3(
+                tx + (Math.random() - 0.5) * jitter,
+                ty + (Math.random() - 0.5) * jitter,
+                tz + (Math.random() - 0.5) * jitter
+            );
+        }
+        textGeo.dispose();
+    }
+}
 // 用于跟踪是否已初始化
 let isInitialized = false;
 
@@ -316,38 +395,9 @@ function createGlowTexture() {
     return texture;
 }
 
-// --- 3. 字体生成逻辑 ---
-function updateTextShape(text) {
-    if (!font) return;
-    currentText = text;
 
-    const textGeo = new THREE.TextGeometry(text, {
-        font: font,
-        size: 20,
-        height: 2,
-        curveSegments: 10,
-        bevelEnabled: false
-    });
+// (updateTextShape 已移动到上方并升级)
 
-    textGeo.center(); // 居中
-
-    // 从几何体中获取点
-    // 我们需要根据粒子数量重新采样或填充
-    // 这里我们简单地从顶点数组中随机取样，如果不够就循环取
-    const textPoints = textGeo.attributes.position.array;
-    const pointCount = textPoints.length / 3;
-
-    // 更新目标位置
-    for (let i = 0; i < particleCount; i++) {
-        const targetIndex = i % pointCount;
-        const tx = textPoints[targetIndex * 3];
-        const ty = textPoints[targetIndex * 3 + 1];
-        const tz = textPoints[targetIndex * 3 + 2];
-
-        // 将新的目标位置存入
-        targetPositions[i] = new THREE.Vector3(tx, ty, tz);
-    }
-}
 
 // --- 4. MediaPipe 手势识别逻辑 ---
 function initMediaPipe() {
@@ -548,10 +598,25 @@ function animate() {
         if (autoTimer > AUTO_SWITCH_INTERVAL) {
             autoTimer = 0;
             autoTextIndex = (autoTextIndex + 1) % autoTexts.length;
-            updateTextShape(autoTexts[autoTextIndex]);
-            // 随机切换颜色
-            const randomColorKey = Math.floor(Math.random() * 4);
-            updateParticleColor(colorPalette[randomColorKey] || colorPalette[0]);
+            const nextText = autoTexts[autoTextIndex];
+            updateTextShape(nextText);
+
+            // 智能颜色匹配
+            let colorKey = 0;
+            if (nextText === "HEART" || nextText === "HAPPY" || nextText === "YEAR") {
+                // 红色或金色
+                colorKey = Math.random() > 0.5 ? 4 : 5;
+            } else if (nextText === "2025" || nextText === "NEW") {
+                // 金色或紫色
+                colorKey = Math.random() > 0.5 ? 5 : 2;
+            } else if (nextText === "NODECRYPT") {
+                // 青色 (品牌色)
+                colorKey = 1;
+            } else {
+                // 随机
+                colorKey = Math.floor(Math.random() * 6);
+            }
+            updateParticleColor(colorPalette[colorKey] || colorPalette[0]);
         }
 
         // 自动模式下的呼吸扩散效果
