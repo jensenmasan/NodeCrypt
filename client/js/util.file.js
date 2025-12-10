@@ -634,7 +634,7 @@ export function handleFileMessage(message, isPrivate = false) {
 // Handle file start message
 // 处理文件开始消息
 function handleFileStart(message, isPrivate) {
-	const { fileId, fileName, originalSize, compressedSize, totalVolumes, originalHash, archiveHash, fileCount, fileManifest, isArchive, userName } = message;
+	const { fileId, fileName, originalSize, compressedSize, totalVolumes, originalHash, archiveHash, fileCount, fileManifest, isArchive, userName, autoDestruct } = message;
 
 	const fileTransfer = {
 		fileId,
@@ -650,7 +650,8 @@ function handleFileStart(message, isPrivate) {
 		fileCount,
 		fileManifest,
 		isArchive,
-		userName // 记录发送者名字
+		userName, // 记录发送者名字
+		autoDestruct // 记录销毁时间
 	};
 
 	window.fileTransfers.set(fileId, fileTransfer);
@@ -667,7 +668,8 @@ function handleFileStart(message, isPrivate) {
 				totalVolumes,
 				fileCount,
 				isArchive: true,
-				userName
+				userName,
+				autoDestruct
 			};
 		} else {
 			displayData = {
@@ -676,7 +678,8 @@ function handleFileStart(message, isPrivate) {
 				fileName,
 				originalSize,
 				totalVolumes,
-				userName
+				userName,
+				autoDestruct
 			};
 		}
 

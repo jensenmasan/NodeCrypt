@@ -874,6 +874,7 @@ function onDocumentTouchStart(event) {
             target.closest('textarea') || // Also allow textareas
             target.closest('.input-message-input') || // Specific chat input class
             target.closest('[contenteditable="true"]') || // Generic contenteditable
+            target.closest('.send-message-btn') || // Send message button
             target.closest('a') ||
             target.closest('.flip-card') ||
             target.closest('.start-screen') || // Start screen should allow clicks on button
