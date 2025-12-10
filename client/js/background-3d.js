@@ -387,7 +387,14 @@ function createPointsFromCanvas(text, isPattern = false) {
     // 字体设置
     let fontSize = 40; // PC默认
     if (isPattern) fontSize = isMobile ? 30 : 40; // Pattern模式：手机30，PC 40
-    else fontSize = isMobile ? 40 : 60;          // 主标题：手机40，PC 60
+    else {
+        // 主标题：如果是在手机上且文字很长，减小字体
+        if (isMobile && text.length > 5 && useVertical) {
+            fontSize = 28; // 缩小字体以适应垂直显示
+        } else {
+            fontSize = isMobile ? 40 : 60;
+        }
+    }
 
     const fontFamily = 'Arial, "Microsoft YaHei", sans-serif';
     ctx.font = `bold ${fontSize}px ${fontFamily}`;
@@ -478,7 +485,22 @@ function createPointsFromCanvas(text, isPattern = false) {
     // 采样步长 (1=最精细)
     const step = 1;
     // 缩放系数：手机端要稍微小一点以免爆屏
-    const scaleFactor = isMobile ? 0.8 : 1.2;
+    let scaleFactor = isMobile ? 0.8 : 1.2;
+
+    // 针对长文本竖排的特殊处理，动态计算最佳缩放比例
+    if (useVertical && text.length > 5 && !isPattern) {
+        // 目标：让总高度适应屏幕可视区域 (约200单位高度)
+        const totalTextHeightPixels = text.length * fontSize * 1.2;
+        const spreadY = 1.5; // 下面代码中的 multiplier
+
+        // 我们希望 totalTextHeightPixels * scaleFactor * spreadY <= 200
+        // scaleFactor <= 200 / (totalTextHeightPixels * spreadY)
+        const maxScale = 220 / (totalTextHeightPixels * spreadY);
+        scaleFactor = Math.min(scaleFactor, maxScale);
+
+        // 保证最小可见性
+        if (scaleFactor < 0.25) scaleFactor = 0.25;
+    }
 
     for (let y = 0; y < canvas.height; y += step) {
         for (let x = 0; x < canvas.width; x += step) {
@@ -492,8 +514,17 @@ function createPointsFromCanvas(text, isPattern = false) {
                     pz = 0;
                 } else {
                     // 主标题：稍微拉开一点
+                    // 注意：Y轴方向py本身已经是居中的（减去了 canvas.height/2）
+                    // 但由于相机 LookAt 问题，如果觉得偏了，可以在这里微调
+
                     px = (x - canvas.width / 2) * (scaleFactor * 1.5);
                     py = -(y - canvas.height / 2) * (scaleFactor * 1.5);
+
+                    if (useVertical) {
+                        // 竖排时，如果文字太长，稍微往上提一点，因为相机好像偏高(y=20)
+                        py += 10;
+                    }
+
                     pz = (Math.random() - 0.5) * 10;
                 }
                 points.push(new THREE.Vector3(px, py, pz));
