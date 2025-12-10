@@ -45,6 +45,8 @@ let forceRadius = 100; // 力场半径
 
 let uiHideTimer = null; // 控制面板自动隐藏计时器
 const UI_HIDE_DELAY = 3000; // 3秒无操作隐藏
+let isMouseDown = false; // 鼠标是否按下
+let lastMouseMoveTime = 0; // 最后一次鼠标移动时间
 
 
 
@@ -488,6 +490,42 @@ function initThree() {
 
     // 窗口大小调整
     window.addEventListener('resize', onWindowResize, false);
+
+    // 鼠标交互事件
+    document.addEventListener('mousemove', onDocumentMouseMove, false);
+    document.addEventListener('mousedown', onDocumentMouseDown, false);
+    document.addEventListener('mouseup', onDocumentMouseUp, false);
+}
+
+// 鼠标移动事件
+function onDocumentMouseMove(event) {
+    event.preventDefault();
+    mouse.x = (event.clientX / window.innerWidth) * 2 - 1;
+    mouse.y = -(event.clientY / window.innerHeight) * 2 + 1;
+    lastMouseMoveTime = Date.now();
+    isAutoMode = false; // 鼠标移动时退出自动模式
+
+    // 更新UI隐藏计时器
+    const controlPanel = document.getElementById('main-control-panel');
+    if (controlPanel) {
+        controlPanel.classList.remove('hidden');
+        if (uiHideTimer) clearTimeout(uiHideTimer);
+        uiHideTimer = setTimeout(() => {
+            if (!controlPanel.matches(':hover')) controlPanel.classList.add('hidden');
+        }, UI_HIDE_DELAY);
+    }
+}
+
+// 鼠标按下事件
+function onDocumentMouseDown(event) {
+    isMouseDown = true;
+    lastMouseMoveTime = Date.now();
+    isAutoMode = false;
+}
+
+// 鼠标抬起事件
+function onDocumentMouseUp(event) {
+    isMouseDown = false;
 }
 
 // 新增：创建星空背景
@@ -917,6 +955,35 @@ function animate() {
     }
 
     // 扩散系数
+    // 如果是鼠标控制模式（最近有移动且没检测到手）
+    if (!isAutoMode && Date.now() - lastHandTime > 2000) {
+        // 鼠标按下时 spread = 1 (张开)，否则 0 (握拳)
+        // 使用平滑过渡
+        const targetSpread = isMouseDown ? 1.0 : 0.0;
+        handSpread += (targetSpread - handSpread) * 0.1;
+
+        // 生成鼠标轨迹 (模拟手指)
+        if (Date.now() - lastMouseMoveTime < 1000) {
+            const aspect = window.innerWidth / window.innerHeight;
+            const visibleHeight = 150;
+            const visibleWidth = visibleHeight * aspect;
+
+            // 将归一化鼠标坐标映射到 3D 视野平面
+            const targetX = mouse.x * visibleWidth * 0.5;
+            const targetY = mouse.y * visibleHeight * 0.5;
+            const targetZ = 0;
+
+            fingerTrail.unshift(new THREE.Vector3(targetX, targetY, targetZ));
+            if (fingerTrail.length > TRAIL_LENGTH) fingerTrail.pop();
+
+            // 鼠标模式下默认视为“绘图/交互”手势，除非在点击
+            currentGesture = 1;
+        } else {
+            fingerTrail = [];
+            currentGesture = 0;
+        }
+    }
+
     const dispersion = handSpread * 80;
 
     // 更新粒子连线
