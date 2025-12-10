@@ -871,6 +871,9 @@ function onDocumentTouchStart(event) {
         const target = event.target;
         const isInteractive = target.closest('button') ||
             target.closest('input') ||
+            target.closest('textarea') || // Also allow textareas
+            target.closest('.input-message-input') || // Specific chat input class
+            target.closest('[contenteditable="true"]') || // Generic contenteditable
             target.closest('a') ||
             target.closest('.flip-card') ||
             target.closest('.start-screen') || // Start screen should allow clicks on button
