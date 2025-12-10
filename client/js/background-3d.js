@@ -5,7 +5,7 @@
 let scene, camera, renderer;
 let particles, stars, connections;
 let geometry, starGeometry, lineGeometry;
-const particleCount = 20000; // 粒子总数 (大幅增加以支持精细文字)
+const particleCount = 30000; // 进一步增加粒子数以支持满屏清晰文字
 const particleData = []; // 存储每个粒子的物理状态
 let animationFrameId = null; // 用于取消动画循环
 
@@ -363,8 +363,8 @@ function createPointsFromCanvas(text, isPattern = false) {
     const canvas = document.createElement('canvas');
     const ctx = canvas.getContext('2d');
 
-    // 如果是 Pattern 模式，使用小号字体
-    const fontSize = isPattern ? 24 : 60;
+    // 如果是 Pattern 模式，使用稍大一点的小号字体，保证清晰度
+    const fontSize = isPattern ? 40 : 60;
     const fontFamily = 'Arial, "Microsoft YaHei", sans-serif';
     ctx.font = `bold ${fontSize}px ${fontFamily}`;
 
@@ -374,8 +374,8 @@ function createPointsFromCanvas(text, isPattern = false) {
 
     if (isPattern) {
         // 满屏模式：创建一个大画布，循环绘制
-        const screenW = 600; // 映射到3D空间的虚拟宽度
-        const screenH = 400;
+        const screenW = 1000; // 扩大虚拟画布
+        const screenH = 800;
         canvas.width = screenW;
         canvas.height = screenH;
 
@@ -384,14 +384,14 @@ function createPointsFromCanvas(text, isPattern = false) {
         ctx.textAlign = 'left';
         ctx.textBaseline = 'top';
 
-        const cols = Math.floor(screenW / (textWidth + 20));
-        const rows = Math.floor(screenH / (textHeight + 10));
+        const cols = Math.floor(screenW / (textWidth + 50)); // 增加间距
+        const rows = Math.floor(screenH / (textHeight + 30));
 
         for (let r = 0; r < rows; r++) {
             for (let c = 0; c < cols; c++) {
                 // 错位排列
                 const offsetX = (r % 2 === 0) ? 0 : (textWidth / 2);
-                ctx.fillText(text, c * (textWidth + 30) + offsetX, r * (textHeight + 20));
+                ctx.fillText(text, c * (textWidth + 50) + offsetX, r * (textHeight + 30));
             }
         }
     } else {
@@ -411,8 +411,9 @@ function createPointsFromCanvas(text, isPattern = false) {
     const data = imageData.data;
     const points = [];
 
-    // Pattern 模式可以稍微稀疏一点以覆盖更多区域
-    const step = isPattern ? 2 : 1;
+    // 采样步长 (1=最精细)
+    // 即使是 pattern 模式也用 1，保证清晰，靠增加粒子数来支撑
+    const step = 1;
 
     for (let y = 0; y < canvas.height; y += step) {
         for (let x = 0; x < canvas.width; x += step) {
@@ -422,8 +423,8 @@ function createPointsFromCanvas(text, isPattern = false) {
                 let px, py;
                 if (isPattern) {
                     // 映射回中心
-                    px = (x - canvas.width / 2) * 1.5;
-                    py = -(y - canvas.height / 2) * 1.5;
+                    px = (x - canvas.width / 2) * 1.2; // 稍微拉开一点间距
+                    py = -(y - canvas.height / 2) * 1.2;
                 } else {
                     px = (x - canvas.width / 2) * 2.0;
                     py = -(y - canvas.height / 2) * 2.0;
