@@ -133,17 +133,17 @@ function handleShareAction() {
 	const rd = roomsData[activeRoomIndex];
 	const roomName = rd.roomName.trim();
 	const password = rd.password || '';
-	
+
 	// Encrypt room name and password
 	const encryptedRoom = simpleEncrypt(roomName);
 	const encryptedPwd = password ? simpleEncrypt(password) : '';
-	
+
 	// Create share URL with encrypted data
 	let url = `${location.origin}${location.pathname}?r=${encodeURIComponent(encryptedRoom)}`;
 	if (encryptedPwd) {
 		url += `&p=${encodeURIComponent(encryptedPwd)}`;
 	}
-	
+
 	copyToClipboard(url, t('action.share_copied', 'Share link copied!'), t('action.copy_url_failed', 'Copy failed, url:'));
 }
 
@@ -172,9 +172,34 @@ export function renderMainHeader() {
 		onlineCount += 1
 	}
 	const safeRoomName = escapeHTML(roomName);
-	$id("main-header").innerHTML = `<button class="mobile-menu-btn"id="mobile-menu-btn"aria-label="Open Sidebar"><svg width="35px"height="35px"viewBox="0 0 24 24"fill="none"xmlns="http://www.w3.org/2000/svg"><g id="SVGRepo_bgCarrier"stroke-width="0"></g><g id="SVGRepo_tracerCarrier"stroke-linecap="round"stroke-linejoin="round"></g><g id="SVGRepo_iconCarrier"><path fill-rule="evenodd"clip-rule="evenodd"d="M21.4498 10.275L11.9998 3.1875L2.5498 10.275L2.9998 11.625H3.7498V20.25H20.2498V11.625H20.9998L21.4498 10.275ZM5.2498 18.75V10.125L11.9998 5.0625L18.7498 10.125V18.75H14.9999V14.3333L14.2499 13.5833H9.74988L8.99988 14.3333V18.75H5.2498ZM10.4999 18.75H13.4999V15.0833H10.4999V18.75Z"fill="#808080"></path></g></svg></button><div class="main-header-center"id="main-header-center"><div class="main-header-flex"><div class="group-title group-title-bold">#${safeRoomName}</div><span class="main-header-members">${onlineCount} ${t('ui.members', 'members')}</span></div></div><div class="main-header-actions"><button class="more-btn"id="more-btn"aria-label="More Options"><svg width="35px"height="35px"viewBox="0 0 24 24"fill="none"xmlns="http://www.w3.org/2000/svg"><g id="SVGRepo_bgCarrier"stroke-width="0"></g><g id="SVGRepo_tracerCarrier"stroke-linecap="round"stroke-linejoin="round"></g><g id="SVGRepo_iconCarrier"><circle cx="12"cy="6"r="1.5"fill="#808080"></circle><circle cx="12"cy="12"r="1.5"fill="#808080"></circle><circle cx="12"cy="18"r="1.5"fill="#808080"></circle></g></svg></button><button class="mobile-info-btn"id="mobile-info-btn"aria-label="Open Members"><svg width="35px"height="35px"viewBox="0 0 24 24"fill="none"xmlns="http://www.w3.org/2000/svg"><g id="SVGRepo_bgCarrier"stroke-width="0"></g><g id="SVGRepo_tracerCarrier"stroke-linecap="round"stroke-linejoin="round"></g><g id="SVGRepo_iconCarrier"><path fill-rule="evenodd"clip-rule="evenodd"d="M16.0603 18.307C14.89 19.0619 13.4962 19.5 12 19.5C10.5038 19.5 9.10996 19.0619 7.93972 18.307C8.66519 16.7938 10.2115 15.75 12 15.75C13.7886 15.75 15.3349 16.794 16.0603 18.307ZM17.2545 17.3516C16.2326 15.5027 14.2632 14.25 12 14.25C9.73663 14.25 7.76733 15.5029 6.74545 17.3516C5.3596 15.9907 4.5 14.0958 4.5 12C4.5 7.85786 7.85786 4.5 12 4.5C16.1421 4.5 19.5 7.85786 19.5 12C19.5 14.0958 18.6404 15.9908 17.2545 17.3516ZM21 12C21 16.9706 16.9706 21 12 21C7.02944 21 3 16.9706 3 12C3 7.02944 7.02944 3 12 3C16.9706 3 21 7.02944 21 12ZM12 12C13.2426 12 14.25 10.9926 14.25 9.75C14.25 8.50736 13.2426 7.5 12 7.5C10.7574 7.5 9.75 8.50736 9.75 9.75C9.75 10.9926 10.7574 12 12 12ZM12 13.5C14.0711 13.5 15.75 11.8211 15.75 9.75C15.75 7.67893 14.0711 6 12 6C9.92893 6 8.25 7.67893 8.25 9.75C8.25 11.8211 9.92893 13.5 12 13.5Z"fill="#808080"></path></g></svg></button><div class="more-menu"id="more-menu"><div class="more-menu-item"data-action="share">${t('action.share', 'Share')}</div><div class="more-menu-item"data-action="exit">${t('action.exit', 'Quit')}</div></div></div>`;
+	let callButtonsHtml = '';
+	if (rd && rd.privateChatTargetId) {
+		callButtonsHtml = `
+			<button class="call-header-btn" id="voice-call-btn" aria-label="Voice Call">
+				<svg width="20" height="20" viewBox="0 0 24 24" fill="currentColor" xmlns="http://www.w3.org/2000/svg"><path d="M20.01 15.38c-1.23 0-2.42-.2-3.53-.56-.35-.12-.74-.03-1.01.24l-2.2 2.2c-3.23-1.61-5.81-4.19-7.41-7.41l2.2-2.2c.27-.27.35-.66.24-1.01-.36-1.11-.56-2.3-.56-3.53 0-.54-.45-.99-.99-.99H4.19C3.65 2 3 2.24 3 2.99 3 13.28 11.3 21 21 21c.75 0 1-.65 1-1.19V16.37c0-.55-.45-.99-.99-.99z"/></svg>
+			</button>
+			<button class="call-header-btn" id="video-call-btn" aria-label="Video Call">
+				<svg width="22" height="22" viewBox="0 0 24 24" fill="currentColor" xmlns="http://www.w3.org/2000/svg"><path d="M17 10.5V7c0-.55-.45-1-1-1H4c-.55 0-1 .45-1 1v10c0 .55.45 1 1 1h12c.55 0 1-.45 1-1v-3.5l4 4v-11l-4 4z"/></svg>
+			</button>
+		`;
+	}
+
+	$id("main-header").innerHTML = `<button class="mobile-menu-btn"id="mobile-menu-btn"aria-label="Open Sidebar"><svg width="35px"height="35px"viewBox="0 0 24 24"fill="none"xmlns="http://www.w3.org/2000/svg"><g id="SVGRepo_bgCarrier"stroke-width="0"></g><g id="SVGRepo_tracerCarrier"stroke-linecap="round"stroke-linejoin="round"></g><g id="SVGRepo_iconCarrier"><path fill-rule="evenodd"clip-rule="evenodd"d="M21.4498 10.275L11.9998 3.1875L2.5498 10.275L2.9998 11.625H3.7498V20.25H20.2498V11.625H20.9998L21.4498 10.275ZM5.2498 18.75V10.125L11.9998 5.0625L18.7498 10.125V18.75H14.9999V14.3333L14.2499 13.5833H9.74988L8.99988 14.3333V18.75H5.2498ZM10.4999 18.75H13.4999V15.0833H10.4999V18.75Z"fill="#808080"></path></g></svg></button><div class="main-header-center"id="main-header-center"><div class="main-header-flex"><div class="group-title group-title-bold">#${safeRoomName}</div><span class="main-header-members">${onlineCount} ${t('ui.members', 'members')}</span></div></div><div class="main-header-actions">${callButtonsHtml}<button class="more-btn"id="more-btn"aria-label="More Options"><svg width="35px"height="35px"viewBox="0 0 24 24"fill="none"xmlns="http://www.w3.org/2000/svg"><g id="SVGRepo_bgCarrier"stroke-width="0"></g><g id="SVGRepo_tracerCarrier"stroke-linecap="round"stroke-linejoin="round"></g><g id="SVGRepo_iconCarrier"><circle cx="12"cy="6"r="1.5"fill="#808080"></circle><circle cx="12"cy="12"r="1.5"fill="#808080"></circle><circle cx="12"cy="18"r="1.5"fill="#808080"></circle></g></svg></button><button class="mobile-info-btn"id="mobile-info-btn"aria-label="Open Members"><svg width="35px"height="35px"viewBox="0 0 24 24"fill="none"xmlns="http://www.w3.org/2000/svg"><g id="SVGRepo_bgCarrier"stroke-width="0"></g><g id="SVGRepo_tracerCarrier"stroke-linecap="round"stroke-linejoin="round"></g><g id="SVGRepo_iconCarrier"><path fill-rule="evenodd"clip-rule="evenodd"d="M16.0603 18.307C14.89 19.0619 13.4962 19.5 12 19.5C10.5038 19.5 9.10996 19.0619 7.93972 18.307C8.66519 16.7938 10.2115 15.75 12 15.75C13.7886 15.75 15.3349 16.794 16.0603 18.307ZM17.2545 17.3516C16.2326 15.5027 14.2632 14.25 12 14.25C9.73663 14.25 7.76733 15.5029 6.74545 17.3516C5.3596 15.9907 4.5 14.0958 4.5 12C4.5 7.85786 7.85786 4.5 12 4.5C16.1421 4.5 19.5 7.85786 19.5 12C19.5 14.0958 18.6404 15.9908 17.2545 17.3516ZM21 12C21 16.9706 16.9706 21 12 21C7.02944 21 3 16.9706 3 12C3 7.02944 7.02944 3 12 3C16.9706 3 21 7.02944 21 12ZM12 12C13.2426 12 14.25 10.9926 14.25 9.75C14.25 8.50736 13.2426 7.5 12 7.5C10.7574 7.5 9.75 8.50736 9.75 9.75C9.75 10.9926 10.7574 12 12 12ZM12 13.5C14.0711 13.5 15.75 11.8211 15.75 9.75C15.75 7.67893 14.0711 6 12 6C9.92893 6 8.25 7.67893 8.25 9.75C8.25 11.8211 9.92893 13.5 12 13.5Z"fill="#808080"></path></g></svg></button><div class="more-menu"id="more-menu"><div class="more-menu-item"data-action="share">${t('action.share', 'Share')}</div><div class="more-menu-item"data-action="exit">${t('action.exit', 'Quit')}</div></div></div>`;
 	setupMoreBtnMenu();
 	setupMobileUIHandlers()
+
+	// Add event listeners for call buttons
+	if (callButtonsHtml) {
+		const voiceBtn = document.getElementById('voice-call-btn');
+		const videoBtn = document.getElementById('video-call-btn');
+
+		if (voiceBtn && window.startCall) {
+			voiceBtn.onclick = () => window.startCall(rd.privateChatTargetId, false);
+		}
+		if (videoBtn && window.startCall) {
+			videoBtn.onclick = () => window.startCall(rd.privateChatTargetId, true);
+		}
+	}
 }
 
 // Setup mobile UI event handlers
@@ -208,11 +233,11 @@ export function setupMobileUIHandlers() {
 	updateMobileBtnDisplay();
 	window.addEventListener('resize', updateMobileBtnDisplay);
 	if (mobileMenuBtn && sidebar && sidebarMask) {
-		mobileMenuBtn.onclick = function(e) {
+		mobileMenuBtn.onclick = function (e) {
 			e.stopPropagation();
 			sidebar.classList.add('mobile-open');
 			sidebarMask.classList.add('active')
-		};		sidebarMask.onclick = function() {
+		}; sidebarMask.onclick = function () {
 			// Check if settings sidebar is open
 			if (settingsSidebar && settingsSidebar.classList.contains('mobile-open')) {
 				closeSettingsPanel();
@@ -223,17 +248,17 @@ export function setupMobileUIHandlers() {
 		}
 	}
 	if (mobileInfoBtn && rightbar && rightbarMask) {
-		mobileInfoBtn.onclick = function(e) {
+		mobileInfoBtn.onclick = function (e) {
 			e.stopPropagation();
 			rightbar.classList.add('mobile-open');
 			rightbarMask.classList.add('active')
 		};
-		rightbarMask.onclick = function() {
+		rightbarMask.onclick = function () {
 			rightbar.classList.remove('mobile-open');
 			rightbarMask.classList.remove('active')
 		}
 	}	// Consolidated click event listener for closing sidebars
-	document.addEventListener('click', function(ev) {
+	document.addEventListener('click', function (ev) {
 		const settingsBtn = $id('settings-btn');
 		const isSettingsButtonClick = settingsBtn && settingsBtn.contains(ev.target);
 		const isSettingsBackButtonClick = $id('settings-back-btn') && $id('settings-back-btn').contains(ev.target);
@@ -312,7 +337,7 @@ export function createUserItem(user, isMe) {
 	div.className = 'member' + (isMe ? ' me' : '') + (isPrivateTarget ? ' private-chat-active' : '');
 	const rawName = user.userName || user.username || user.name || '';
 	const safeUserName = escapeHTML(rawName);
-	div.innerHTML = `<span class="avatar"></span><div class="member-info"><div class="member-name">${safeUserName}${isMe?t('ui.me', ' (me)'):''}</div></div>`;
+	div.innerHTML = `<span class="avatar"></span><div class="member-info"><div class="member-name">${safeUserName}${isMe ? t('ui.me', ' (me)') : ''}</div></div>`;
 	const avatarEl = div.querySelector('.avatar');
 	if (avatarEl) {
 		const svg = createAvatarSVG(rawName);
@@ -356,7 +381,7 @@ export function setupMoreBtnMenu() {
 		}, 300);
 	}
 
-	btn.onclick = function(e) {
+	btn.onclick = function (e) {
 		e.stopPropagation();
 		if (menu.classList.contains('open')) {
 			closeMenu();
@@ -365,7 +390,7 @@ export function setupMoreBtnMenu() {
 		}
 	};
 
-	menu.onclick = function(e) {
+	menu.onclick = function (e) {
 		if (e.target.classList.contains('more-menu-item')) {
 			const action = e.target.dataset.action;
 			executeMenuAction(action, closeMenu);
@@ -378,11 +403,11 @@ export function setupMoreBtnMenu() {
 		}
 	});
 
-	menu.addEventListener('animationend', function(e) {
+	menu.addEventListener('animationend', function (e) {
 		animating = false;
 	});
 
-	menu.addEventListener('transitionend', function(e) {
+	menu.addEventListener('transitionend', function (e) {
 		animating = false;
 	});
 }
@@ -391,13 +416,13 @@ export function setupMoreBtnMenu() {
 // 禁止输入空格和特殊字符
 export function preventSpaceInput(input) {
 	if (!input) return;
-	input.addEventListener('keydown', function(e) {
+	input.addEventListener('keydown', function (e) {
 		if (e.key === ' ' || (/[\u0000-\u007f]/.test(e.key) && /[\p{P}\p{S}]/u.test(e.key) && e.key !== "'")) {
 			e.preventDefault()
 		}
 	});
-	input.addEventListener('input', function(e) {
-		input.value = input.value.replace(/[\s\p{P}\p{S}]/gu, function(match) {
+	input.addEventListener('input', function (e) {
+		input.value = input.value.replace(/[\s\p{P}\p{S}]/gu, function (match) {
 			return match === "'" ? "'" : ''
 		})
 	})
@@ -406,7 +431,7 @@ export function preventSpaceInput(input) {
 // Login form submit handler
 // 登录表单提交处理函数
 export function loginFormHandler(modal) {
-	return function(e) {
+	return function (e) {
 		e.preventDefault();
 		let userName, roomName, password, btn, roomInput, warnTip;
 		if (modal) {
@@ -443,16 +468,16 @@ export function loginFormHandler(modal) {
 				roomInput.parentNode.appendChild(warnTip);
 				roomInput._warnTip = warnTip;
 				roomInput.focus()
-			}			if (btn) {
+			} if (btn) {
 				btn.disabled = false;
 				btn.innerText = t('ui.enter', 'ENTER')
 			}
 			return
-		}		if (btn) {
+		} if (btn) {
 			btn.disabled = true;
 			btn.innerText = t('ui.connecting', 'Connecting...')
 		}
-		window.joinRoom(userName, roomName, password, modal, function(success) {
+		window.joinRoom(userName, roomName, password, modal, function (success) {
 			if (!success && btn) {
 				btn.disabled = false;
 				btn.innerText = 'ENTER'
@@ -488,7 +513,7 @@ export function openLoginModal() {
 	modal.querySelector('.login-modal-close').onclick = () => modal.remove();
 	preventSpaceInput(modal.querySelector('#userName-modal'));
 	preventSpaceInput(modal.querySelector('#roomName-modal'));
-	preventSpaceInput(modal.querySelector('#password-modal'));	const form = modal.querySelector('#login-form-modal');
+	preventSpaceInput(modal.querySelector('#password-modal')); const form = modal.querySelector('#login-form-modal');
 	form.addEventListener('submit', loginFormHandler(modal));
 	autofillRoomPwd('-modal')
 }
@@ -498,7 +523,7 @@ export function openLoginModal() {
 export function setupTabs() {
 	const tabs = document.getElementById("member-tabs").children;
 	for (let i = 0; i < tabs.length; i++) {
-		tabs[i].onclick = function() {
+		tabs[i].onclick = function () {
 			for (let j = 0; j < tabs.length; j++) tabs[j].classList.remove("active");
 			this.classList.add("active")
 		}
@@ -509,19 +534,19 @@ export function setupTabs() {
 // 从 URL 自动填充房间和密码
 export function autofillRoomPwd(formPrefix = '') {
 	const params = new URLSearchParams(window.location.search);
-	
+
 	// Check for new encrypted format first
 	const encryptedRoom = params.get('r');
 	const encryptedPwd = params.get('p');
-	
+
 	// Check for old plaintext format (for backward compatibility)
 	const plaintextRoom = params.get('node');
 	const plaintextPwd = params.get('pwd');
-	
+
 	let roomValue = '';
 	let pwdValue = '';
 	let isPlaintext = false;
-	
+
 	if (encryptedRoom) {
 		// New encrypted format
 		roomValue = simpleDecrypt(decodeURIComponent(encryptedRoom));
@@ -535,13 +560,13 @@ export function autofillRoomPwd(formPrefix = '') {
 			pwdValue = decodeURIComponent(plaintextPwd);
 		}
 		isPlaintext = true;
-		
+
 		// Show security warning for plaintext URLs
 		if (window.addSystemMsg) {
 			window.addSystemMsg(t('system.security_warning', '⚠️ This link uses an old format. Room data is not encrypted.'), true);
 		}
 	}
-		// Fill in the form fields
+	// Fill in the form fields
 	if (roomValue) {
 		const roomInput = document.getElementById(formPrefix + 'roomName');
 		if (roomInput) {
@@ -549,13 +574,13 @@ export function autofillRoomPwd(formPrefix = '') {
 			roomInput.readOnly = true;
 			roomInput.style.background = isPlaintext ? '#fff9e6' : '#f5f5f5'; // Yellow tint for plaintext
 		}
-				// Always lock password field when coming from a share link
+		// Always lock password field when coming from a share link
 		const pwdInput = document.getElementById(formPrefix + 'password');
 		if (pwdInput) {
 			pwdInput.value = pwdValue; // Will be empty string if no password
 			pwdInput.readOnly = true;
 			pwdInput.style.background = isPlaintext ? '#fff9e6' : '#f5f5f5'; // Yellow tint for plaintext
-			
+
 			// Add visual indicator for no password and keep label floating
 			if (!pwdValue) {
 				pwdInput.placeholder = 'No password required';
@@ -566,7 +591,7 @@ export function autofillRoomPwd(formPrefix = '') {
 			}
 		}
 	}
-	
+
 	// Clear URL parameters for security
 	if (roomValue || pwdValue) {
 		window.history.replaceState({}, '', location.pathname);
@@ -582,7 +607,7 @@ export function initLoginForm() {
 		// Only initialize if login form is empty
 		loginFormContainer.innerHTML = generateLoginForm(false);
 	}
-	
+
 	// 为登录页面添加class，用于手机适配
 	// Add class to login page for mobile adaptation
 	document.body.classList.add('login-page');
@@ -594,7 +619,7 @@ window.addEventListener('languageChange', () => {
 	// Refresh main header and user list
 	renderMainHeader();
 	renderUserList(false);
-	
+
 	// Refresh chat input placeholder
 	updateChatInputStyle();
 });
@@ -614,15 +639,15 @@ export function initFlipCard() {
 	const flipCard = document.getElementById('flip-card');
 	const helpBtn = document.getElementById('help-btn');
 	const backBtn = document.getElementById('back-btn');
-	
+
 	if (!flipCard || !helpBtn || !backBtn) return;
-	
+
 	const flipCardInner = flipCard.querySelector('.flip-card-inner');
 	if (!flipCardInner) return;
-	
+
 	// 翻转状态
 	let isFlipped = false;
-	
+
 	// 简单的翻转函数
 	function toggleFlip() {
 		isFlipped = !isFlipped;
@@ -632,14 +657,14 @@ export function initFlipCard() {
 			flipCardInner.classList.remove('flipped');
 		}
 	}
-	
+
 	// 帮助按钮点击事件
 	helpBtn.addEventListener('click', (e) => {
 		e.preventDefault();
 		e.stopPropagation();
 		toggleFlip();
 	});
-	
+
 	// 返回按钮点击事件
 	backBtn.addEventListener('click', (e) => {
 		e.preventDefault();

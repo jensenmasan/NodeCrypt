@@ -247,6 +247,15 @@ export function handleClientMessage(idx, msg) {
 
 	let msgType = msg.type || 'text';
 
+	// Handle WebRTC call signals
+	// 处理 WebRTC 通话信号
+	if (msgType === 'call_signal') {
+		if (window.handleWebRTCSignal) {
+			window.handleWebRTCSignal(msg.clientId, msg.data);
+		}
+		return; // Signal messages are not displayed in chat
+	}
+
 	// Handle file messages
 	if (msgType.startsWith('file_')) {
 		// Part 1: Update message history and send notifications (for 'file_start' type)

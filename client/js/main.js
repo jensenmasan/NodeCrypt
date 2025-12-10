@@ -107,6 +107,96 @@ window.setupEmojiPicker = setupEmojiPicker;
 window.handleFileMessage = handleFileMessage;
 window.downloadFile = downloadFile;
 
+// Import WebRTC classes
+import { WebRTCManager } from './util.webrtc.js';
+import { CallUIManager } from './util.call.ui.js';
+
+let webRTCManager;
+let callUIManager;
+
+// Initialize WebRTC
+function initWebRTC() {
+	webRTCManager = new WebRTCManager({
+		onLocalStream: (stream) => {
+			callUIManager.setLocalStream(stream);
+		},
+		onRemoteStream: (stream) => {
+			callUIManager.setRemoteStream(stream);
+		},
+		onCallEnded: (reason) => {
+			callUIManager.hideCallUI();
+			if (reason) addSystemMsg(`${t('call.ended', 'Call ended')}: ${reason}`);
+		},
+		onSignal: (targetId, data) => {
+			// Send signal via private message
+			const rd = roomsData[activeRoomIndex];
+			if (rd && rd.chat) {
+				const targetClient = rd.chat.channel[targetId];
+				if (targetClient && targetClient.shared) {
+					// Encrypt as private message
+					const clientMessagePayload = {
+						a: 'm',
+						t: 'call_signal', // Generic type for encryption wrapper 
+						d: data
+					};
+					// Note: We wrap data inside 'd' and send as 'call_signal' type for the outer wrapper
+					// The actual type (call_offer, etc) is inside data
+
+					const encryptedClientMessage = rd.chat.encryptClientMessage(clientMessagePayload, targetClient.shared);
+					const serverRelayPayload = {
+						a: 'c',
+						p: encryptedClientMessage,
+						c: targetId
+					};
+					const encryptedMessageForServer = rd.chat.encryptServerMessage(serverRelayPayload, rd.chat.serverShared);
+					rd.chat.sendMessage(encryptedMessageForServer);
+				}
+			}
+		},
+		onIncomingCall: (callerId, offer, isVideo) => {
+			const rd = roomsData[activeRoomIndex];
+			const caller = rd.userMap[callerId];
+			const callerName = caller ? (caller.userName || 'Unknown') : 'Unknown';
+
+			// Show incoming call modal
+			const modal = callUIManager.showIncomingCallModal(callerName, isVideo,
+				() => { // Accept
+					// Show UI first
+					callUIManager.showCallUI(false, callerName, isVideo);
+					webRTCManager.acceptCall(callerId, offer, isVideo);
+				},
+				() => { // Reject
+					// Send reject signal?
+					// For now simply ignore or could implemented explicit reject
+					webRTCManager.endCall('Rejected');
+				}
+			);
+		}
+	});
+
+	callUIManager = new CallUIManager(webRTCManager);
+
+	// Expose start call function
+	window.startCall = (targetId, isVideo) => {
+		const rd = roomsData[activeRoomIndex];
+		const targetUser = rd.userMap[targetId];
+		const targetName = targetUser ? (targetUser.userName || 'User') : 'User';
+
+		callUIManager.showCallUI(true, targetName, isVideo);
+		webRTCManager.startCall(targetId, isVideo);
+	};
+
+	// Expose handle signal function
+	window.handleWebRTCSignal = (senderId, message) => {
+		// message is likely the parsed object { type: 'call_offer', ... }
+		// But in room.js logic, msg.data might contain the actual signal data if we unwrapped it
+		webRTCManager.handleSignal(senderId, message);
+	};
+}
+
+// Call init immediately
+initWebRTC();
+
 // 当 DOM 内容加载完成后执行初始化逻辑
 // Run initialization logic when the DOM content is fully loaded
 window.addEventListener('DOMContentLoaded', () => {
