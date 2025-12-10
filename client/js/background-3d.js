@@ -21,50 +21,33 @@ let handSpread = 0; // 0 到 1，控制扩散
 let currentText = "NODECRYPT"; // 当前文字（改为默认显示NODECRYPT）
 
 // 新增功能变量
-let fingerTrail = []; // 手指轨迹，用于画图
-const TRAIL_LENGTH = 70; // 增加轨迹长度，写字更连贯
-let lastHandTime = Date.now(); // 上次检测到手的时间
-let isAutoMode = true; // 是否处于自动演示模式
-let autoTimer = 0; // 自动模式计时器
-const AUTO_SWITCH_INTERVAL = 250; // 加快一点切换速度
-// 新年快乐主题内容
-const autoTexts = ["HAPPY", "NEW", "YEAR", "2025", "HEART"];
+// 新增功能变量
+let fingerTrail = []; // 手指轨迹
+const TRAIL_LENGTH = 70;
+let lastHandTime = Date.now();
+let isAutoMode = true;
+let autoTimer = 0;
+const AUTO_SWITCH_INTERVAL = 300;
+// 终极自动轮播内容： 文字 -> 数学几何 -> 祝福
+const autoTexts = ["NODECRYPT", "SPHERE", "FUTURE", "DNA", "TECH", "MOBIUS", "ART", "HEART", "HAPPY", "NEW", "YEAR", "2025"];
 let autoTextIndex = 0;
 
-// 高级颜色配置 - 使用渐变色
+// 交互与物理引擎变量
+let mouse = new THREE.Vector2(-9999, -9999); // 鼠标位置
+let windowHalfX = window.innerWidth / 2;
+let windowHalfY = window.innerHeight / 2;
+let interactionForce = 0; // 交互力场强度 (-1: 吸入, 0: 无, 1: 排斥)
+let forceRadius = 100; // 力场半径
+
+// 粒子颜色配置 (扩充)
 const colorPalette = {
-    1: {
-        primary: new THREE.Color(0x00d9ff),   // 亮青色
-        secondary: new THREE.Color(0x0088ff), // 蓝色
-        glow: new THREE.Color(0x00ffff)
-    },
-    2: {
-        primary: new THREE.Color(0xff00ff),   // 紫色
-        secondary: new THREE.Color(0xff0088), // 粉紫色
-        glow: new THREE.Color(0xff88ff)
-    },
-    3: {
-        primary: new THREE.Color(0xffaa00),   // 橙色
-        secondary: new THREE.Color(0xffdd00), // 金色
-        glow: new THREE.Color(0xffff00)
-    },
-    0: {
-        primary: new THREE.Color(0x88ccff),   // 天蓝色
-        secondary: new THREE.Color(0xaaddff), // 浅蓝色
-        glow: new THREE.Color(0xffffff)
-    },
-    // 新增：新年红
-    4: {
-        primary: new THREE.Color(0xff0033),   // 鲜红
-        secondary: new THREE.Color(0xff6666), // 浅红
-        glow: new THREE.Color(0xffaaaa)
-    },
-    // 新增：流光金
-    5: {
-        primary: new THREE.Color(0xffbb00),   // 金色
-        secondary: new THREE.Color(0xffee88), // 亮金
-        glow: new THREE.Color(0xffffff)
-    }
+    1: { primary: new THREE.Color(0x00d9ff), secondary: new THREE.Color(0x0088ff), glow: new THREE.Color(0x00ffff) }, // 青
+    2: { primary: new THREE.Color(0xff00ff), secondary: new THREE.Color(0xff0088), glow: new THREE.Color(0xff88ff) }, // 紫
+    3: { primary: new THREE.Color(0xffaa00), secondary: new THREE.Color(0xffdd00), glow: new THREE.Color(0xffff00) }, // 橙
+    0: { primary: new THREE.Color(0x88ccff), secondary: new THREE.Color(0xaaddff), glow: new THREE.Color(0xffffff) }, // 蓝
+    4: { primary: new THREE.Color(0xff0033), secondary: new THREE.Color(0xff6666), glow: new THREE.Color(0xffaaaa) }, // 红
+    5: { primary: new THREE.Color(0xffbb00), secondary: new THREE.Color(0xffee88), glow: new THREE.Color(0xffffff) }, // 金
+    6: { primary: new THREE.Color(0x00ff88), secondary: new THREE.Color(0xccffcc), glow: new THREE.Color(0xaaffaa) }  // 绿(DNA)
 };
 
 // ... (init3DGestureSystem 等函数保持不变，直到 updateTextShape) ...
@@ -494,12 +477,24 @@ function onHandsResults(results) {
             newText = "ART";
             newColor = colorPalette[3];
             gestureName = "3 (艺术)";
+        } else if (fingers[0] && fingers[1] && !fingers[2] && !fingers[3] && fingers[4]) {
+            // 🤟 I Love You 手势 (拇指+食指+小指) -> 爱心
+            currentGesture = 4;
+            newText = "HEART"; // 这里会触发 updateTextShape 生成心形
+            newColor = colorPalette[4]; // 红色
+            gestureName = "🤟 (Love)";
+        } else if (fingers[0] && fingers[1] && fingers[2] && fingers[3] && fingers[4]) {
+            // 🖐 五指张开 -> 2025 新年快乐
+            currentGesture = 5;
+            newText = "2025";
+            newColor = colorPalette[5]; // 金色
+            gestureName = "🖐 (2025)";
         } else {
             // 其他手势 -> 恢复默认
             currentGesture = 0;
             // newText = "NODECRYPT"; 
             gestureName = "自由交互";
-            if (currentText !== "NODECRYPT" && currentText !== "FUTURE" && currentText !== "TECH" && currentText !== "ART") {
+            if (currentText !== "NODECRYPT" && currentText !== "FUTURE" && currentText !== "TECH" && currentText !== "ART" && currentText !== "HEART" && currentText !== "2025") {
                 newText = "NODECRYPT";
             }
         }
@@ -549,8 +544,15 @@ function countFingers(landmarks) {
     const fingers = [false, false, false, false, false];
 
     // 拇指 (比较指尖和指关节的 x 距离，稍微复杂，这里简化判断)
-    // 简单判断：如果拇指尖端比IP关节远
-    // fingers[0] = landmarks[4].x < landmarks[3].x; // 简化忽略拇指
+    // 逻辑：计算拇指指尖到食指掌指关节(MCP)的距离，如果足够远则认为伸出
+    const thumbTip = landmarks[4];
+    const indexMcp = landmarks[5];
+
+    // 计算2D距离 (x, y)
+    const dist = Math.sqrt(Math.pow(thumbTip.x - indexMcp.x, 2) + Math.pow(thumbTip.y - indexMcp.y, 2));
+
+    // 阈值需要调试，通常伸开时距离较大 (>0.15 左右)
+    fingers[0] = dist > 0.12; // 稍微宽松一点的阈值
 
     // 食指 (指尖 y < 指根 y)
     fingers[1] = landmarks[8].y < landmarks[6].y;
@@ -609,6 +611,9 @@ function animate() {
             } else if (nextText === "2025" || nextText === "NEW") {
                 // 金色或紫色
                 colorKey = Math.random() > 0.5 ? 5 : 2;
+            } else if (nextText === "HAPPY" || nextText === "YEAR") {
+                // 多彩/橙色
+                colorKey = 3;
             } else if (nextText === "NODECRYPT") {
                 // 青色 (品牌色)
                 colorKey = 1;
@@ -697,11 +702,14 @@ function animate() {
     geometry.attributes.position.needsUpdate = true;
 
     // 粒子群整体旋转
-    particles.rotation.y += 0.0008;
-    // 绘图模式下减少晃动，方便写字
     if (currentGesture !== 1) {
+        // 非绘图模式下正常旋转
+        particles.rotation.y += 0.0008;
         particles.rotation.x = Math.sin(time * 0.3) * 0.1;
         particles.rotation.z = Math.cos(time * 0.2) * 0.05;
+    } else {
+        // 绘图模式下暂停旋转，方便书写
+        // 保持当前角度不变，或者非常缓慢地复位，这里完全暂停
     }
 
     // 星空旋转
