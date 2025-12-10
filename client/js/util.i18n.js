@@ -126,6 +126,15 @@ const LANGUAGES = {
 			'help.tip_security_reminder_desc': 'Both node name and password must be exactly the same to enter the same room',
 			'help.tip_password_strategy': 'Password Strategy',
 			'help.tip_password_strategy_desc': 'Recommend using strong passwords containing letters, numbers and symbols',
+			'help.tip_password_strategy_desc': 'Recommend using strong passwords containing letters, numbers and symbols',
+			// Call handling
+			'call.voice_call': 'Voice Call',
+			'call.video_call': 'Video Call',
+			'call.calling': 'Calling',
+			'call.connecting': 'Connecting',
+			'call.connected': 'Connected',
+			'call.ended': 'Call ended',
+			'call.incoming': 'Incoming',
 		}
 	},
 	zh: {
@@ -252,6 +261,14 @@ const LANGUAGES = {
 			'help.tip_security_reminder_desc': '节点名和密码都需要完全一致才能进入同一个房间',
 			'help.tip_password_strategy': '密码策略',
 			'help.tip_password_strategy_desc': '建议使用包含字母、数字和符号的强密码',
+			// Call handling
+			'call.voice_call': '语音通话',
+			'call.video_call': '视频通话',
+			'call.calling': '呼叫中',
+			'call.connecting': '连接中',
+			'call.connected': '已连接',
+			'call.ended': '通话结束',
+			'call.incoming': '邀请视频通话',
 		}
 	}
 };
