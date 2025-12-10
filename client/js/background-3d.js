@@ -12,10 +12,7 @@ let animationFrameId = null; // 用于取消动画循环
 // 目标形状的点集
 let targetPositions = [];
 
-// 刀光轨迹 Mesh
-let bladeMesh;
-let bladeGeometry;
-let gameLights = [];
+
 
 // 字体加载器
 let font;
@@ -46,15 +43,10 @@ let windowHalfY = window.innerHeight / 2;
 let interactionForce = 0; // 交互力场强度 (-1: 吸入, 0: 无, 1: 排斥)
 let forceRadius = 100; // 力场半径
 
-// --- 游戏模式变量 (Fruit Ninja) ---
-let isGameMode = false;
-let gameScore = 0;
-let gameLives = 3;
-let fruits = []; // 存储当前屏幕上的水果对象
-let bombs = [];
-let gameTime = 0;
 let uiHideTimer = null; // 控制面板自动隐藏计时器
 const UI_HIDE_DELAY = 3000; // 3秒无操作隐藏
+
+
 
 // 粒子颜色配置 (扩充)
 const colorPalette = {
@@ -309,11 +301,6 @@ function initAutoHideUI() {
     }
 
     function hideUI() {
-        // 如果正在游戏中，始终显示分数UI（由CSS控制），但隐藏控制面板
-        if (isGameMode) {
-            controlPanel.classList.add('hidden');
-            return;
-        }
         // 如果有按钮被hover，也不隐藏
         if (controlPanel.matches(':hover')) return;
 
@@ -336,25 +323,7 @@ function initAutoHideUI() {
 
 // --- 切水果游戏逻辑 ---
 
-function startGame() {
-    isGameMode = true;
-    gameScore = 0;
-    gameLives = 3;
-    fruits = [];
-    bombs = [];
-    gameTime = 0;
 
-    // 更新UI
-    document.getElementById('game-ui').style.display = 'block';
-    document.getElementById('main-control-panel').classList.add('hidden'); // 隐藏设置面板
-    document.getElementById('game-over-screen').style.display = 'none';
-    document.getElementById('game-score-val').innerText = '0';
-    document.getElementById('game-lives-val').innerText = '❤️❤️❤️';
-
-    // 切换特效
-    updateTextShape("GAME_START"); // 可以做一个特殊的倒计时或文字
-    updateParticleColor(colorPalette[3]); // 橙色战斗氛围
-}
 
 
 
@@ -408,29 +377,7 @@ function initUIControls() {
         });
     }
 
-    // 游戏按钮
-    const startGameBtn = document.getElementById('start-game-btn');
-    if (startGameBtn) {
-        startGameBtn.addEventListener('click', startGame);
-    }
 
-    const restartBtn = document.getElementById('restart-game-btn');
-    if (restartBtn) {
-        restartBtn.addEventListener('click', () => {
-            startGame();
-        });
-    }
-
-    const exitGameBtn = document.getElementById('exit-game-btn');
-    if (exitGameBtn) {
-        exitGameBtn.addEventListener('click', () => {
-            isGameMode = false;
-            document.getElementById('game-ui').style.display = 'none';
-            document.getElementById('game-over-screen').style.display = 'none';
-            document.getElementById('main-control-panel').classList.remove('hidden');
-            updateTextShape("NODECRYPT");
-        });
-    }
 }
 
 // 新增：清理函数，用于登录成功后关闭3D系统
