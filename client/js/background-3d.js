@@ -244,6 +244,22 @@ function updateTextShape(text) {
                 );
             }
         }
+    } else if (text.startsWith("CUSTOM:")) {
+        // 自定义文字模式 (打字机效果用到)
+        const customText = text.substring(7);
+        const points = createPointsFromCanvas(customText);
+        const pLen = points.length;
+        for (let i = 0; i < particleCount; i++) {
+            if (i < pLen) {
+                targetPositions[i] = points[i];
+            } else {
+                targetPositions[i] = new THREE.Vector3(
+                    (Math.random() - 0.5) * 500,
+                    (Math.random() - 0.5) * 500,
+                    (Math.random() - 0.5) * 500
+                );
+            }
+        }
     } else if (text === "NEWYEAR_WISH") {
         // 新增：马老师新年祝福 (中文)
         // 使用 Canvas 生成点阵
@@ -584,34 +600,58 @@ function onDocumentDoubleClick(event) {
 function startNewYearMode() {
     isAutoMode = false;
 
-    // 立即显示文字
-    updateTextShape("NEWYEAR_WISH");
-    updateParticleColor({ primary: new THREE.Color(0xff0000), secondary: new THREE.Color(0xffd700), glow: new THREE.Color(0xffaa00) }); // 红金配色
-
     // 清除旧的定时器 (如果已存在)
     if (fireworksInterval) clearInterval(fireworksInterval);
+    if (window.typewriterTimer) clearTimeout(window.typewriterTimer);
 
-    // 启动循环：文字 -> 烟花 -> 文字
-    let showFireworks = false;
-    fireworksInterval = setInterval(() => {
-        showFireworks = !showFireworks;
-        if (showFireworks) {
-            updateTextShape("FIREWORKS");
-            // 烟花时随机彩色
-            const p = [
-                { primary: new THREE.Color(0xff0000), secondary: new THREE.Color(0xffff00), glow: new THREE.Color(0xffffff) },
-                { primary: new THREE.Color(0x00ff00), secondary: new THREE.Color(0x00ffff), glow: new THREE.Color(0xffffff) },
-                { primary: new THREE.Color(0x0000ff), secondary: new THREE.Color(0xff00ff), glow: new THREE.Color(0xffffff) }
-            ];
-            updateParticleColor(p[Math.floor(Math.random() * p.length)]);
-            // 强力扩散一下
-            shockwave = 1.5;
-        } else {
-            updateTextShape("NEWYEAR_WISH");
+    const fullText = "马老师提前祝大家新年快乐";
+    let charIndex = 0;
+
+    // 定义一个类似打字机的序列函数
+    function playSequence() {
+        // 第一阶段：逐字显示
+        if (charIndex <= fullText.length) {
+            const subText = fullText.substring(0, charIndex);
+            if (subText.length > 0) {
+                // 使用 createPointsFromCanvas 直接生成对应文字
+                // 这里我们需要稍微修改 updateTextShape 的调用方式，或者新建一个直接调用的逻辑
+                // 为了复用现有架构，我们扩展 updateTextShape 支持直接传入自定义字符串
+                updateTextShape("CUSTOM:" + subText);
+            }
+
             updateParticleColor({ primary: new THREE.Color(0xff0000), secondary: new THREE.Color(0xffd700), glow: new THREE.Color(0xffaa00) });
-            shockwave = 0;
+
+            charIndex++;
+            // 字数越多，显示越快一点
+            window.typewriterTimer = setTimeout(playSequence, 300);
+        } else {
+            // 第二阶段：文字展示完毕，停留一会儿
+            // 此时已显示全句
+            window.typewriterTimer = setTimeout(() => {
+                // 第三阶段：放烟花
+                updateTextShape("FIREWORKS");
+                // 烟花时随机彩色
+                const p = [
+                    { primary: new THREE.Color(0xff0000), secondary: new THREE.Color(0xffff00), glow: new THREE.Color(0xffffff) },
+                    { primary: new THREE.Color(0x00ff00), secondary: new THREE.Color(0x00ffff), glow: new THREE.Color(0xffffff) },
+                    { primary: new THREE.Color(0x0000ff), secondary: new THREE.Color(0xff00ff), glow: new THREE.Color(0xffffff) }
+                ];
+                updateParticleColor(p[Math.floor(Math.random() * p.length)]);
+                shockwave = 2.0; // 强力炸开
+
+                // 烟花持续时间后，重新开始循环
+                window.typewriterTimer = setTimeout(() => {
+                    charIndex = 1; // 重置索引
+                    shockwave = 0;
+                    playSequence(); // 循环开始
+                }, 4000);
+            }, 2000);
         }
-    }, 3000); // 每3秒切换一次
+    }
+
+    // 启动序列
+    charIndex = 1;
+    playSequence();
 }
 
 // 鼠标移动事件
