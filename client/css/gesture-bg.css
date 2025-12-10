@@ -137,13 +137,27 @@ body {
     border-top: 1px solid rgba(255, 255, 255, 0.1);
     pointer-events: auto;
     /* Enable interaction */
+    transition: opacity 0.5s ease, transform 0.5s ease;
+    opacity: 1;
+    transform: translateY(0);
+}
+
+.control-panel.hidden {
+    opacity: 0;
+    transform: translateY(20px);
+    pointer-events: none;
 }
 
 .panel-row {
     margin-bottom: 10px;
 }
 
-.panel-row label {
+.panel-section {
+    margin-bottom: 15px;
+}
+
+.panel-row label,
+.panel-section label {
     display: block;
     margin-bottom: 5px;
     font-size: 11px;
@@ -157,11 +171,30 @@ body {
     gap: 5px;
 }
 
+/* Scrollable button groups */
+.scroll-group {
+    display: flex;
+    overflow-x: auto;
+    padding-bottom: 5px;
+    gap: 8px;
+    scrollbar-width: thin;
+    scrollbar-color: rgba(255, 255, 255, 0.3) transparent;
+}
+
+.scroll-group::-webkit-scrollbar {
+    height: 4px;
+}
+
+.scroll-group::-webkit-scrollbar-thumb {
+    background: rgba(255, 255, 255, 0.2);
+    border-radius: 4px;
+}
+
 .model-btn {
     background: rgba(255, 255, 255, 0.1);
     border: 1px solid rgba(255, 255, 255, 0.05);
     color: rgba(255, 255, 255, 0.8);
-    padding: 6px 10px;
+    padding: 6px 12px;
     font-size: 11px;
     border-radius: 6px;
     cursor: pointer;
@@ -169,7 +202,10 @@ body {
     text-align: left;
     display: flex;
     align-items: center;
-    gap: 5px;
+    gap: 6px;
+    white-space: nowrap;
+    /* Prevent wrapping in scroll view */
+    min-width: max-content;
 }
 
 .model-btn:hover {
@@ -184,16 +220,108 @@ body {
     color: #00d9ff;
 }
 
+.game-btn {
+    background: linear-gradient(135deg, #ffcc00 0%, #ff8800 100%);
+    border: none;
+    color: white;
+    padding: 6px 12px;
+    border-radius: 6px;
+    cursor: pointer;
+    font-weight: bold;
+    font-size: 12px;
+    transition: transform 0.2s;
+    box-shadow: 0 4px 10px rgba(255, 136, 0, 0.3);
+}
+
+.game-btn:hover {
+    transform: scale(1.05);
+}
+
 #particle-color {
     -webkit-appearance: none;
     appearance: none;
     /* Standard property */
     border: none;
-    width: 100%;
+    width: 60px;
     height: 25px;
     border-radius: 4px;
     background: transparent;
     cursor: pointer;
+}
+
+/* Game UI Elements */
+#game-ui {
+    position: fixed;
+    top: 20px;
+    right: 20px;
+    z-index: 200;
+    pointer-events: none;
+    text-align: right;
+    font-family: 'Segoe UI', 'Roboto', sans-serif;
+}
+
+.game-score {
+    font-size: 24px;
+    font-weight: bold;
+    color: #fff;
+    text-shadow: 0 0 10px rgba(0, 0, 0, 0.5);
+    margin-bottom: 5px;
+}
+
+.game-lives {
+    font-size: 18px;
+}
+
+#game-over-screen {
+    position: fixed;
+    top: 50%;
+    left: 50%;
+    transform: translate(-50%, -50%);
+    background: rgba(0, 0, 0, 0.85);
+    backdrop-filter: blur(20px);
+    padding: 40px;
+    border-radius: 20px;
+    text-align: center;
+    border: 1px solid rgba(255, 255, 255, 0.1);
+    box-shadow: 0 0 50px rgba(255, 0, 0, 0.2);
+    pointer-events: auto;
+}
+
+#game-over-screen h2 {
+    color: #ff3366;
+    font-size: 32px;
+    margin-bottom: 10px;
+}
+
+#game-over-screen p {
+    font-size: 18px;
+    color: #fff;
+    margin-bottom: 20px;
+}
+
+#game-over-screen button {
+    background: #fff;
+    border: none;
+    padding: 10px 20px;
+    margin: 0 10px;
+    border-radius: 8px;
+    font-weight: bold;
+    cursor: pointer;
+    transition: all 0.2s;
+}
+
+#game-over-screen button:hover {
+    transform: scale(1.05);
+}
+
+#restart-game-btn {
+    background: #00d9ff;
+    color: #000;
+}
+
+#exit-game-btn {
+    background: rgba(255, 255, 255, 0.2);
+    color: #fff;
 }
 
 #particle-color::-webkit-color-swatch-wrapper {

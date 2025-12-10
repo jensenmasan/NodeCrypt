@@ -64,10 +64,23 @@
 		</p>
 
 		<!-- 新增控制面板 -->
-		<div class="control-panel">
-			<div class="panel-row">
-				<label>模型选择:</label>
-				<div class="btn-group">
+		<!-- 新增：切水果游戏 UI -->
+		<div id="game-ui" style="display: none;">
+			<div class="game-score">分数: <span id="game-score-val">0</span></div>
+			<div class="game-lives">生命: <span id="game-lives-val">❤️❤️❤️</span></div>
+			<div id="game-over-screen" style="display: none;">
+				<h2>GAME OVER</h2>
+				<p>最终得分: <span id="final-score">0</span></p>
+				<button id="restart-game-btn">再试一次</button>
+				<button id="exit-game-btn">退出游戏</button>
+			</div>
+		</div>
+
+		<!-- 改进的控制面板 -->
+		<div class="control-panel" id="main-control-panel">
+			<div class="panel-section">
+				<label>基础模型</label>
+				<div class="btn-group scroll-group">
 					<button class="model-btn" data-model="HEART">❤️ 爱心</button>
 					<button class="model-btn" data-model="FLOWER">🌸 花朵</button>
 					<button class="model-btn" data-model="SATURN">🪐 土星</button>
@@ -75,9 +88,32 @@
 					<button class="model-btn" data-model="FIREWORKS">🎆 烟花</button>
 				</div>
 			</div>
-			<div class="panel-row">
-				<label>粒子颜色:</label>
-				<input type="color" id="particle-color" value="#00d9ff">
+
+			<div class="panel-section">
+				<label>12 星座</label>
+				<div class="btn-group scroll-group constellation-group">
+					<button class="model-btn" data-model="ARIES">♈ 白羊</button>
+					<button class="model-btn" data-model="TAURUS">♉ 金牛</button>
+					<button class="model-btn" data-model="GEMINI">♊ 双子</button>
+					<button class="model-btn" data-model="CANCER">♋ 巨蟹</button>
+					<button class="model-btn" data-model="LEO">♌ 狮子</button>
+					<button class="model-btn" data-model="VIRGO">♍ 处女</button>
+					<button class="model-btn" data-model="LIBRA">♎ 天秤</button>
+					<button class="model-btn" data-model="SCORPIO">♏ 天蝎</button>
+					<button class="model-btn" data-model="SAGITTARIUS">♐ 射手</button>
+					<button class="model-btn" data-model="CAPRICORN">♑ 摩羯</button>
+					<button class="model-btn" data-model="AQUARIUS">♒ 水瓶</button>
+					<button class="model-btn" data-model="PISCES">♓ 双鱼</button>
+				</div>
+			</div>
+
+			<div class="panel-row"
+				style="margin-top: 10px; display: flex; align-items: center; justify-content: space-between;">
+				<div>
+					<label style="margin-bottom: 2px;">粒子颜色</label>
+					<input type="color" id="particle-color" value="#00d9ff">
+				</div>
+				<button id="start-game-btn" class="game-btn">🎮 切水果</button>
 			</div>
 		</div>
 
