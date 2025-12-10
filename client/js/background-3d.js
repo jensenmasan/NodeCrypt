@@ -1015,10 +1015,7 @@ function animate() {
     }
 
     // 更新游戏逻辑
-    if (isGameMode) {
-        updateGameLogic();
-        updateBladeTrail();
-    }
+    // (已移除切水果游戏)
 
     // 星空旋转
     if (stars) {
@@ -1027,11 +1024,10 @@ function animate() {
     }
 
     // 相机移动
-    if (!isGameMode) {
-        camera.position.x = Math.sin(time * 0.2) * 5;
-        camera.position.y = 20 + Math.cos(time * 0.15) * 3;
-        camera.lookAt(0, 0, 0);
-    }
+    // 相机移动
+    camera.position.x = Math.sin(time * 0.2) * 5;
+    camera.position.y = 20 + Math.cos(time * 0.15) * 3;
+    camera.lookAt(0, 0, 0);
 
     renderer.render(scene, camera);
 }
