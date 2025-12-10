@@ -374,52 +374,100 @@ function updateTextShape(text) {
     }
 }
 
-// 新增：从 Canvas 获取文字点阵 (支持中文 + 满屏模式)
+// 新增：从 Canvas 获取文字点阵 (支持中文 + 满屏模式 + 自动竖屏适配)
 function createPointsFromCanvas(text, isPattern = false) {
     const canvas = document.createElement('canvas');
     const ctx = canvas.getContext('2d');
 
-    // 如果是 Pattern 模式，使用 50px 字体，既不算太大也能看清细节
-    const fontSize = isPattern ? 50 : 60;
+    // 检测是否为移动端 (屏幕宽度小于 800)
+    const isMobile = window.innerWidth < 800;
+    // 如果是移动端，或者文字特别长且非Pattern模式，强制竖排
+    const useVertical = isMobile || (text.length > 8 && !isPattern && window.innerWidth < 1000);
+
+    // 字体设置
+    let fontSize = 40; // PC默认
+    if (isPattern) fontSize = isMobile ? 30 : 40; // Pattern模式：手机30，PC 40
+    else fontSize = isMobile ? 40 : 60;          // 主标题：手机40，PC 60
+
     const fontFamily = 'Arial, "Microsoft YaHei", sans-serif';
     ctx.font = `bold ${fontSize}px ${fontFamily}`;
 
+    // 测量
     const metrics = ctx.measureText(text);
-    const textWidth = Math.ceil(metrics.width);
-    const textHeight = Math.ceil(fontSize * 1.5);
+
+    let textWidth, textHeight;
+
+    if (useVertical) {
+        // 竖排：宽 = 字宽，高 = 字高 * 字数
+        textWidth = fontSize * 1.5;
+        textHeight = (fontSize * 1.2) * text.length;
+    } else {
+        // 横排
+        textWidth = Math.ceil(metrics.width);
+        textHeight = Math.ceil(fontSize * 1.5);
+    }
 
     if (isPattern) {
         // 满屏模式：创建一个更大大画布，循环绘制
-        const screenW = 1500;
-        const screenH = 1200;
+        const screenW = isMobile ? 800 : 1500;
+        const screenH = isMobile ? 1200 : 1200;
         canvas.width = screenW;
         canvas.height = screenH;
 
         ctx.fillStyle = '#ffffff';
         ctx.font = `bold ${fontSize}px ${fontFamily}`;
-        ctx.textAlign = 'left';
-        ctx.textBaseline = 'top';
+        ctx.textAlign = 'center'; // 竖排时居中比较好对齐
+        ctx.textBaseline = 'middle';
 
-        const cols = Math.floor(screenW / (textWidth + 40));
-        const rows = Math.floor(screenH / (textHeight + 20));
+        // 间距配置
+        let itemW = useVertical ? (fontSize * 2.5) : (textWidth + 40);
+        let itemH = useVertical ? (textHeight + 50) : (textHeight + 20);
+
+        // 防止除以0
+        if (itemW < 1) itemW = 50;
+        if (itemH < 1) itemH = 50;
+
+        const cols = Math.floor(screenW / itemW) + 1;
+        const rows = Math.floor(screenH / itemH) + 1;
 
         for (let r = 0; r < rows; r++) {
             for (let c = 0; c < cols; c++) {
-                // 错位排列
-                const offsetX = (r % 2 === 0) ? 0 : (textWidth / 2);
-                ctx.fillText(text, c * (textWidth + 40) + offsetX, r * (textHeight + 20));
+                const cx = c * itemW + (r % 2 === 0 ? 0 : itemW / 2);
+                const cy = r * itemH;
+
+                if (useVertical) {
+                    // 绘制竖排文字
+                    for (let i = 0; i < text.length; i++) {
+                        const char = text[i];
+                        ctx.fillText(char, cx + textWidth / 2, cy + i * (fontSize * 1.2) + fontSize / 2);
+                    }
+                } else {
+                    ctx.textAlign = 'left';
+                    ctx.textBaseline = 'top';
+                    const offsetX = (r % 2 === 0) ? 0 : (textWidth / 2);
+                    ctx.fillText(text, c * (textWidth + 40) + offsetX, r * (textHeight + 20));
+                }
             }
         }
     } else {
-        // 普通单行大字
-        canvas.width = textWidth + 20;
-        canvas.height = textHeight + 20;
+        // 普通大字 (单个)
+        canvas.width = textWidth + 40;
+        canvas.height = textHeight + 40;
 
         ctx.font = `bold ${fontSize}px ${fontFamily}`;
         ctx.fillStyle = '#ffffff';
         ctx.textAlign = 'center';
         ctx.textBaseline = 'middle';
-        ctx.fillText(text, canvas.width / 2, canvas.height / 2);
+
+        if (useVertical) {
+            for (let i = 0; i < text.length; i++) {
+                const char = text[i];
+                // 居中绘制每个字
+                ctx.fillText(char, canvas.width / 2, 20 + i * (fontSize * 1.2) + fontSize / 2);
+            }
+        } else {
+            ctx.fillText(text, canvas.width / 2, canvas.height / 2);
+        }
     }
 
     // 读取像素
@@ -429,6 +477,8 @@ function createPointsFromCanvas(text, isPattern = false) {
 
     // 采样步长 (1=最精细)
     const step = 1;
+    // 缩放系数：手机端要稍微小一点以免爆屏
+    const scaleFactor = isMobile ? 0.8 : 1.2;
 
     for (let y = 0; y < canvas.height; y += step) {
         for (let x = 0; x < canvas.width; x += step) {
@@ -437,13 +487,13 @@ function createPointsFromCanvas(text, isPattern = false) {
                 // 坐标映射
                 let px, py, pz;
                 if (isPattern) {
-                    // 映射回中心
-                    px = (x - canvas.width / 2) * 1.2;
-                    py = -(y - canvas.height / 2) * 1.2;
-                    pz = 0; // 满屏模式下完全扁平，不加随机厚度，保证最清晰
+                    px = (x - canvas.width / 2) * scaleFactor;
+                    py = -(y - canvas.height / 2) * scaleFactor;
+                    pz = 0;
                 } else {
-                    px = (x - canvas.width / 2) * 2.0;
-                    py = -(y - canvas.height / 2) * 2.0;
+                    // 主标题：稍微拉开一点
+                    px = (x - canvas.width / 2) * (scaleFactor * 1.5);
+                    py = -(y - canvas.height / 2) * (scaleFactor * 1.5);
                     pz = (Math.random() - 0.5) * 10;
                 }
                 points.push(new THREE.Vector3(px, py, pz));
