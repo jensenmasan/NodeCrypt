@@ -140,11 +140,11 @@ export function addMsg(text, isHistory = false, msgType = 'text', timestamp = nu
 			</div>`;
 		}
 		// Extract the actual message content
-		if (text.text !== undefined) {
-			messageText = text.text;
-		} else if (text.images || text.image || text.audio) {
+		if (text.images || text.image || text.audio) {
 			// Keep the object for image/voice messages
 			messageText = text;
+		} else if (text.text !== undefined) {
+			messageText = text.text;
 		}
 	}
 
