@@ -79,9 +79,114 @@ function updateTextShape(text) {
 
             targetPositions[i] = new THREE.Vector3(x * randomScale, y * randomScale, z * randomScale);
         }
+    } else if (text === "FLOWER") {
+        // 🌸 花朵形状 (3D 玫瑰/莲花)
+        for (let i = 0; i < particleCount; i++) {
+            const t = Math.random() * Math.PI * 2;
+            const p = (Math.random() - 0.5) * Math.PI; // latitude
+
+            // 玫瑰曲线方程 r = cos(k*theta)
+            const k = 4; // 4 petals
+            const r = Math.cos(k * t) * 20 + 10; // radius variation
+
+            // 转换为3D坐标
+            // 使用球坐标系变体
+            const x = r * Math.cos(t) * Math.cos(p);
+            const y = r * Math.sin(p) * 0.5 + Math.cos(r * 0.1) * 5; // 给一点高度变化
+            const z = r * Math.sin(t) * Math.cos(p);
+
+            targetPositions[i] = new THREE.Vector3(x, y, z);
+        }
+    } else if (text === "SATURN") {
+        // 🪐 土星形状
+        const ringParticleCount = Math.floor(particleCount * 0.7);
+        const planetParticleCount = particleCount - ringParticleCount;
+
+        for (let i = 0; i < particleCount; i++) {
+            if (i < planetParticleCount) {
+                // 星球主体 (球体)
+                const r = 15;
+                const theta = Math.random() * Math.PI * 2;
+                const phi = Math.acos(Math.random() * 2 - 1);
+
+                const x = r * Math.sin(phi) * Math.cos(theta);
+                const y = r * Math.sin(phi) * Math.sin(theta);
+                const z = r * Math.cos(phi);
+                targetPositions[i] = new THREE.Vector3(x, y, z);
+            } else {
+                // 土星环 (圆环)
+                const minR = 25;
+                const maxR = 40;
+                const r = minR + Math.random() * (maxR - minR);
+                const theta = Math.random() * Math.PI * 2;
+
+                const x = r * Math.cos(theta);
+                const z = r * Math.sin(theta);
+                const y = (Math.random() - 0.5) * 1; // 环很薄
+
+                // 倾斜环
+                const tilt = Math.PI / 6; // 30 degrees
+                const tiltedX = x * Math.cos(tilt) - y * Math.sin(tilt);
+                const tiltedY = x * Math.sin(tilt) + y * Math.cos(tilt);
+
+                targetPositions[i] = new THREE.Vector3(tiltedX, tiltedY, z);
+            }
+        }
+    } else if (text === "BUDDHA") {
+        // 🧘 简易佛像/冥想坐姿 (堆叠球体)
+        const headStart = 0;
+        const headEnd = Math.floor(particleCount * 0.15);
+        const bodyStart = headEnd;
+        const bodyEnd = Math.floor(particleCount * 0.5);
+        const legsStart = bodyEnd;
+
+        for (let i = 0; i < particleCount; i++) {
+            let x, y, z;
+            if (i < headEnd) { // 头部
+                const r = 8;
+                const theta = Math.random() * Math.PI * 2;
+                const phi = Math.acos(Math.random() * 2 - 1);
+                x = r * Math.sin(phi) * Math.cos(theta);
+                y = r * Math.sin(phi) * Math.sin(theta) + 20; // 抬高
+                z = r * Math.cos(phi);
+            } else if (i < bodyEnd) { // 身体 (椭球)
+                const r = 14;
+                const theta = Math.random() * Math.PI * 2;
+                const phi = Math.acos(Math.random() * 2 - 1);
+                x = r * Math.sin(phi) * Math.cos(theta) * 1.2; // 宽一点
+                y = r * Math.sin(phi) * Math.sin(theta);
+                z = r * Math.cos(phi) * 0.8;
+            } else { // 盘腿/底座 (扁椭球)
+                const r = 22;
+                const theta = Math.random() * Math.PI * 2;
+                const phi = Math.acos(Math.random()); // 上半球
+                x = r * Math.sin(phi) * Math.cos(theta) * 1.5;
+                y = -r * Math.cos(phi) * 0.5 - 10;
+                z = r * Math.sin(phi) * Math.sin(theta) * 1.2;
+            }
+            targetPositions[i] = new THREE.Vector3(x, y, z);
+        }
+    } else if (text === "FIREWORKS") {
+        // 🎆 烟花爆炸 (射线球)
+        for (let i = 0; i < particleCount; i++) {
+            // 随机方向
+            const theta = Math.random() * Math.PI * 2;
+            const phi = Math.acos(Math.random() * 2 - 1);
+
+            // 随机半径，集中在中心，有长尾巴
+            // 使用幂函数让粒子集中在核心，少数射出很远
+            const r = Math.pow(Math.random(), 2) * 60;
+
+            const x = r * Math.sin(phi) * Math.cos(theta);
+            const y = r * Math.sin(phi) * Math.sin(theta);
+            const z = r * Math.cos(phi);
+
+            targetPositions[i] = new THREE.Vector3(x, y, z);
+        }
     } else {
         if (!font) return;
 
+        // 默认文字处理逻辑
         const textGeo = new THREE.TextGeometry(text, {
             font: font,
             size: 20,
@@ -125,7 +230,59 @@ export function init3DGestureSystem() {
 
     initThree();
     initMediaPipe();
+
+    initUIControls(); // 初始化UI事件
     animate();
+}
+
+// 新增：初始化UI控制事件
+function initUIControls() {
+    // 模型按钮
+    const modelBtns = document.querySelectorAll('.model-btn');
+    modelBtns.forEach(btn => {
+        btn.addEventListener('click', (e) => {
+            // 移除其他激活状态
+            modelBtns.forEach(b => b.classList.remove('active'));
+            // 激活当前
+            e.currentTarget.classList.add('active');
+
+            const model = e.currentTarget.getAttribute('data-model');
+            isAutoMode = false; // 停止自动轮播
+            updateTextShape(model);
+        });
+    });
+
+    // 颜色选择器
+    const colorPicker = document.getElementById('particle-color');
+    if (colorPicker) {
+        colorPicker.addEventListener('input', (e) => {
+            const hex = e.target.value;
+            const color = new THREE.Color(hex);
+            isAutoMode = false;
+
+            // 更新当前颜色配置
+            const newConfig = {
+                primary: color,
+                secondary: color.clone().offsetHSL(0, 0, -0.2), // 稍微暗一点作为副色
+                glow: color.clone().offsetHSL(0, 0, 0.2) // 稍微亮一点作为发光
+            };
+            updateParticleColor(newConfig);
+        });
+    }
+
+    // 全屏按钮
+    const fullscreenBtn = document.getElementById('fullscreen-btn');
+    if (fullscreenBtn) {
+        fullscreenBtn.addEventListener('click', () => {
+            if (!document.fullscreenElement) {
+                document.documentElement.requestFullscreen();
+            } else {
+                if (document.exitFullscreen) {
+                    document.exitFullscreen();
+                }
+            }
+        });
+    }
 }
 
 // 新增：清理函数，用于登录成功后关闭3D系统
@@ -402,7 +559,7 @@ function initMediaPipe() {
     });
 
     hands.setOptions({
-        maxNumHands: 1,
+        maxNumHands: 2,
         modelComplexity: 1,
         minDetectionConfidence: 0.5,
         minTrackingConfidence: 0.5
@@ -430,107 +587,112 @@ function onHandsResults(results) {
         isAutoMode = false;
 
         // 显示UI面板
-        if (uiLayer) uiLayer.classList.add('visible');
-
-        const landmarks = results.multiHandLandmarks[0];
-
-        // --- 记录食指指尖轨迹 (用于绘图) ---
-        const indexTip = landmarks[8];
-        // 转换坐标系: MediaPipe(0~1) -> Three.js(场景坐标)
-        // 视口宽高比例适配
-        const aspect = window.innerWidth / window.innerHeight;
-        const visibleHeight = 150; // 近似可见区域高度
-        const visibleWidth = visibleHeight * aspect;
-
-        const targetX = (indexTip.x - 0.5) * -visibleWidth; // 镜像X
-        const targetY = (indexTip.y - 0.5) * -visibleHeight; // 反转Y
-        const targetZ = 0; // 投影到平面
-
-        fingerTrail.unshift(new THREE.Vector3(targetX, targetY, targetZ));
-        if (fingerTrail.length > TRAIL_LENGTH) {
-            fingerTrail.pop();
+        if (uiLayer) {
+            uiLayer.classList.add('visible');
+            // 确保 pointer-events 正常 (某些情况下被 CSS 覆盖)
+            // uiLayer.style.pointerEvents = 'none'; // 容器本身不阻挡
         }
 
-        // 1. 计算手势 (简单的手指计数法)
-        const fingers = countFingers(landmarks);
+        let totalSpread = 0;
+        let handCount = 0;
 
-        // 防止抖动，只有变化时才更新文字
-        let newText = currentText;
-        let newColor = colorPalette[0];
-        let gestureName = "未知";
+        // 遍历所有检测到的手
+        for (const landmarks of results.multiHandLandmarks) {
+            handCount++;
 
-        if (fingers[1] && !fingers[2] && !fingers[3] && !fingers[4]) {
-            // 仅食指 -> 自由绘图模式
-            currentGesture = 1;
-            // newText 不变，维持现状
-            newColor = colorPalette[1];
-            gestureName = "食指 (绘图)";
-        } else if (fingers[1] && fingers[2] && !fingers[3] && !fingers[4]) {
-            // 食指+中指 -> 手势 2
-            currentGesture = 2;
-            newText = "TECH";
-            newColor = colorPalette[2];
-            gestureName = "2 (科技)";
-        } else if (fingers[1] && fingers[2] && fingers[3] && !fingers[4]) {
-            // 食指+中指+无名指 -> 手势 3
-            currentGesture = 3;
-            newText = "ART";
-            newColor = colorPalette[3];
-            gestureName = "3 (艺术)";
-        } else if (fingers[0] && fingers[1] && !fingers[2] && !fingers[3] && fingers[4]) {
-            // 🤟 I Love You 手势 (拇指+食指+小指) -> 爱心
-            currentGesture = 4;
-            newText = "HEART"; // 这里会触发 updateTextShape 生成心形
-            newColor = colorPalette[4]; // 红色
-            gestureName = "🤟 (Love)";
-        } else if (fingers[0] && fingers[1] && fingers[2] && fingers[3] && fingers[4]) {
-            // 🖐 五指张开 -> 2025 新年快乐
-            currentGesture = 5;
-            newText = "2025";
-            newColor = colorPalette[5]; // 金色
-            gestureName = "🖐 (2025)";
-        } else {
-            // 其他手势 -> 恢复默认
-            currentGesture = 0;
-            // newText = "NODECRYPT"; 
-            gestureName = "自由交互";
-            if (currentText !== "NODECRYPT" && currentText !== "FUTURE" && currentText !== "TECH" && currentText !== "ART" && currentText !== "HEART" && currentText !== "2025") {
-                newText = "NODECRYPT";
+            // --- 记录食指指尖轨迹 (仅使用第一只手用于绘图) ---
+            if (handCount === 1) {
+                const indexTip = landmarks[8];
+                const aspect = window.innerWidth / window.innerHeight;
+                const visibleHeight = 150;
+                const visibleWidth = visibleHeight * aspect;
+                const targetX = (indexTip.x - 0.5) * -visibleWidth;
+                const targetY = (indexTip.y - 0.5) * -visibleHeight;
+                const targetZ = 0;
+
+                fingerTrail.unshift(new THREE.Vector3(targetX, targetY, targetZ));
+                if (fingerTrail.length > TRAIL_LENGTH) fingerTrail.pop();
+
+                // 手势识别 (仅第一只手用于切换文字)
+                const fingers = countFingers(landmarks);
+                let newText = currentText;
+                let newColor = null; // null 表示保持当前颜色，除非有明确手势
+                let gestureName = "未知";
+
+                if (fingers[1] && !fingers[2] && !fingers[3] && !fingers[4]) {
+                    currentGesture = 1; // 绘图
+                    gestureName = "食指 (绘图)";
+                } else if (fingers[1] && fingers[2] && !fingers[3] && !fingers[4]) {
+                    currentGesture = 2; // Tech
+                    newText = "TECH";
+                    gestureName = "2 (科技)";
+                } else if (fingers[1] && fingers[2] && fingers[3] && !fingers[4]) {
+                    currentGesture = 3; // Art
+                    newText = "ART";
+                    gestureName = "3 (艺术)";
+                } else if (fingers[0] && fingers[1] && !fingers[2] && !fingers[3] && fingers[4]) {
+                    currentGesture = 4; // Heart
+                    newText = "HEART";
+                    gestureName = "🤟 (Love)";
+                } else if (fingers[0] && fingers[1] && fingers[2] && fingers[3] && fingers[4]) {
+                    // High Five - 2025
+                    currentGesture = 5;
+                    newText = "2025";
+                    gestureName = "🖐 (2025)";
+                } else {
+                    currentGesture = 0;
+                    gestureName = "自由交互";
+                }
+
+                if (gestureStatus) gestureStatus.innerText = gestureName;
+
+                // 只有当文字确实改变了，才更新形状
+                if (newText !== currentText) {
+                    // 如果是手势触发的，且当前不是手动选择模式(虽然这里简化了逻辑)
+                    // 只有当不是在绘制模式时才切换
+                    if (currentGesture !== 1) {
+                        updateTextShape(newText);
+                        // 为特定手势设置颜色
+                        if (newText === "TECH") updateParticleColor(colorPalette[2]);
+                        if (newText === "ART") updateParticleColor(colorPalette[3]);
+                        if (newText === "HEART") updateParticleColor(colorPalette[4]);
+                        if (newText === "2025") updateParticleColor(colorPalette[5]);
+                        if (newText === "NODECRYPT") updateParticleColor(colorPalette[1]);
+                    }
+                }
             }
+
+            // 计算张合程度 (累加)
+            const thumbTip = landmarks[4];
+            const indexTip = landmarks[8];
+            const distance = Math.sqrt(
+                Math.pow(thumbTip.x - indexTip.x, 2) +
+                Math.pow(thumbTip.y - indexTip.y, 2)
+            );
+
+            // 归一化
+            let rawSpread = (distance - 0.05) * 5;
+            totalSpread += Math.max(0, Math.min(1, rawSpread));
         }
 
-        if (newText !== currentText) {
-            updateTextShape(newText);
-            updateParticleColor(newColor);
+        // 平均张合程度
+        if (handCount > 0) {
+            handSpread = totalSpread / handCount;
         }
-
-        if (gestureStatus) gestureStatus.innerText = gestureName;
-
-        // 2. 计算张合程度 (Thumb Tip 到 Index Tip 的距离)
-        const thumbTip = landmarks[4];
-        // const indexTip = landmarks[8];
-        const distance = Math.sqrt(
-            Math.pow(thumbTip.x - indexTip.x, 2) +
-            Math.pow(thumbTip.y - indexTip.y, 2)
-        );
-
-        // 归一化距离 (大概范围 0.02 到 0.2)
-        let rawSpread = (distance - 0.05) * 5;
-        handSpread = Math.max(0, Math.min(1, rawSpread));
 
         if (spreadStatus) spreadStatus.innerText = Math.round(handSpread * 100) + "%";
 
     } else {
-        // 没有检测到手 - 检查是否进入自动模式
-        if (Date.now() - lastHandTime > 2000) { // 2秒无操作
+        // 没有检测到手
+        if (Date.now() - lastHandTime > 2000 && !document.querySelector('.model-btn.active')) {
+            // 只有当没有手动激活任何模型按钮时，才恢复自动模式
             isAutoMode = true;
-            // 隐藏UI面板
-            if (uiLayer) uiLayer.classList.remove('visible');
+        } else if (Date.now() - lastHandTime > 5000) {
+            // 如果手动激活了，但很久没操作，也可以恢复自动？暂时不恢复，保持手动选择
         }
 
         if (gestureStatus) gestureStatus.innerText = "未检测到手";
-        // handSpread = 0; // 自动模式下不重置，由动画控制
-        fingerTrail = []; // 清空轨迹
+        fingerTrail = [];
     }
 }
 
@@ -657,9 +819,24 @@ function animate() {
                 trailPoint.y + (Math.random() - 0.5) * spread,
                 trailPoint.z + (Math.random() - 0.5) * spread
             );
+            target = new THREE.Vector3(
+                trailPoint.x + (Math.random() - 0.5) * spread,
+                trailPoint.y + (Math.random() - 0.5) * spread,
+                trailPoint.z + (Math.random() - 0.5) * spread
+            );
         } else {
             // 默认模式：飞向文字目标点
-            target = targetPositions[i] || new THREE.Vector3(0, 0, 0);
+            const baseTarget = targetPositions[i] || new THREE.Vector3(0, 0, 0);
+
+            // 缩放效果 based on handSpread (0~1)
+            // 范围：0.8x (握拳) 到 1.3x (张开)
+            const scale = 0.8 + handSpread * 0.5;
+
+            target = new THREE.Vector3(
+                baseTarget.x * scale,
+                baseTarget.y * scale,
+                baseTarget.z * scale
+            );
         }
 
         // 噪声运动

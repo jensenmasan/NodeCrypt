@@ -58,12 +58,35 @@
 			当前手势: <span id="gesture-status" class="status">无</span><br>
 			扩散程度: <span id="spread-status" class="status">0%</span>
 		</p>
-		<p style="font-size: 12px; color: #888;">
-			手势 1: 文字 FUTURE<br>
-			手势 2: 文字 TECH<br>
-			手势 3: 文字 ART<br>
-			张合手指控制扩散
+		// 替换原有说明文字，增加控制面板
+		手势 1-3: 文字变换 | 🤟: 爱心 | 🖐: 2025<br>
+		张合手指控制粒子扩散
 		</p>
+
+		<!-- 新增控制面板 -->
+		<div class="control-panel">
+			<div class="panel-row">
+				<label>模型选择:</label>
+				<div class="btn-group">
+					<button class="model-btn" data-model="HEART">❤️ 爱心</button>
+					<button class="model-btn" data-model="FLOWER">🌸 花朵</button>
+					<button class="model-btn" data-model="SATURN">🪐 土星</button>
+					<button class="model-btn" data-model="BUDDHA">🧘 佛像</button>
+					<button class="model-btn" data-model="FIREWORKS">🎆 烟花</button>
+				</div>
+			</div>
+			<div class="panel-row">
+				<label>粒子颜色:</label>
+				<input type="color" id="particle-color" value="#00d9ff">
+			</div>
+		</div>
+
+		<button id="fullscreen-btn" class="fullscreen-btn" title="全屏模式">
+			<svg width="24" height="24" viewBox="0 0 24 24" fill="none" class="fullscreen-icon">
+				<path d="M4 8V4m0 0h4M4 4l5 5m11-5v4m0-4h-4m4 4l-5 5M4 16v4m0 0h4m-4 0l5-5m11 5v-4m0 4h-4m4-4l-5-5"
+					stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" />
+			</svg>
+		</button>
 	</div>
 	<div id="video-container">
 		<video id="input-video"></video>

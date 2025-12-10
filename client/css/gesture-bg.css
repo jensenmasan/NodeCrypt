@@ -130,6 +130,105 @@ body {
     display: inline-block;
 }
 
+/* Control Panel Styles */
+.control-panel {
+    margin-top: 15px;
+    padding-top: 10px;
+    border-top: 1px solid rgba(255, 255, 255, 0.1);
+    pointer-events: auto;
+    /* Enable interaction */
+}
+
+.panel-row {
+    margin-bottom: 10px;
+}
+
+.panel-row label {
+    display: block;
+    margin-bottom: 5px;
+    font-size: 11px;
+    color: rgba(255, 255, 255, 0.6);
+    text-transform: uppercase;
+}
+
+.btn-group {
+    display: grid;
+    grid-template-columns: repeat(2, 1fr);
+    gap: 5px;
+}
+
+.model-btn {
+    background: rgba(255, 255, 255, 0.1);
+    border: 1px solid rgba(255, 255, 255, 0.05);
+    color: rgba(255, 255, 255, 0.8);
+    padding: 6px 10px;
+    font-size: 11px;
+    border-radius: 6px;
+    cursor: pointer;
+    transition: all 0.2s ease;
+    text-align: left;
+    display: flex;
+    align-items: center;
+    gap: 5px;
+}
+
+.model-btn:hover {
+    background: rgba(255, 255, 255, 0.2);
+    color: #fff;
+    transform: translateY(-1px);
+}
+
+.model-btn.active {
+    background: rgba(0, 217, 255, 0.2);
+    border-color: rgba(0, 217, 255, 0.5);
+    color: #00d9ff;
+}
+
+#particle-color {
+    -webkit-appearance: none;
+    appearance: none;
+    /* Standard property */
+    border: none;
+    width: 100%;
+    height: 25px;
+    border-radius: 4px;
+    background: transparent;
+    cursor: pointer;
+}
+
+#particle-color::-webkit-color-swatch-wrapper {
+    padding: 0;
+}
+
+#particle-color::-webkit-color-swatch {
+    border: 1px solid rgba(255, 255, 255, 0.2);
+    border-radius: 4px;
+}
+
+/* Fullscreen Button */
+.fullscreen-btn {
+    position: absolute;
+    top: 15px;
+    right: 15px;
+    background: rgba(255, 255, 255, 0.1);
+    border: none;
+    width: 30px;
+    height: 30px;
+    border-radius: 8px;
+    color: rgba(255, 255, 255, 0.8);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    cursor: pointer;
+    transition: all 0.2s;
+    pointer-events: auto;
+}
+
+.fullscreen-btn:hover {
+    background: rgba(255, 255, 255, 0.25);
+    color: white;
+}
+
 /* 加载提示 - 现代化设计 */
 #loading {
     position: absolute;
