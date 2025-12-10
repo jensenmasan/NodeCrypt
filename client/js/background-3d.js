@@ -42,6 +42,9 @@ let windowHalfX = window.innerWidth / 2;
 let windowHalfY = window.innerHeight / 2;
 let interactionForce = 0; // 交互力场强度 (-1: 吸入, 0: 无, 1: 排斥)
 let forceRadius = 100; // 力场半径
+let shockwave = 0; // 冲击波强度
+let colorCycle = 0; // 颜色循环
+
 
 let uiHideTimer = null; // 控制面板自动隐藏计时器
 const UI_HIDE_DELAY = 3000; // 3秒无操作隐藏
@@ -521,11 +524,20 @@ function onDocumentMouseDown(event) {
     isMouseDown = true;
     lastMouseMoveTime = Date.now();
     isAutoMode = false;
+
+    // 酷炫效果：点击产生冲击波
+    if (event.button === 0) { // 左键
+        shockwave = 1.0;
+        // 随机换个颜色
+        const randomPalette = colorPalette[Math.floor(Math.random() * 7)];
+        if (randomPalette) updateParticleColor(randomPalette);
+    }
 }
 
 // 鼠标抬起事件
 function onDocumentMouseUp(event) {
     isMouseDown = false;
+    shockwave = 0;
 }
 
 // 新增：创建星空背景
@@ -710,7 +722,16 @@ function initMediaPipe() {
     cameraUtils.start().catch(err => {
         console.warn("Camera init failed, falling back to Auto Mode", err);
         isAutoMode = true; // 确保启用自动模式
-        // 这里可以添加UI提示，说明未检测到摄像头
+        // 隐藏视频预览框，因为没摄像头
+        const videoContainer = document.getElementById('video-container');
+        if (videoContainer) videoContainer.style.display = 'none';
+
+        const uiLayer = document.getElementById('ui-layer');
+        if (uiLayer) {
+            // 修改提示文字
+            const status = document.getElementById('gesture-status');
+            if (status) status.innerText = "鼠标交互模式";
+        }
     });
 }
 
@@ -1058,6 +1079,28 @@ function animate() {
         if (isAutoMode) speedFactor = 0.05; // 自动模式慢一点
 
         const speed = Math.min(speedFactor + distance * 0.001, 0.3);
+
+        // 鼠标模式下的高级交互
+        if (!isAutoMode && Date.now() - lastHandTime > 2000) {
+            // 漩涡/黑洞效果 (按住Shift键)
+            let vortexX = 0, vortexY = 0, vortexZ = 0;
+            // 检查 shiftKey 状态需要从 mousemove event 获取，这里简化为一直有微弱漩涡，或者通过 isMouseDown 增强
+
+            // 冲击波效果 (点击触发)
+            if (shockwave > 0.01) {
+                const dx_mouse = px - (mouse.x * windowHalfX * 0.5); // 估算映射
+                const dy_mouse = py - (mouse.y * windowHalfY * 0.5);
+                const dist_mouse = Math.sqrt(dx_mouse * dx_mouse + dy_mouse * dy_mouse);
+
+                if (dist_mouse < 200) {
+                    const force = (1 - dist_mouse / 200) * shockwave * 50;
+                    dx += (dx_mouse / dist_mouse) * force;
+                    dy += (dy_mouse / dist_mouse) * force;
+                    dz += force; // 也向外推
+                }
+                shockwave *= 0.95; // 衰减
+            }
+        }
 
         const nextX = px + dx * speed;
         const nextY = py + dy * speed;
