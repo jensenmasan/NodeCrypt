@@ -722,6 +722,11 @@ function initThree() {
     document.addEventListener('mousedown', onDocumentMouseDown, false);
     document.addEventListener('mouseup', onDocumentMouseUp, false);
     document.addEventListener('dblclick', onDocumentDoubleClick, false); // 新增双击事件
+
+    // Touch events for mobile interaction
+    document.addEventListener('touchstart', onDocumentTouchStart, { passive: false });
+    document.addEventListener('touchmove', onDocumentTouchMove, { passive: false });
+    document.addEventListener('touchend', onDocumentTouchEnd, { passive: false });
 }
 
 // 新增：双击事件 - 触发新年祝福模式
@@ -817,7 +822,51 @@ function onDocumentMouseDown(event) {
 }
 
 // 鼠标抬起事件
+// 鼠标抬起事件
 function onDocumentMouseUp(event) {
+    isMouseDown = false;
+    shockwave = 0;
+}
+
+// --- 触摸事件支持 (移动端) ---
+
+function onDocumentTouchStart(event) {
+    if (event.touches.length === 1) {
+        event.preventDefault(); // 防止滚动
+        mouse.x = (event.touches[0].clientX / window.innerWidth) * 2 - 1;
+        mouse.y = -(event.touches[0].clientY / window.innerHeight) * 2 + 1;
+        isMouseDown = true;
+        lastMouseMoveTime = Date.now();
+        isAutoMode = false;
+
+        // 像点击一样产生冲击波
+        shockwave = 1.0;
+        const randomPalette = colorPalette[Math.floor(Math.random() * 7)];
+        if (randomPalette) updateParticleColor(randomPalette);
+
+        // 显示UI
+        const controlPanel = document.getElementById('main-control-panel');
+        if (controlPanel) {
+            controlPanel.classList.remove('hidden');
+            if (uiHideTimer) clearTimeout(uiHideTimer);
+            uiHideTimer = setTimeout(() => {
+                if (!controlPanel.matches(':hover')) controlPanel.classList.add('hidden');
+            }, UI_HIDE_DELAY);
+        }
+    }
+}
+
+function onDocumentTouchMove(event) {
+    if (event.touches.length === 1) {
+        event.preventDefault(); // 防止滚动
+        mouse.x = (event.touches[0].clientX / window.innerWidth) * 2 - 1;
+        mouse.y = -(event.touches[0].clientY / window.innerHeight) * 2 + 1;
+        lastMouseMoveTime = Date.now(); // 保持活跃，产生轨迹
+        isAutoMode = false;
+    }
+}
+
+function onDocumentTouchEnd(event) {
     isMouseDown = false;
     shockwave = 0;
 }
