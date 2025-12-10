@@ -623,61 +623,21 @@ function onDocumentDoubleClick(event) {
 }
 
 // 新增：新年祝福模式逻辑
+// 新增：新年祝福模式逻辑
+let isNewYearMode = false;
+
 function startNewYearMode() {
+    isNewYearMode = true;
     isAutoMode = false;
 
-    // 清除旧的定时器 (如果已存在)
+    // 清除旧的定时器
     if (fireworksInterval) clearInterval(fireworksInterval);
     if (window.typewriterTimer) clearTimeout(window.typewriterTimer);
 
-    const fullText = "马老师提前祝大家新年快乐";
-    let charIndex = 0;
-
-    // 定义一个类似打字机的序列函数
-    function playSequence() {
-        // 第一阶段：逐字显示
-        if (charIndex <= fullText.length) {
-            const subText = fullText.substring(0, charIndex);
-            if (subText.length > 0) {
-                // 使用 createPointsFromCanvas 直接生成对应文字
-                // 这里我们需要稍微修改 updateTextShape 的调用方式，或者新建一个直接调用的逻辑
-                // 为了复用现有架构，我们扩展 updateTextShape 支持直接传入自定义字符串
-                updateTextShape("CUSTOM:" + subText);
-            }
-
-            updateParticleColor({ primary: new THREE.Color(0xff0000), secondary: new THREE.Color(0xffd700), glow: new THREE.Color(0xffaa00) });
-
-            charIndex++;
-            // 字数越多，显示越快一点
-            window.typewriterTimer = setTimeout(playSequence, 300);
-        } else {
-            // 第二阶段：文字展示完毕，停留一会儿
-            // 此时已显示全句
-            window.typewriterTimer = setTimeout(() => {
-                // 第三阶段：放烟花
-                updateTextShape("FIREWORKS");
-                // 烟花时随机彩色
-                const p = [
-                    { primary: new THREE.Color(0xff0000), secondary: new THREE.Color(0xffff00), glow: new THREE.Color(0xffffff) },
-                    { primary: new THREE.Color(0x00ff00), secondary: new THREE.Color(0x00ffff), glow: new THREE.Color(0xffffff) },
-                    { primary: new THREE.Color(0x0000ff), secondary: new THREE.Color(0xff00ff), glow: new THREE.Color(0xffffff) }
-                ];
-                updateParticleColor(p[Math.floor(Math.random() * p.length)]);
-                shockwave = 2.0; // 强力炸开
-
-                // 烟花持续时间后，重新开始循环
-                window.typewriterTimer = setTimeout(() => {
-                    charIndex = 1; // 重置索引
-                    shockwave = 0;
-                    playSequence(); // 循环开始
-                }, 4000);
-            }, 2000);
-        }
-    }
-
-    // 启动序列
-    charIndex = 1;
-    playSequence();
+    // 立即显示全句
+    const fullText = "马老师祝大家新年快乐";
+    updateTextShape("CUSTOM:" + fullText);
+    updateParticleColor({ primary: new THREE.Color(0xff0000), secondary: new THREE.Color(0xffd700), glow: new THREE.Color(0xffaa00) });
 }
 
 // 鼠标移动事件
@@ -1332,6 +1292,21 @@ function animate() {
 
     if (isAutoMode && Date.now() - autoTimer > AUTO_SWITCH_INTERVAL * 50) { // 减慢自动切换
         // do auto logic
+    }
+
+    // 逻辑：如果处于新年模式，且鼠标很久没动（比如1秒），则重新显示文字
+    // 这样当用户在玩鼠标时是交互，一停下来就显示祝福
+    if (isNewYearMode && !isAutoMode && !isMouseDown) {
+        if (Date.now() - lastMouseMoveTime > 1000) {
+            if (currentText !== "CUSTOM:马老师祝大家新年快乐" && !isExploding) {
+                updateTextShape("CUSTOM:马老师祝大家新年快乐");
+                // 确保颜色正确
+                updateParticleColor({ primary: new THREE.Color(0xff0000), secondary: new THREE.Color(0xffd700), glow: new THREE.Color(0xffaa00) });
+            }
+        } else {
+            // 鼠标刚动，或者正在动，也许可以切换到“爆炸/打散”状态或者仅仅只有鼠标轨迹
+            // 这里不用特别处理，因为 animate 里的物理逻辑会处理 "follows mouse"
+        }
     }
 
     // 星空旋转
