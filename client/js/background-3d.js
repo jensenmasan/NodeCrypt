@@ -29,7 +29,9 @@ let isAutoMode = true;
 let autoTimer = 0;
 const AUTO_SWITCH_INTERVAL = 300;
 // 终极自动轮播内容： 文字 -> 数学几何 -> 祝福
-const autoTexts = ["NODECRYPT", "SPHERE", "FUTURE", "DNA", "TECH", "MOBIUS", "ART", "HEART", "HAPPY", "NEW", "YEAR", "2025"];
+const autoTexts = ["NODECRYPT", "SPHERE", "DNA", "TECH", "MOBIUS", "ART", "HEART", "HAPPY", "NEW", "YEAR", "2025",
+    "ARIES", "TAURUS", "GEMINI", "CANCER", "LEO", "VIRGO", "LIBRA", "SCORPIO", "SAGITTARIUS", "CAPRICORN", "AQUARIUS", "PISCES"
+];
 let autoTextIndex = 0;
 
 // 交互与物理引擎变量
@@ -182,6 +184,51 @@ function updateTextShape(text) {
             const z = r * Math.cos(phi);
 
             targetPositions[i] = new THREE.Vector3(x, y, z);
+        }
+    } else if (["ARIES", "TAURUS", "GEMINI", "CANCER", "LEO", "VIRGO", "LIBRA", "SCORPIO", "SAGITTARIUS", "CAPRICORN", "AQUARIUS", "PISCES"].includes(text)) {
+        // 🌌 12 星座生成逻辑
+        // 为了简化，我们使用程序化生成的"星座风格"连线图
+        // 每个星座有独特的特征点数量和分布
+
+        // 1. 生成几颗亮星 (主恒星)
+        const mainStarCount = 12 + Math.floor(Math.random() * 8); // 12-20颗主星
+        const stars = [];
+        for (let j = 0; j < mainStarCount; j++) {
+            stars.push(new THREE.Vector3(
+                (Math.random() - 0.5) * 120,
+                (Math.random() - 0.5) * 80,
+                (Math.random() - 0.5) * 40
+            ));
+        }
+
+        // 2. 将粒子分配给星星或连线
+        for (let i = 0; i < particleCount; i++) {
+            if (i < 200) {
+                // 200个粒子作为高亮主星 (光晕)
+                const starIdx = i % mainStarCount;
+                const star = stars[starIdx];
+                // 在星星周围随机抖动
+                targetPositions[i] = new THREE.Vector3(
+                    star.x + (Math.random() - 0.5) * 4,
+                    star.y + (Math.random() - 0.5) * 4,
+                    star.z + (Math.random() - 0.5) * 4
+                );
+            } else {
+                // 其他粒子构成星云或连线
+                // 随机选择两个星星，在它们之间连线
+                const starA = stars[Math.floor(Math.random() * mainStarCount)];
+                const starB = stars[Math.floor(Math.random() * mainStarCount)];
+                const t = Math.random(); // 插值系数
+
+                // 增加一些由于"重力"或"能量"导致的弯曲
+                const curve = Math.sin(t * Math.PI) * 20;
+
+                targetPositions[i] = new THREE.Vector3(
+                    starA.x * (1 - t) + starB.x * t,
+                    starA.y * (1 - t) + starB.y * t + curve,
+                    starA.z * (1 - t) + starB.z * t
+                );
+            }
         }
     } else {
         if (!font) return;
@@ -574,7 +621,11 @@ function initMediaPipe() {
         width: 320,
         height: 240
     });
-    cameraUtils.start();
+    cameraUtils.start().catch(err => {
+        console.warn("Camera init failed, falling back to Auto Mode", err);
+        isAutoMode = true; // 确保启用自动模式
+        // 这里可以添加UI提示，说明未检测到摄像头
+    });
 }
 
 function onHandsResults(results) {
@@ -598,6 +649,16 @@ function onHandsResults(results) {
 
         // 遍历所有检测到的手
         for (const landmarks of results.multiHandLandmarks) {
+
+            // 新增：识别到手势时，隐藏"进入系统"按钮，提供更纯净的体验
+            // 如果用户移开手，按钮在下面else块中暂时不恢复，或者通过其他方式(如点击屏幕)恢复
+            // 这里为了体验，一旦动手玩，就隐藏按钮。
+            const startScreen = document.getElementById('start-screen');
+            if (startScreen && startScreen.style.opacity !== '0') {
+                startScreen.style.transition = 'opacity 0.5s';
+                startScreen.style.opacity = '0';
+                startScreen.style.pointerEvents = 'none'; // 防止误触
+            }
             handCount++;
 
             // --- 记录食指指尖轨迹 (仅使用第一只手用于绘图) ---
@@ -693,6 +754,22 @@ function onHandsResults(results) {
 
         if (gestureStatus) gestureStatus.innerText = "未检测到手";
         fingerTrail = [];
+
+        // 如果手离开很久，可以考虑让进入按钮重新显示？
+        // 暂时不显示，因为用户可能正在欣赏自动动画。
+        // 如果需要登录，用户可以点击任意地方或者刷新？
+        // 其实 index.html 里有逻辑点击 start-login-btn 才能看到 login-container
+        // 如果我们把按钮隐藏了，用户怎么登录？
+        // 修改策略：手势消失5秒后，如果是自动模式，让按钮淡入回来
+        if (isAutoMode) {
+            const startScreen = document.getElementById('start-screen');
+            // 只有当登录框还没显示的时候才显示按钮
+            const loginContainer = document.getElementById('login-container');
+            if (startScreen && (!loginContainer || loginContainer.style.display === 'none')) {
+                startScreen.style.opacity = '1';
+                startScreen.style.pointerEvents = 'auto';
+            }
+        }
     }
 }
 
