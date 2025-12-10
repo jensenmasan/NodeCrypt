@@ -189,40 +189,56 @@ function updateTextShape(text) {
             targetPositions[i] = new THREE.Vector3(x, y, z);
         }
     } else if (text === "FIREWORKS") {
-        // 🎆 真实物理烟花
-        // 这里只分配初始位置（发射点），具体的爆炸飞散在 animate 中通过 isExploding 物理模拟实现
-
+        // 🎆 真实物理烟花 (升级版)
         isExploding = true;
 
-        // 重置所有粒子到中心附近的一簇或几个簇
+        // 1. 发射源：中心点加上一点随机偏移
+        const sourceCenter = new THREE.Vector3(0, 0, 0);
+
+        // 2. 颜色初始化：炸开瞬间是高亮白/金
+        const colors = geometry.attributes.color.array;
+
         for (let i = 0; i < particleCount; i++) {
-            // 随机几个发射源
-            const sourceX = (Math.random() - 0.5) * 50;
-            const sourceY = (Math.random() - 0.5) * 50;
-            const sourceZ = (Math.random() - 0.5) * 50;
-
-            // 初始位置
+            // 初始位置集中在一点
             const p = geometry.attributes.position.array;
-            p[i * 3] = sourceX;
-            p[i * 3 + 1] = sourceY;
-            p[i * 3 + 2] = sourceZ;
+            p[i * 3] = sourceCenter.x + (Math.random() - 0.5) * 2;
+            p[i * 3 + 1] = sourceCenter.y + (Math.random() - 0.5) * 2;
+            p[i * 3 + 2] = sourceCenter.z + (Math.random() - 0.5) * 2;
 
-            // 赋予随机爆炸速度 (球形分布)
-            const theta = Math.random() * Math.PI * 2;
-            const phi = Math.acos(Math.random() * 2 - 1);
-            const speed = 2 + Math.random() * 8; // 爆炸力度
+            // 速度向量：球壳分布 (Spherical Shell) 让烟花更像空心球
+            // 混合多种形态：80% 球壳, 20% 随机填充
+            let vx, vy, vz;
+            const speedBase = 3.5 + Math.random() * 2; // 爆炸速度
+
+            const u = Math.random();
+            const v = Math.random();
+            const theta = 2 * Math.PI * u;
+            const phi = Math.acos(2 * v - 1);
+
+            if (Math.random() > 0.2) {
+                // 球壳表面
+                vx = Math.sin(phi) * Math.cos(theta) * speedBase;
+                vy = Math.sin(phi) * Math.sin(theta) * speedBase;
+                vz = Math.cos(phi) * speedBase;
+            } else {
+                // 内部填充 / 爆炸碎片
+                const r = Math.pow(Math.random(), 1 / 3) * speedBase; // 均匀分布在球体内
+                vx = Math.sin(phi) * Math.cos(theta) * r;
+                vy = Math.sin(phi) * Math.sin(theta) * r;
+                vz = Math.cos(phi) * r;
+            }
 
             if (!explosionVelocities[i]) explosionVelocities[i] = new THREE.Vector3();
+            explosionVelocities[i].set(vx, vy, vz);
 
-            explosionVelocities[i].set(
-                speed * Math.sin(phi) * Math.cos(theta),
-                speed * Math.sin(phi) * Math.sin(theta),
-                speed * Math.cos(phi)
-            );
+            // 重置颜色为超亮白/金
+            colors[i * 3] = 1.0;
+            colors[i * 3 + 1] = 0.9;
+            colors[i * 3 + 2] = 0.6 + Math.random() * 0.4;
 
-            // 目标位置暂时设为 null 或忽略，因为我们由物理接管
             targetPositions[i] = new THREE.Vector3(0, 0, 0);
         }
+        geometry.attributes.color.needsUpdate = true;
     } else if (["ARIES", "TAURUS", "GEMINI", "CANCER", "LEO", "VIRGO", "LIBRA", "SCORPIO", "SAGITTARIUS", "CAPRICORN", "AQUARIUS", "PISCES"].includes(text)) {
         isExploding = false; // 退出爆炸模式
         // 🌌 12 星座生成逻辑
@@ -363,8 +379,8 @@ function createPointsFromCanvas(text, isPattern = false) {
     const canvas = document.createElement('canvas');
     const ctx = canvas.getContext('2d');
 
-    // 如果是 Pattern 模式，使用稍大一点的小号字体，保证清晰度
-    const fontSize = isPattern ? 40 : 60;
+    // 如果是 Pattern 模式，使用更小的字体 (20px)
+    const fontSize = isPattern ? 20 : 60;
     const fontFamily = 'Arial, "Microsoft YaHei", sans-serif';
     ctx.font = `bold ${fontSize}px ${fontFamily}`;
 
@@ -373,9 +389,9 @@ function createPointsFromCanvas(text, isPattern = false) {
     const textHeight = Math.ceil(fontSize * 1.5);
 
     if (isPattern) {
-        // 满屏模式：创建一个大画布，循环绘制
-        const screenW = 1000; // 扩大虚拟画布
-        const screenH = 800;
+        // 满屏模式：创建一个更大大画布，循环绘制
+        const screenW = 1200;
+        const screenH = 1000;
         canvas.width = screenW;
         canvas.height = screenH;
 
@@ -384,14 +400,14 @@ function createPointsFromCanvas(text, isPattern = false) {
         ctx.textAlign = 'left';
         ctx.textBaseline = 'top';
 
-        const cols = Math.floor(screenW / (textWidth + 50)); // 增加间距
-        const rows = Math.floor(screenH / (textHeight + 30));
+        const cols = Math.floor(screenW / (textWidth + 30)); // 间距适中
+        const rows = Math.floor(screenH / (textHeight + 15));
 
         for (let r = 0; r < rows; r++) {
             for (let c = 0; c < cols; c++) {
                 // 错位排列
                 const offsetX = (r % 2 === 0) ? 0 : (textWidth / 2);
-                ctx.fillText(text, c * (textWidth + 50) + offsetX, r * (textHeight + 30));
+                ctx.fillText(text, c * (textWidth + 30) + offsetX, r * (textHeight + 15));
             }
         }
     } else {
@@ -1176,9 +1192,6 @@ function animate() {
             } else if (nextText === "HAPPY" || nextText === "YEAR") {
                 // 多彩/橙色
                 colorKey = 3;
-            } else if (nextText === "NODECRYPT") {
-                // 青色 (品牌色)
-                colorKey = 1;
             } else {
                 // 随机
                 colorKey = Math.floor(Math.random() * 6);
@@ -1239,21 +1252,44 @@ function animate() {
         if (isExploding && explosionVelocities[i]) {
             const vel = explosionVelocities[i];
 
-            // 重力
-            vel.y -= 0.05;
+            // 重力 (稍微加大一点，增加真实感)
+            vel.y -= 0.08;
             // 空气阻力
-            vel.x *= 0.98;
-            vel.y *= 0.98;
-            vel.z *= 0.98;
+            vel.x *= 0.96;
+            vel.y *= 0.96;
+            vel.z *= 0.96;
 
             p.x += vel.x;
             p.y += vel.y;
             p.z += vel.z;
 
+            // 颜色冷却效果：逐渐变红/变暗
+            // 取当前速度大小作为"温度"参考
+            const speedSq = vel.x * vel.x + vel.y * vel.y + vel.z * vel.z;
+            const colors = geometry.attributes.color.array;
+
+            if (speedSq > 0.1) {
+                // 还在飞：闪烁
+                if (Math.random() > 0.95) {
+                    colors[i * 3] = 1; colors[i * 3 + 1] = 1; colors[i * 3 + 2] = 1; // 闪白光
+                } else {
+                    // 随速度变暗
+                    colors[i * 3] *= 0.99;
+                    colors[i * 3 + 1] *= 0.98; // 绿蓝衰减快 -> 变红
+                    colors[i * 3 + 2] *= 0.97;
+                }
+            } else {
+                // 速度慢了，熄灭
+                colors[i * 3] *= 0.95;
+                colors[i * 3 + 1] *= 0.95;
+                colors[i * 3 + 2] *= 0.95;
+            }
+
             // 如果掉太低，重置或让它消失
             if (p.y < -300) {
                 vel.set(0, 0, 0);
                 p.y = -300;
+                colors[i * 3] = 0; colors[i * 3 + 1] = 0; colors[i * 3 + 2] = 0;
             }
         }
         // 模式 B: 寻找目标点 (文字/形状)
@@ -1349,6 +1385,12 @@ function animate() {
         positions[i * 3] = p.x;
         positions[i * 3 + 1] = p.y;
         positions[i * 3 + 2] = p.z;
+    }
+
+
+    // 如果是爆炸模式，需要更新颜色缓冲
+    if (isExploding) {
+        geometry.attributes.color.needsUpdate = true;
     }
 
     geometry.attributes.position.needsUpdate = true;
