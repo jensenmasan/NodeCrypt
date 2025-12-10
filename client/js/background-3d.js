@@ -5,12 +5,15 @@
 let scene, camera, renderer;
 let particles, stars, connections;
 let geometry, starGeometry, lineGeometry;
-const particleCount = 8000; // 粒子总数 (增加)
+const particleCount = 20000; // 粒子总数 (大幅增加以支持精细文字)
 const particleData = []; // 存储每个粒子的物理状态
 let animationFrameId = null; // 用于取消动画循环
 
 // 目标形状的点集
 let targetPositions = [];
+let explosionVelocities = []; // 专用：烟花爆炸速度
+let isExploding = false; // 是否处于爆炸物理模式
+
 
 
 
@@ -71,6 +74,9 @@ const colorPalette = {
 // --- 3. 字体生成逻辑 (升级版：支持心形) ---
 function updateTextShape(text) {
     currentText = text;
+
+    // 默认关闭爆炸模式，除非是 FIREWORKS
+    if (text !== "FIREWORKS") isExploding = false;
 
     if (text === "HEART") {
         // 生成 3D 爱心形状
@@ -183,23 +189,42 @@ function updateTextShape(text) {
             targetPositions[i] = new THREE.Vector3(x, y, z);
         }
     } else if (text === "FIREWORKS") {
-        // 🎆 烟花爆炸 (射线球)
+        // 🎆 真实物理烟花
+        // 这里只分配初始位置（发射点），具体的爆炸飞散在 animate 中通过 isExploding 物理模拟实现
+
+        isExploding = true;
+
+        // 重置所有粒子到中心附近的一簇或几个簇
         for (let i = 0; i < particleCount; i++) {
-            // 随机方向
+            // 随机几个发射源
+            const sourceX = (Math.random() - 0.5) * 50;
+            const sourceY = (Math.random() - 0.5) * 50;
+            const sourceZ = (Math.random() - 0.5) * 50;
+
+            // 初始位置
+            const p = geometry.attributes.position.array;
+            p[i * 3] = sourceX;
+            p[i * 3 + 1] = sourceY;
+            p[i * 3 + 2] = sourceZ;
+
+            // 赋予随机爆炸速度 (球形分布)
             const theta = Math.random() * Math.PI * 2;
             const phi = Math.acos(Math.random() * 2 - 1);
+            const speed = 2 + Math.random() * 8; // 爆炸力度
 
-            // 随机半径，集中在中心，有长尾巴
-            // 使用幂函数让粒子集中在核心，少数射出很远
-            const r = Math.pow(Math.random(), 2) * 60;
+            if (!explosionVelocities[i]) explosionVelocities[i] = new THREE.Vector3();
 
-            const x = r * Math.sin(phi) * Math.cos(theta);
-            const y = r * Math.sin(phi) * Math.sin(theta);
-            const z = r * Math.cos(phi);
+            explosionVelocities[i].set(
+                speed * Math.sin(phi) * Math.cos(theta),
+                speed * Math.sin(phi) * Math.sin(theta),
+                speed * Math.cos(phi)
+            );
 
-            targetPositions[i] = new THREE.Vector3(x, y, z);
+            // 目标位置暂时设为 null 或忽略，因为我们由物理接管
+            targetPositions[i] = new THREE.Vector3(0, 0, 0);
         }
     } else if (["ARIES", "TAURUS", "GEMINI", "CANCER", "LEO", "VIRGO", "LIBRA", "SCORPIO", "SAGITTARIUS", "CAPRICORN", "AQUARIUS", "PISCES"].includes(text)) {
+        isExploding = false; // 退出爆炸模式
         // 🌌 12 星座生成逻辑
         // 为了简化，我们使用程序化生成的"星座风格"连线图
         // 每个星座有独特的特征点数量和分布
@@ -349,8 +374,9 @@ function createPointsFromCanvas(text) {
     const data = imageData.data;
     const points = [];
 
-    // 采样步长 (越小越精细，点越多)
-    const step = 3;
+    // 采样步长 (1=最精细，但点也是最多的)
+    // 为了保证马老师能看清，也是拼了，用 1
+    const step = 1;
 
     for (let y = 0; y < canvas.height; y += step) {
         for (let x = 0; x < canvas.width; x += step) {
@@ -1166,7 +1192,7 @@ function animate() {
     const dispersion = handSpread * 80;
 
     // 更新粒子连线
-    updateConnections(positions);
+    // updateConnections(positions); // 暂时禁用，因为粒子数太多，性能消耗大
 
     // --- 粒子运动逻辑 ---
     for (let i = 0; i < particleCount; i++) {
@@ -1174,116 +1200,139 @@ function animate() {
         const py = positions[i * 3 + 1];
         const pz = positions[i * 3 + 2];
 
-        let target;
+        const p = new THREE.Vector3(px, py, pz); // 临时Vector3用于物理计算
 
-        // 如果处于绘图模式 (手势1) 且有轨迹，粒子跟随手指
-        if (currentGesture === 1 && fingerTrail.length > 0) {
-            // 将粒子分配到轨迹的不同点上，形成长尾效果
-            // 使用 i % fingerTrail.length 可以让粒子均匀分布在轨迹上
-            const trailIndex = i % fingerTrail.length;
-            const trailPoint = fingerTrail[trailIndex];
+        // --- 物理更新核心 ---
+        // 模式 A: 爆炸物理模拟 (烟花)
+        if (isExploding && explosionVelocities[i]) {
+            const vel = explosionVelocities[i];
 
-            // 为了让线条有体积感，加一点随机抖动
-            const spread = 2.0;
-            target = new THREE.Vector3(
-                trailPoint.x + (Math.random() - 0.5) * spread,
-                trailPoint.y + (Math.random() - 0.5) * spread,
-                trailPoint.z + (Math.random() - 0.5) * spread
-            );
-            target = new THREE.Vector3(
-                trailPoint.x + (Math.random() - 0.5) * spread,
-                trailPoint.y + (Math.random() - 0.5) * spread,
-                trailPoint.z + (Math.random() - 0.5) * spread
-            );
-        } else {
-            // 默认模式：飞向文字目标点
-            const baseTarget = targetPositions[i] || new THREE.Vector3(0, 0, 0);
+            // 重力
+            vel.y -= 0.05;
+            // 空气阻力
+            vel.x *= 0.98;
+            vel.y *= 0.98;
+            vel.z *= 0.98;
 
-            // 缩放效果 based on handSpread (0~1)
-            // 范围：0.8x (握拳) 到 1.3x (张开)
-            const scale = 0.8 + handSpread * 0.5;
+            p.x += vel.x;
+            p.y += vel.y;
+            p.z += vel.z;
 
-            target = new THREE.Vector3(
-                baseTarget.x * scale,
-                baseTarget.y * scale,
-                baseTarget.z * scale
-            );
-        }
-
-        // 噪声运动
-        const noiseX = Math.sin(time * 0.5 + i * 0.1) * dispersion;
-        const noiseY = Math.cos(time * 0.7 + i * 0.2) * dispersion;
-        const noiseZ = Math.sin(time * 0.3 + i * 0.15) * dispersion;
-
-        let dx, dy, dz;
-
-        if (isAutoMode) {
-            // 自动模式下增加波浪效果
-            const waveX = Math.sin(time * 2 + py * 0.05) * 10;
-            const waveY = Math.cos(time * 1.5 + px * 0.05) * 10;
-            dx = target.x + noiseX + waveX - px;
-            dy = target.y + noiseY + waveY - py;
-            dz = target.z + noiseZ - pz;
-        } else {
-            dx = target.x + noiseX - px;
-            dy = target.y + noiseY - py;
-            dz = target.z + noiseZ - pz;
-        }
-
-        const distance = Math.sqrt(dx * dx + dy * dy + dz * dz);
-
-        // 绘图模式下速度要快一点，否则跟不上手指
-        let speedFactor = (currentGesture === 1) ? 0.2 : 0.08;
-        if (isAutoMode) speedFactor = 0.05; // 自动模式慢一点
-
-        const speed = Math.min(speedFactor + distance * 0.001, 0.3);
-
-        // 鼠标模式下的高级交互
-        if (!isAutoMode && Date.now() - lastHandTime > 2000) {
-            // 漩涡/黑洞效果 (按住Shift键)
-            let vortexX = 0, vortexY = 0, vortexZ = 0;
-            // 检查 shiftKey 状态需要从 mousemove event 获取，这里简化为一直有微弱漩涡，或者通过 isMouseDown 增强
-
-            // 冲击波效果 (点击触发)
-            if (shockwave > 0.01) {
-                const dx_mouse = px - (mouse.x * windowHalfX * 0.5); // 估算映射
-                const dy_mouse = py - (mouse.y * windowHalfY * 0.5);
-                const dist_mouse = Math.sqrt(dx_mouse * dx_mouse + dy_mouse * dy_mouse);
-
-                if (dist_mouse < 200) {
-                    const force = (1 - dist_mouse / 200) * shockwave * 50;
-                    dx += (dx_mouse / dist_mouse) * force;
-                    dy += (dy_mouse / dist_mouse) * force;
-                    dz += force; // 也向外推
-                }
-                shockwave *= 0.95; // 衰减
+            // 如果掉太低，重置或让它消失
+            if (p.y < -300) {
+                vel.set(0, 0, 0);
+                p.y = -300;
             }
         }
+        // 模式 B: 寻找目标点 (文字/形状)
+        else {
+            if (!targetPositions[i]) continue;
 
-        const nextX = px + dx * speed;
-        const nextY = py + dy * speed;
-        const nextZ = pz + dz * speed;
+            let target;
 
-        positions[i * 3] = nextX;
-        positions[i * 3 + 1] = nextY;
-        positions[i * 3 + 2] = nextZ;
+            // 如果处于绘图模式 (手势1) 且有轨迹，粒子跟随手指
+            if (currentGesture === 1 && fingerTrail.length > 0) {
+                // 将粒子分配到轨迹的不同点上，形成长尾效果
+                // 使用 i % fingerTrail.length 可以让粒子均匀分布在轨迹上
+                const trailIndex = i % fingerTrail.length;
+                const trailPoint = fingerTrail[trailIndex];
+
+                // 为了让线条有体积感，加一点随机抖动
+                const spread = 2.0;
+                target = new THREE.Vector3(
+                    trailPoint.x + (Math.random() - 0.5) * spread,
+                    trailPoint.y + (Math.random() - 0.5) * spread,
+                    trailPoint.z + (Math.random() - 0.5) * spread
+                );
+            } else {
+                // 默认模式：飞向文字目标点
+                const baseTarget = targetPositions[i] || new THREE.Vector3(0, 0, 0);
+
+                // 缩放效果 based on handSpread (0~1)
+                // 范围：0.8x (握拳) 到 1.3x (张开)
+                const scale = 0.8 + handSpread * 0.5;
+
+                target = new THREE.Vector3(
+                    baseTarget.x * scale,
+                    baseTarget.y * scale,
+                    baseTarget.z * scale
+                );
+            }
+
+            // 噪声运动
+            const noiseX = Math.sin(time * 0.5 + i * 0.1) * dispersion;
+            const noiseY = Math.cos(time * 0.7 + i * 0.2) * dispersion;
+            const noiseZ = Math.sin(time * 0.3 + i * 0.15) * dispersion;
+
+            // 原始归位力
+            let dx = target.x + noiseX - p.x;
+            let dy = target.y + noiseY - p.y;
+            let dz = target.z + noiseZ - p.z;
+
+            // 根据手指轨迹产生排斥/吸引 (仅当非自动模式且有轨迹且非绘图模式时)
+            // (如果是绘图模式，粒子跟随手指，这里简化逻辑)
+
+            // ... [保留原有鼠标/手势交互逻辑] ...
+
+            // 自动模式下的镜头漂移效果
+            if (isAutoMode) {
+                // 稍微上下浮动
+                dy += Math.sin(time * 2 + p.x * 0.05) * 5;
+            }
+
+            // 速度因子 (越远越快)
+            const distance = Math.sqrt(dx * dx + dy * dy + dz * dz);
+            // 增加归位速度，让文字显示更利索
+            let speedFactor = (currentGesture === 1) ? 0.2 : 0.08;
+            if (isAutoMode) speedFactor = 0.05; // 自动模式慢一点
+            const speed = Math.min(speedFactor + distance * 0.001, 0.3);
+
+            // 鼠标模式下的高级交互
+            if (!isAutoMode && Date.now() - lastHandTime > 2000) {
+                if (shockwave > 0.01) {
+                    const dx_mouse = p.x - (mouse.x * window.innerWidth * 0.5); // 估算映射
+                    const dy_mouse = p.y - (mouse.y * window.innerHeight * 0.5);
+                    const dist_mouse = Math.sqrt(dx_mouse * dx_mouse + dy_mouse * dy_mouse);
+
+                    if (dist_mouse < 200) {
+                        const force = (1 - dist_mouse / 200) * shockwave * 80; // 增强冲击波
+                        dx += (dx_mouse / dist_mouse) * force;
+                        dy += (dy_mouse / dist_mouse) * force;
+                        dz += force;
+                    }
+                    shockwave *= 0.95;
+                }
+            }
+
+            const nextX = p.x + dx * speed;
+            const nextY = p.y + dy * speed;
+            const nextZ = p.z + dz * speed;
+
+            p.x += (nextX - p.x) * 0.5; // 平滑插值
+            p.y += (nextY - p.y) * 0.5;
+            p.z += (nextZ - p.z) * 0.5;
+        }
+
+        // 更新位置
+        positions[i * 3] = p.x;
+        positions[i * 3 + 1] = p.y;
+        positions[i * 3 + 2] = p.z;
     }
 
     geometry.attributes.position.needsUpdate = true;
 
-    // 粒子群整体旋转
-    if (currentGesture !== 1) {
-        // 非绘图模式下正常旋转
-        particles.rotation.y += 0.0008;
-        particles.rotation.x = Math.sin(time * 0.3) * 0.1;
-        particles.rotation.z = Math.cos(time * 0.2) * 0.05;
-    } else {
-        // 绘图模式下暂停旋转，方便书写
-        // 保持当前角度不变，或者非常缓慢地复位，这里完全暂停
+    // 如果是爆炸模式，不用连线；如果是文字模式，可以有连线
+    if (connections && !isExploding) {
+        // 简化连线逻辑以提高性能 (20000个粒子连线会卡死)
+        // 仅在手动模式下开启连线，或者只连很少一部分？
+        // 为了性能，当粒子数增加到 2万时，必须大幅减少连线计算或彻底关闭
+        // 建议：此处暂时禁用 updateConnections();
+        // updateConnections(); 
     }
 
-    // 更新游戏逻辑
-    // (已移除切水果游戏)
+    if (isAutoMode && Date.now() - autoTimer > AUTO_SWITCH_INTERVAL * 50) { // 减慢自动切换
+        // do auto logic
+    }
 
     // 星空旋转
     if (stars) {
@@ -1291,7 +1340,6 @@ function animate() {
         stars.rotation.x += 0.0001;
     }
 
-    // 相机移动
     // 相机移动
     camera.position.x = Math.sin(time * 0.2) * 5;
     camera.position.y = 20 + Math.cos(time * 0.15) * 3;
