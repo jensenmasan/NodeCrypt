@@ -362,6 +362,7 @@ export function togglePrivateChat(targetId, targetName) {
 		rd.privateChatTargetName = targetName
 	}
 	renderUserList();
+	renderMainHeader();
 	updateChatInputStyle()
 }
 
