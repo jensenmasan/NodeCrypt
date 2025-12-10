@@ -209,6 +209,7 @@ body {
 }
 
 /* 登录容器 - 修改为全屏居中布局 */
+/* 登录容器 - 修改为全屏居中布局 (优化版) */
 .login-container {
 	position: fixed;
 	top: 0;
@@ -216,26 +217,38 @@ body {
 	width: 100%;
 	height: 100%;
 	display: flex;
-	text-align: center;
-	align-items: center;
-	justify-content: center;
-	/* 垂直居中 */
 	flex-direction: column;
+	text-align: center;
 	z-index: 60;
-	/* 确保在 start-screen 之上 */
 	pointer-events: none;
-	/* 让点击穿透空白区域，方便体验3D背景 */
 	overflow-y: auto;
-	/* 防止小屏幕无法滚动 */
+	/* 允许滚动 */
+	padding: 80px 15px 40px 15px;
+	/* 顶部留出更多空间，防止被Start按钮遮挡，底部留空 */
+	box-sizing: border-box;
 }
 
 /* 确保内部卡片可以点击 */
 .flip-card {
 	pointer-events: auto;
 	margin: auto;
-	/* 在 flex 容器中自动居中 */
+	/* 核心：在 flex 容器中自动垂直水平居中，且内容溢出时回退到正常流 */
 	flex-shrink: 0;
-	/* 防止被压缩 */
+}
+
+/* 移动端优化 */
+@media (max-height: 700px) {
+	.login-container {
+		padding-top: 60px;
+		/* 小屏幕高度下减少顶部留白 */
+		align-items: flex-start;
+		/* 防止高度不足时切掉顶部 */
+	}
+
+	.flip-card {
+		margin: 20px auto;
+		/* 高度不足时，仅保留水平居中 */
+	}
 }
 
 .login-container h1 {
@@ -675,4 +688,44 @@ body {
 .new-message-wrapper {
 	position: relative;
 	z-index: 1;
+}
+
+/* --- 移动端排版深度优化 --- */
+@media (max-width: 600px) {
+	.login-container {
+		padding: 60px 10px 20px 10px !important;
+	}
+
+	.flip-card {
+		max-width: 100% !important;
+		width: 100% !important;
+	}
+
+	.flip-card-front,
+	.flip-card-back {
+		padding: 30px 20px !important;
+		/* 减小内边距 */
+		min-height: auto !important;
+		/* 不强制高度 */
+	}
+
+	.login-container h1 {
+		font-size: 1.6rem !important;
+		margin-bottom: 24px !important;
+	}
+
+	.input-group input {
+		font-size: 1rem !important;
+		padding: 12px 14px !important;
+	}
+
+	.subtips {
+		margin-bottom: 20px !important;
+		font-size: 0.9rem !important;
+	}
+
+	.login-btn {
+		font-size: 1.1rem !important;
+		padding: 14px 0 !important;
+	}
 }
