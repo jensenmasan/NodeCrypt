@@ -5,7 +5,7 @@
 let scene, camera, renderer;
 let particles, stars, connections;
 let geometry, starGeometry, lineGeometry;
-const particleCount = 30000; // 进一步增加粒子数以支持满屏清晰文字
+const particleCount = 40000; // 再次增加粒子数，确保每个字都清晰饱满
 const particleData = []; // 存储每个粒子的物理状态
 let animationFrameId = null; // 用于取消动画循环
 
@@ -379,8 +379,8 @@ function createPointsFromCanvas(text, isPattern = false) {
     const canvas = document.createElement('canvas');
     const ctx = canvas.getContext('2d');
 
-    // 如果是 Pattern 模式，使用更小的字体 (20px)
-    const fontSize = isPattern ? 20 : 60;
+    // 如果是 Pattern 模式，使用 50px 字体，既不算太大也能看清细节
+    const fontSize = isPattern ? 50 : 60;
     const fontFamily = 'Arial, "Microsoft YaHei", sans-serif';
     ctx.font = `bold ${fontSize}px ${fontFamily}`;
 
@@ -390,8 +390,8 @@ function createPointsFromCanvas(text, isPattern = false) {
 
     if (isPattern) {
         // 满屏模式：创建一个更大大画布，循环绘制
-        const screenW = 1200;
-        const screenH = 1000;
+        const screenW = 1500;
+        const screenH = 1200;
         canvas.width = screenW;
         canvas.height = screenH;
 
@@ -400,14 +400,14 @@ function createPointsFromCanvas(text, isPattern = false) {
         ctx.textAlign = 'left';
         ctx.textBaseline = 'top';
 
-        const cols = Math.floor(screenW / (textWidth + 30)); // 间距适中
-        const rows = Math.floor(screenH / (textHeight + 15));
+        const cols = Math.floor(screenW / (textWidth + 40));
+        const rows = Math.floor(screenH / (textHeight + 20));
 
         for (let r = 0; r < rows; r++) {
             for (let c = 0; c < cols; c++) {
                 // 错位排列
                 const offsetX = (r % 2 === 0) ? 0 : (textWidth / 2);
-                ctx.fillText(text, c * (textWidth + 30) + offsetX, r * (textHeight + 15));
+                ctx.fillText(text, c * (textWidth + 40) + offsetX, r * (textHeight + 20));
             }
         }
     } else {
@@ -428,7 +428,6 @@ function createPointsFromCanvas(text, isPattern = false) {
     const points = [];
 
     // 采样步长 (1=最精细)
-    // 即使是 pattern 模式也用 1，保证清晰，靠增加粒子数来支撑
     const step = 1;
 
     for (let y = 0; y < canvas.height; y += step) {
@@ -436,16 +435,17 @@ function createPointsFromCanvas(text, isPattern = false) {
             const index = (y * canvas.width + x) * 4;
             if (data[index + 3] > 128) {
                 // 坐标映射
-                let px, py;
+                let px, py, pz;
                 if (isPattern) {
                     // 映射回中心
-                    px = (x - canvas.width / 2) * 1.2; // 稍微拉开一点间距
+                    px = (x - canvas.width / 2) * 1.2;
                     py = -(y - canvas.height / 2) * 1.2;
+                    pz = 0; // 满屏模式下完全扁平，不加随机厚度，保证最清晰
                 } else {
                     px = (x - canvas.width / 2) * 2.0;
                     py = -(y - canvas.height / 2) * 2.0;
+                    pz = (Math.random() - 0.5) * 10;
                 }
-                const pz = (Math.random() - 0.5) * 10; // 给一点厚度
                 points.push(new THREE.Vector3(px, py, pz));
             }
         }
