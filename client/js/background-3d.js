@@ -830,9 +830,19 @@ function onDocumentMouseUp(event) {
 
 // --- 触摸事件支持 (移动端) ---
 
+let lastTouchTime = 0;
+
 function onDocumentTouchStart(event) {
     if (event.touches.length === 1) {
         event.preventDefault(); // 防止滚动
+
+        const now = Date.now();
+        if (now - lastTouchTime < 300) {
+            // 双击检测成功：触发新年模式
+            startNewYearMode();
+        }
+        lastTouchTime = now;
+
         mouse.x = (event.touches[0].clientX / window.innerWidth) * 2 - 1;
         mouse.y = -(event.touches[0].clientY / window.innerHeight) * 2 + 1;
         isMouseDown = true;
