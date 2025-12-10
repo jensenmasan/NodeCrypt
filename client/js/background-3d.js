@@ -50,6 +50,8 @@ let uiHideTimer = null; // 控制面板自动隐藏计时器
 const UI_HIDE_DELAY = 3000; // 3秒无操作隐藏
 let isMouseDown = false; // 鼠标是否按下
 let lastMouseMoveTime = 0; // 最后一次鼠标移动时间
+let fireworksInterval = null; // 烟花循环定时器
+
 
 
 
@@ -242,6 +244,26 @@ function updateTextShape(text) {
                 );
             }
         }
+    } else if (text === "NEWYEAR_WISH") {
+        // 新增：马老师新年祝福 (中文)
+        // 使用 Canvas 生成点阵
+        const points = createPointsFromCanvas("马老师祝你们新年快乐");
+
+        // 分配目标位置
+        // 如果点数不够，循环使用；如果多了，剩下的回到原点
+        const pLen = points.length;
+        for (let i = 0; i < particleCount; i++) {
+            if (i < pLen) {
+                targetPositions[i] = points[i];
+            } else {
+                // 多余的粒子变成背景星空
+                targetPositions[i] = new THREE.Vector3(
+                    (Math.random() - 0.5) * 500,
+                    (Math.random() - 0.5) * 500,
+                    (Math.random() - 0.5) * 500
+                );
+            }
+        }
     } else {
         if (!font) return;
 
@@ -279,6 +301,57 @@ function updateTextShape(text) {
         }
         textGeo.dispose();
     }
+}
+
+// 新增：从 Canvas 获取文字点阵 (支持中文)
+function createPointsFromCanvas(text) {
+    const canvas = document.createElement('canvas');
+    const ctx = canvas.getContext('2d');
+
+    // 设置字体 (更大字号)
+    const fontSize = 60;
+    const fontFamily = 'Arial, "Microsoft YaHei", sans-serif'; // 确保支持中文
+    ctx.font = `bold ${fontSize}px ${fontFamily}`;
+
+    // 测量宽度
+    const metrics = ctx.measureText(text);
+    const textWidth = Math.ceil(metrics.width);
+    const textHeight = Math.ceil(fontSize * 1.5);
+
+    canvas.width = textWidth + 20;
+    canvas.height = textHeight + 20;
+
+    // 绘制
+    ctx.font = `bold ${fontSize}px ${fontFamily}`;
+    ctx.fillStyle = '#ffffff';
+    ctx.textAlign = 'center';
+    ctx.textBaseline = 'middle';
+    ctx.fillText(text, canvas.width / 2, canvas.height / 2);
+
+    // 读取像素
+    const imageData = ctx.getImageData(0, 0, canvas.width, canvas.height);
+    const data = imageData.data;
+    const points = [];
+
+    // 采样步长 (越小越精细，点越多)
+    const step = 3;
+
+    for (let y = 0; y < canvas.height; y += step) {
+        for (let x = 0; x < canvas.width; x += step) {
+            const index = (y * canvas.width + x) * 4;
+            // 检查 Alpha 通道
+            if (data[index + 3] > 128) {
+                // 映射到 3D 坐标
+                // x 轴居中
+                const px = (x - canvas.width / 2) * 2.0; // 放大系数
+                const py = -(y - canvas.height / 2) * 2.0; // Y轴翻转
+                const pz = 0;
+                points.push(new THREE.Vector3(px, py, pz));
+            }
+        }
+    }
+
+    return points;
 }
 // 用于跟踪是否已初始化
 let isInitialized = false;
@@ -498,6 +571,47 @@ function initThree() {
     document.addEventListener('mousemove', onDocumentMouseMove, false);
     document.addEventListener('mousedown', onDocumentMouseDown, false);
     document.addEventListener('mouseup', onDocumentMouseUp, false);
+    document.addEventListener('dblclick', onDocumentDoubleClick, false); // 新增双击事件
+}
+
+// 新增：双击事件 - 触发新年祝福模式
+function onDocumentDoubleClick(event) {
+    event.preventDefault();
+    startNewYearMode();
+}
+
+// 新增：新年祝福模式逻辑
+function startNewYearMode() {
+    isAutoMode = false;
+
+    // 立即显示文字
+    updateTextShape("NEWYEAR_WISH");
+    updateParticleColor({ primary: new THREE.Color(0xff0000), secondary: new THREE.Color(0xffd700), glow: new THREE.Color(0xffaa00) }); // 红金配色
+
+    // 清除旧的定时器 (如果已存在)
+    if (fireworksInterval) clearInterval(fireworksInterval);
+
+    // 启动循环：文字 -> 烟花 -> 文字
+    let showFireworks = false;
+    fireworksInterval = setInterval(() => {
+        showFireworks = !showFireworks;
+        if (showFireworks) {
+            updateTextShape("FIREWORKS");
+            // 烟花时随机彩色
+            const p = [
+                { primary: new THREE.Color(0xff0000), secondary: new THREE.Color(0xffff00), glow: new THREE.Color(0xffffff) },
+                { primary: new THREE.Color(0x00ff00), secondary: new THREE.Color(0x00ffff), glow: new THREE.Color(0xffffff) },
+                { primary: new THREE.Color(0x0000ff), secondary: new THREE.Color(0xff00ff), glow: new THREE.Color(0xffffff) }
+            ];
+            updateParticleColor(p[Math.floor(Math.random() * p.length)]);
+            // 强力扩散一下
+            shockwave = 1.5;
+        } else {
+            updateTextShape("NEWYEAR_WISH");
+            updateParticleColor({ primary: new THREE.Color(0xff0000), secondary: new THREE.Color(0xffd700), glow: new THREE.Color(0xffaa00) });
+            shockwave = 0;
+        }
+    }, 3000); // 每3秒切换一次
 }
 
 // 鼠标移动事件
@@ -524,6 +638,10 @@ function onDocumentMouseDown(event) {
     isMouseDown = true;
     lastMouseMoveTime = Date.now();
     isAutoMode = false;
+
+    // 如果点击了，且当前正在放烟花循环，停止循环回到普通模式？
+    // 或者点击只是加特效，不打断循环？
+    // 这里选择：点击不打断，只是增加冲击波效果
 
     // 酷炫效果：点击产生冲击波
     if (event.button === 0) { // 左键
