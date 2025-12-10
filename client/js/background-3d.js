@@ -12,6 +12,11 @@ let animationFrameId = null; // 用于取消动画循环
 // 目标形状的点集
 let targetPositions = [];
 
+// 刀光轨迹 Mesh
+let bladeMesh;
+let bladeGeometry;
+let gameLights = [];
+
 // 字体加载器
 let font;
 
@@ -351,98 +356,7 @@ function startGame() {
     updateParticleColor(colorPalette[3]); // 橙色战斗氛围
 }
 
-function endGame() {
-    isGameMode = false;
-    document.getElementById('game-over-screen').style.display = 'block';
-    document.getElementById('final-score').innerText = gameScore;
-    document.getElementById('main-control-panel').classList.remove('hidden'); // 恢复设置面板
-}
 
-function updateGameLogic() {
-    if (!isGameMode) return;
-
-    gameTime++;
-
-    // 1. 生成水果 (每60帧约1秒，随机生成)
-    if (gameTime % 40 === 0) {
-        spawnFruit();
-    }
-
-    // 2. 更新水果位置
-    for (let i = fruits.length - 1; i >= 0; i--) {
-        const fruit = fruits[i];
-        fruit.position.x += fruit.velocity.x;
-        fruit.position.y += fruit.velocity.y;
-        fruit.position.z += fruit.velocity.z;
-        fruit.velocity.y -= 0.05; // 重力
-
-        // 旋转
-        fruit.rotation.x += 0.05;
-        fruit.rotation.y += 0.05;
-
-        // 检测是否掉出屏幕
-        if (fruit.position.y < -100) {
-            scene.remove(fruit);
-            fruits.splice(i, 1);
-            // 掉落扣分/扣命？暂不扣命，只扣分
-            // loseLife(); 
-        }
-
-        // 碰撞检测 (切水果)
-        checkSlice(fruit, i);
-    }
-}
-
-function spawnFruit() {
-    // 创建一个粒子球代表水果
-    // 简化：直接用 Mesh，或者用粒子系统的一小部分？
-    // 为了性能，创建一个简单的 Mesh 球体
-    const geometry = new THREE.SphereGeometry(4, 8, 8);
-    const color = Math.random() > 0.5 ? 0xff0000 : (Math.random() > 0.5 ? 0xffff00 : 0x00ff00);
-    const material = new THREE.MeshBasicMaterial({ color: color, wireframe: true });
-    const fruit = new THREE.Mesh(geometry, material);
-
-    // 随机初始位置 (底部)
-    fruit.position.set((Math.random() - 0.5) * 100, -60, (Math.random() - 0.5) * 20);
-
-    // 向上抛的力
-    fruit.velocity = new THREE.Vector3(
-        (Math.random() - 0.5) * 2,
-        2.5 + Math.random() * 1.5,
-        (Math.random() - 0.5) * 1
-    );
-
-    scene.add(fruit);
-    fruits.push(fruit);
-}
-
-function checkSlice(fruit, index) {
-    if (fingerTrail.length < 2) return;
-
-    const tip = fingerTrail[0]; // 指尖当前位置
-    const distance = tip.distanceTo(fruit.position);
-
-    if (distance < 10) { // 命中半径
-        // 切中！
-        scene.remove(fruit);
-        fruits.splice(index, 1);
-
-        gameScore += 10;
-        document.getElementById('game-score-val').innerText = gameScore;
-
-        // 播放特效 (简单粒子爆炸)
-        createExplosion(fruit.position, fruit.material.color);
-    }
-}
-
-function createExplosion(pos, color) {
-    // 借用主粒子系统的前100个粒子产生爆炸效果？
-    // 或者改变部分主粒子的目标位置到这里然后散开
-    // 简单起见，让主粒子系统的颜色闪烁一下
-    // updateParticleColor({primary: color, secondary: new THREE.Color(0xffffff), glow: color});
-    // 更好的做法：临时修改一部分粒子的目标位置为爆炸点，然后再散开
-    // 这里为了不打断主循环，简单处理
-}
 
 
 // 新增：初始化UI控制事件
@@ -1156,6 +1070,7 @@ function animate() {
     // 更新游戏逻辑
     if (isGameMode) {
         updateGameLogic();
+        updateBladeTrail();
     }
 
     // 星空旋转
@@ -1165,9 +1080,11 @@ function animate() {
     }
 
     // 相机移动
-    camera.position.x = Math.sin(time * 0.2) * 5;
-    camera.position.y = 20 + Math.cos(time * 0.15) * 3;
-    camera.lookAt(0, 0, 0);
+    if (!isGameMode) {
+        camera.position.x = Math.sin(time * 0.2) * 5;
+        camera.position.y = 20 + Math.cos(time * 0.15) * 3;
+        camera.lookAt(0, 0, 0);
+    }
 
     renderer.render(scene, camera);
 }
