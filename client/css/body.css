@@ -4,19 +4,22 @@ body {
 	margin: 0;
 }
 
-/* 翻转卡片样式 / Flip Card Styles */
+/* 翻转卡片样式 / Flip Card Styles (Fixed for Mobile) */
 .flip-card {
 	perspective: 1500px;
 	max-width: 480px;
 	width: 100%;
 	height: auto;
 	position: relative;
+	z-index: 1;
+	/* 建立层叠上下文 */
 }
 
 .flip-card-inner {
 	position: relative;
 	width: 100%;
-	min-height: 500px;
+	height: auto;
+	/* 高度由内容撑开 */
 	text-align: center;
 	transition: transform 0.8s cubic-bezier(0.645, 0.045, 0.355, 1);
 	transform-style: preserve-3d;
@@ -28,12 +31,7 @@ body {
 
 .flip-card-front,
 .flip-card-back {
-	position: absolute;
-	top: 0;
-	left: 0;
 	width: 100%;
-	height: auto;
-	min-height: 500px;
 	border-radius: 24px;
 	padding: 48px 40px;
 
@@ -56,10 +54,61 @@ body {
 	display: flex;
 	flex-direction: column;
 	backface-visibility: hidden;
+	-webkit-backface-visibility: hidden;
 	overflow: visible;
+}
 
-	/* 添加外发光效果 */
+/* 正面：相对定位，撑开高度，负责 Z 轴层级 */
+.flip-card-front {
 	position: relative;
+	z-index: 2;
+	transform: rotateX(0deg);
+	min-height: 500px;
+	/* 默认最小高度 */
+	/* 翻转时延迟隐藏 front，防止穿透 */
+	transition: visibility 0s 0.4s, opacity 0s 0.4s;
+}
+
+/* 背面：绝对定位，覆盖在正面 */
+.flip-card-back {
+	position: absolute;
+	top: 0;
+	left: 0;
+	height: 100%;
+	/* 跟随正面高度 */
+	z-index: 1;
+	transform: rotateX(180deg);
+	padding: 40px 35px;
+	/* 默认隐藏背面 */
+	visibility: hidden;
+	transition: visibility 0s 0.4s, opacity 0s 0.4s;
+}
+
+/* --- Visibility Hacks 修复移动端渲染 Bug --- */
+
+/* 当翻转后，隐藏正面 */
+.flip-card-inner.flipped .flip-card-front {
+	visibility: hidden;
+	pointer-events: none;
+}
+
+/* 当翻转后，显示背面 (立即) */
+.flip-card-inner.flipped .flip-card-back {
+	visibility: visible;
+	transition-delay: 0s;
+	pointer-events: auto;
+}
+
+/* 当未翻转时，显示正面 (立即) */
+.flip-card-inner:not(.flipped) .flip-card-front {
+	visibility: visible;
+	transition-delay: 0s;
+}
+
+/* 当未翻转时，隐藏背面 */
+.flip-card-inner:not(.flipped) .flip-card-back {
+	visibility: hidden;
+	pointer-events: none;
 }
 
 /* 青色渐变装饰条 - 与3D粒子颜色一致 */
@@ -75,11 +124,6 @@ body {
 	border-radius: 24px 24px 0 0;
 	opacity: 0.9;
 	box-shadow: 0 0 20px rgba(0, 217, 255, 0.5);
-}
-
-.flip-card-back {
-	transform: rotateX(180deg);
-	padding: 40px 35px;
 }
 
 /* 帮助按钮样式 / Help Button Styles - 青色主题 */
