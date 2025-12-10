@@ -348,8 +348,9 @@ window.addEventListener('DOMContentLoaded', () => {
 			// 清空输入框并触发 input 事件
 			// Clear input and trigger input event
 			input.innerHTML = ''; // 清空输入框内容 / Clear input field content
-			if (imagePasteHandler && typeof imagePasteHandler.refreshPlaceholder === 'function') {
-				imagePasteHandler.refreshPlaceholder(); // 更新 placeholder 状态
+			if (imagePasteHandler) {
+				if (typeof imagePasteHandler.clearImages === 'function') imagePasteHandler.clearImages();
+				if (typeof imagePasteHandler.refreshPlaceholder === 'function') imagePasteHandler.refreshPlaceholder(); // 更新 placeholder 状态
 			}
 			clearQuote(); // Clear quote preview
 			autoGrowInput(); // 调整输入框高度
