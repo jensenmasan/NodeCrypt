@@ -34,8 +34,12 @@ let isAutoMode = true;
 let autoTimer = 0;
 const AUTO_SWITCH_INTERVAL = 300;
 // 终极自动轮播内容：包含了祝福语的高级循环
-const autoTexts = ["CUSTOM:马老师祝您新年快乐", "HEART", "2025", "FIREWORKS", "CUSTOM:万事如意", "TECH", "ART", "MOBIUS", "DNA",
-    "ARIES", "TAURUS", "GEMINI", "CANCER", "LEO", "VIRGO", "LIBRA", "SCORPIO", "SAGITTARIUS", "CAPRICORN", "AQUARIUS", "PISCES"
+// 终极自动轮播内容：30+ 惊艳场景自动循环
+const autoTexts = [
+    "CUSTOM:马老师祝您新年快乐", "HEART", "FIREWORKS", "2025",
+    "GALAXY", "DNA", "ATOM", "SPHERE", "WAVE", "BUTTERFLY", "TORNADO", "DIAMOND",
+    "ARIES", "TAURUS", "GEMINI", "CANCER", "LEO", "VIRGO", "LIBRA", "SCORPIO", "SAGITTARIUS", "CAPRICORN", "AQUARIUS", "PISCES",
+    "CUSTOM:财富自由", "CUSTOM:身体健康", "CUSTOM:万事如意", "CUSTOM:NodeCrypt", "TECH", "ART"
 ];
 let autoTextIndex = 0;
 
