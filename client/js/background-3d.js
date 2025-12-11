@@ -13,6 +13,8 @@ let animationFrameId = null; // 用于取消动画循环
 let targetPositions = [];
 let explosionVelocities = []; // 专用：烟花爆炸速度
 let isExploding = false; // 是否处于爆炸物理模式
+let isMultiColor = false; // 是否使用多色模式 (如奥运五环)
+let walkingOffset = new THREE.Vector3(0, 0, 0); // 用于宠物走动的位移
 
 
 
@@ -79,6 +81,8 @@ const colorPalette = {
 // --- 3. 字体生成逻辑 (升级版：支持心形) ---
 function updateTextShape(text) {
     currentText = text;
+    isMultiColor = false; // 重置多色标志
+    walkingOffset.set(0, 0, 0); // 重置走动位移
 
     // 默认关闭爆炸模式，除非是 FIREWORKS
     if (text !== "FIREWORKS") isExploding = false;
@@ -479,6 +483,131 @@ function updateTextShape(text) {
             const z = radiusAtY * Math.sin(finalAngle);
 
             targetPositions[i] = new THREE.Vector3(x, y, z);
+        }
+    } else if (text === "OLYMPIC") {
+        // 🏅 奥运五环 (5 interlocking rings)
+        isMultiColor = true; // 开启多色保护
+        const colors = geometry.attributes.color.array;
+
+        // Define rings: center x, center y, color (r,g,b)
+        // Blue, Yellow, Black, Green, Red
+        const rings = [
+            { x: -60, y: 10, c: [0, 0.5, 0.9] },   // Blue
+            { x: -30, y: -20, c: [0.95, 0.75, 0] }, // Yellow
+            { x: 0, y: 10, c: [0, 0, 0] },         // Black (show as dark grey for visibility)
+            { x: 30, y: -20, c: [0, 0.6, 0.3] },    // Green
+            { x: 60, y: 10, c: [0.9, 0.1, 0.2] }    // Red
+        ];
+        // Adjust black to be visible in dark mode -> Dark Grey or White rim? Let's do Dark Grey
+        rings[2].c = [0.8, 0.8, 0.8]; // White/Grey for "Black" ring in dark mode
+
+        const ptsPerRing = Math.floor(particleCount / 5);
+
+        for (let i = 0; i < particleCount; i++) {
+            const ringIdx = Math.min(4, Math.floor(i / ptsPerRing));
+            const ring = rings[ringIdx];
+
+            const t = Math.random() * Math.PI * 2;
+            const radius = 22;
+            const thickness = 4;
+            // Torus randomness
+            const r = radius + (Math.random() - 0.5) * thickness;
+
+            const x = ring.x + Math.cos(t) * r;
+            const y = ring.y + Math.sin(t) * r;
+            const z = (Math.random() - 0.5) * thickness;
+
+            targetPositions[i] = new THREE.Vector3(x, y, z);
+
+            // Set Color Immediately
+            colors[i * 3] = ring.c[0];
+            colors[i * 3 + 1] = ring.c[1];
+            colors[i * 3 + 2] = ring.c[2];
+        }
+        geometry.attributes.color.needsUpdate = true;
+
+    } else if (text === "CAT" || text === "DOG") {
+        // 🐈 🐕 真实走动宠物 (Emoji渲染)
+        // 渲染 Emoji 到 Canvas
+        const emoji = text === "CAT" ? "🐈" : "🐕";
+        const points = createPointsFromCanvas(emoji, false);
+        const pLen = points.length;
+
+        // 居中修正
+        for (let j = 0; j < pLen; j++) {
+            points[j].multiplyScalar(1.5); // 放大
+            points[j].y += 20; // 稍微抬高
+        }
+
+        for (let i = 0; i < particleCount; i++) {
+            if (i < pLen) {
+                targetPositions[i] = points[i];
+            } else {
+                targetPositions[i] = new THREE.Vector3(
+                    (Math.random() - 0.5) * 500,
+                    (Math.random() - 0.5) * 500,
+                    (Math.random() - 0.5) * 500
+                );
+            }
+        }
+    } else if (text === "UNIVERSE") {
+        // 🌌 宇宙深空隧道
+        for (let i = 0; i < particleCount; i++) {
+            // Tunnel cylinder
+            const angle = Math.random() * Math.PI * 2;
+            const radius = 50 + Math.random() * 200;
+            const depth = (Math.random() - 0.5) * 1000;
+
+            const x = Math.cos(angle) * radius;
+            const y = Math.sin(angle) * radius;
+            const z = depth;
+            targetPositions[i] = new THREE.Vector3(x, y, z);
+        }
+    } else if (text === "WORLD") {
+        // 🌏 世界地图 (Sphere with Emoji Texture Logic approximated by Emoji Globe)
+        const points = createPointsFromCanvas("🌏");
+        const pLen = points.length;
+        for (let i = 0; i < particleCount; i++) {
+            if (i < pLen) {
+                // Map abstract flat points to sphere?
+                // Simple mapping: map flat x,y to lat,lon
+                const p = points[i];
+                // p.x ranges -100 to 100 roughly
+                // Map to sphere
+                const lon = (p.x / 150) * Math.PI * 2;
+                const lat = (p.y / 150) * Math.PI;
+                const rad = 60;
+
+                const sx = rad * Math.cos(lat) * Math.cos(lon);
+                const sy = rad * Math.sin(lat);
+                const sz = rad * Math.cos(lat) * Math.sin(lon);
+
+                // Just use the flat emoji, it looks better usually
+                targetPositions[i] = points[i];
+                targetPositions[i].multiplyScalar(1.5);
+            } else {
+                targetPositions[i] = new THREE.Vector3((Math.random() - 0.5) * 300, (Math.random() - 0.5) * 300, (Math.random() - 0.5) * 300);
+            }
+        }
+    } else if (text === "CHINA") {
+        const points = createPointsFromCanvas("🇨🇳"); // Flag might be boxy, maybe text better?
+        // Let's use Text instead for clearer shape
+        // const points = createPointsFromCanvas("中国"); 
+        // User asked for "Map". "🇨🇳" emoji usually renders as a flag.
+        // Let's use "中国" text but style it creatively?
+        // Stick to the points from canvas logic it's robust.
+        const points2 = createPointsFromCanvas("中国");
+        const pLen = points2.length;
+        for (let i = 0; i < particleCount; i++) {
+            if (i < pLen) targetPositions[i] = points2[i];
+            else targetPositions[i] = new THREE.Vector3(0, 0, 0);
+        }
+    } else if (text === "CHONGQING") {
+        const points = createPointsFromCanvas("重庆");
+        const pLen = points.length;
+        for (let i = 0; i < particleCount; i++) {
+            if (i < pLen) targetPositions[i] = points[i];
+            else targetPositions[i] = new THREE.Vector3(0, 0, 0);
         }
     } else if (text.startsWith("CUSTOM:")) {
         // 自定义文字模式 (打字机效果用到)
@@ -1469,6 +1598,7 @@ function countFingers(landmarks) {
 }
 
 function updateParticleColor(colorConfig) {
+    if (isMultiColor) return; // 如果是多色模式（如奥运），不覆盖颜色
     const colors = geometry.attributes.color.array;
     for (let i = 0; i < particleCount; i++) {
         // 使用渐变色 - 在primary和secondary之间随机混合
@@ -1665,9 +1795,9 @@ function animate() {
                 const scale = 0.8 + handSpread * 0.5;
 
                 target = new THREE.Vector3(
-                    baseTarget.x * scale,
-                    baseTarget.y * scale,
-                    baseTarget.z * scale
+                    baseTarget.x * scale + walkingOffset.x,
+                    baseTarget.y * scale + walkingOffset.y,
+                    baseTarget.z * scale + walkingOffset.z
                 );
             }
 
