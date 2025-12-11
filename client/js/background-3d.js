@@ -553,111 +553,171 @@ function updateTextShape(text) {
                 );
             }
         }
-    } else if (text === "UNIVERSE") {
-        // 🌌 宇宙深空隧道
-        for (let i = 0; i < particleCount; i++) {
-            // Tunnel cylinder
-            const angle = Math.random() * Math.PI * 2;
-            const radius = 50 + Math.random() * 200;
-            const depth = (Math.random() - 0.5) * 1000;
+    }
+}
+    } else if (text === "SPACE_DOG") {
+    // 🚀 太空飞狗 (拉布拉多 + 宇航服)
+    isMultiColor = true;
 
-            const x = Math.cos(angle) * radius;
-            const y = Math.sin(angle) * radius;
-            const z = depth;
+    // 1. 生成狗子 (Labrador) - 身体
+    const dogPoints = createPointsFromCanvas("🐕", false);
+    const pLen = dogPoints.length;
+
+    // 2. 生成头盔 (Bubble)
+    const helmetCenter = new THREE.Vector3(15, 25, 5); // Adjust based on emoji shape
+    const helmetRadius = 35;
+
+    const colors = geometry.attributes.color.array;
+
+    for (let i = 0; i < particleCount; i++) {
+        if (i < pLen) {
+            // Dog body colors (Golden/Brown)
+            const p = dogPoints[i];
+            // Scale up
+            p.multiplyScalar(1.4);
+
+            targetPositions[i] = p;
+
+            // Color mapping: standard dog (Golden Retriever / Labrador color)
+            colors[i * 3] = 1.0;   // R
+            colors[i * 3 + 1] = 0.8; // G
+            colors[i * 3 + 2] = 0.4; // B
+
+        } else if (i < pLen + 1500) {
+            // Helmet Glass (Sphere shell)
+            // Use some particles for the helmet
+            const t1 = Math.random() * Math.PI * 2;
+            const t2 = Math.acos(Math.random() * 2 - 1);
+
+            const x = helmetCenter.x + helmetRadius * Math.sin(t2) * Math.cos(t1);
+            const y = helmetCenter.y + helmetRadius * Math.sin(t2) * Math.sin(t1);
+            const z = helmetCenter.z + helmetRadius * Math.cos(t2);
+
             targetPositions[i] = new THREE.Vector3(x, y, z);
-        }
-    } else if (text === "WORLD") {
-        // 🌏 世界地图 (Sphere with Emoji Texture Logic approximated by Emoji Globe)
-        const points = createPointsFromCanvas("🌏");
-        const pLen = points.length;
-        for (let i = 0; i < particleCount; i++) {
-            if (i < pLen) {
-                // Map abstract flat points to sphere?
-                // Simple mapping: map flat x,y to lat,lon
-                const p = points[i];
-                // p.x ranges -100 to 100 roughly
-                // Map to sphere
-                const lon = (p.x / 150) * Math.PI * 2;
-                const lat = (p.y / 150) * Math.PI;
-                const rad = 60;
 
-                const sx = rad * Math.cos(lat) * Math.cos(lon);
-                const sy = rad * Math.sin(lat);
-                const sz = rad * Math.cos(lat) * Math.sin(lon);
+            // Helmet Color (Cyan/Blue Glass transparency feel)
+            colors[i * 3] = 0.4;
+            colors[i * 3 + 1] = 0.8;
+            colors[i * 3 + 2] = 1.0;
+        } else {
+            // Stars / Space Dust trail
+            const x = (Math.random() - 0.5) * 600;
+            const y = (Math.random() - 0.5) * 300;
+            const z = (Math.random() - 0.5) * 600; // Deep space
+            targetPositions[i] = new THREE.Vector3(x, y, z);
 
-                // Just use the flat emoji, it looks better usually
-                targetPositions[i] = points[i];
-                targetPositions[i].multiplyScalar(1.5);
-            } else {
-                targetPositions[i] = new THREE.Vector3((Math.random() - 0.5) * 300, (Math.random() - 0.5) * 300, (Math.random() - 0.5) * 300);
-            }
+            colors[i * 3] = 1.0;
+            colors[i * 3 + 1] = 1.0;
+            colors[i * 3 + 2] = 1.0;
         }
-    } else if (text === "CHINA") {
-        const points = createPointsFromCanvas("🇨🇳"); // Flag might be boxy, maybe text better?
-        // Let's use Text instead for clearer shape
-        // const points = createPointsFromCanvas("中国"); 
-        // User asked for "Map". "🇨🇳" emoji usually renders as a flag.
-        // Let's use "中国" text but style it creatively?
-        // Stick to the points from canvas logic it's robust.
-        const points2 = createPointsFromCanvas("中国");
-        const pLen = points2.length;
-        for (let i = 0; i < particleCount; i++) {
-            if (i < pLen) targetPositions[i] = points2[i];
-            else targetPositions[i] = new THREE.Vector3(0, 0, 0);
+    }
+    geometry.attributes.color.needsUpdate = true;
+
+} else if (text === "UNIVERSE") {
+    // 🌌 宇宙深空隧道
+    for (let i = 0; i < particleCount; i++) {
+        // Tunnel cylinder
+        const angle = Math.random() * Math.PI * 2;
+        const radius = 50 + Math.random() * 200;
+        const depth = (Math.random() - 0.5) * 1000;
+
+        const x = Math.cos(angle) * radius;
+        const y = Math.sin(angle) * radius;
+        const z = depth;
+        targetPositions[i] = new THREE.Vector3(x, y, z);
+    }
+} else if (text === "WORLD") {
+    // 🌏 世界地图 (Sphere with Emoji Texture Logic approximated by Emoji Globe)
+    const points = createPointsFromCanvas("🌏");
+    const pLen = points.length;
+    for (let i = 0; i < particleCount; i++) {
+        if (i < pLen) {
+            // Map abstract flat points to sphere?
+            // Simple mapping: map flat x,y to lat,lon
+            const p = points[i];
+            // p.x ranges -100 to 100 roughly
+            // Map to sphere
+            const lon = (p.x / 150) * Math.PI * 2;
+            const lat = (p.y / 150) * Math.PI;
+            const rad = 60;
+
+            const sx = rad * Math.cos(lat) * Math.cos(lon);
+            const sy = rad * Math.sin(lat);
+            const sz = rad * Math.cos(lat) * Math.sin(lon);
+
+            // Just use the flat emoji, it looks better usually
+            targetPositions[i] = points[i];
+            targetPositions[i].multiplyScalar(1.5);
+        } else {
+            targetPositions[i] = new THREE.Vector3((Math.random() - 0.5) * 300, (Math.random() - 0.5) * 300, (Math.random() - 0.5) * 300);
         }
-    } else if (text === "CHONGQING") {
-        const points = createPointsFromCanvas("重庆");
-        const pLen = points.length;
-        for (let i = 0; i < particleCount; i++) {
-            if (i < pLen) targetPositions[i] = points[i];
-            else targetPositions[i] = new THREE.Vector3(0, 0, 0);
-        }
-    } else if (text.startsWith("CUSTOM:")) {
-        // 自定义文字模式 (打字机效果用到)
-        const customText = text.substring(7);
-        const points = createPointsFromCanvas(customText);
-        const pLen = points.length;
-        for (let i = 0; i < particleCount; i++) {
-            if (i < pLen) {
-                targetPositions[i] = points[i];
-            } else {
-                targetPositions[i] = new THREE.Vector3(
-                    (Math.random() - 0.5) * 500,
-                    (Math.random() - 0.5) * 500,
-                    (Math.random() - 0.5) * 500
-                );
-            }
-        }
-    } else {
-        if (!font) return;
-        // Default text
-        const textGeo = new THREE.TextGeometry(text, {
-            font: font,
-            size: 20,
-            height: 4,
-            curveSegments: 12,
-            bevelEnabled: true,
-            bevelThickness: 1,
-            bevelSize: 0.5,
-            bevelSegments: 3
-        });
-        textGeo.center();
-        const textPoints = textGeo.attributes.position.array;
-        const pointCount = textPoints.length / 3;
-        for (let i = 0; i < particleCount; i++) {
-            const targetIndex = i % pointCount;
-            const tx = textPoints[targetIndex * 3];
-            const ty = textPoints[targetIndex * 3 + 1];
-            const tz = textPoints[targetIndex * 3 + 2];
-            const jitter = 0.5;
+    }
+} else if (text === "CHINA") {
+    const points = createPointsFromCanvas("🇨🇳"); // Flag might be boxy, maybe text better?
+    // Let's use Text instead for clearer shape
+    // const points = createPointsFromCanvas("中国"); 
+    // User asked for "Map". "🇨🇳" emoji usually renders as a flag.
+    // Let's use "中国" text but style it creatively?
+    // Stick to the points from canvas logic it's robust.
+    const points2 = createPointsFromCanvas("中国");
+    const pLen = points2.length;
+    for (let i = 0; i < particleCount; i++) {
+        if (i < pLen) targetPositions[i] = points2[i];
+        else targetPositions[i] = new THREE.Vector3(0, 0, 0);
+    }
+} else if (text === "CHONGQING") {
+    const points = createPointsFromCanvas("重庆");
+    const pLen = points.length;
+    for (let i = 0; i < particleCount; i++) {
+        if (i < pLen) targetPositions[i] = points[i];
+        else targetPositions[i] = new THREE.Vector3(0, 0, 0);
+    }
+} else if (text.startsWith("CUSTOM:")) {
+    // 自定义文字模式 (打字机效果用到)
+    const customText = text.substring(7);
+    const points = createPointsFromCanvas(customText);
+    const pLen = points.length;
+    for (let i = 0; i < particleCount; i++) {
+        if (i < pLen) {
+            targetPositions[i] = points[i];
+        } else {
             targetPositions[i] = new THREE.Vector3(
-                tx + (Math.random() - 0.5) * jitter,
-                ty + (Math.random() - 0.5) * jitter,
-                tz + (Math.random() - 0.5) * jitter
+                (Math.random() - 0.5) * 500,
+                (Math.random() - 0.5) * 500,
+                (Math.random() - 0.5) * 500
             );
         }
-        textGeo.dispose();
     }
+} else {
+    if (!font) return;
+    // Default text
+    const textGeo = new THREE.TextGeometry(text, {
+        font: font,
+        size: 20,
+        height: 4,
+        curveSegments: 12,
+        bevelEnabled: true,
+        bevelThickness: 1,
+        bevelSize: 0.5,
+        bevelSegments: 3
+    });
+    textGeo.center();
+    const textPoints = textGeo.attributes.position.array;
+    const pointCount = textPoints.length / 3;
+    for (let i = 0; i < particleCount; i++) {
+        const targetIndex = i % pointCount;
+        const tx = textPoints[targetIndex * 3];
+        const ty = textPoints[targetIndex * 3 + 1];
+        const tz = textPoints[targetIndex * 3 + 2];
+        const jitter = 0.5;
+        targetPositions[i] = new THREE.Vector3(
+            tx + (Math.random() - 0.5) * jitter,
+            ty + (Math.random() - 0.5) * jitter,
+            tz + (Math.random() - 0.5) * jitter
+        );
+    }
+    textGeo.dispose();
+}
 }
 
 // 新增：从 Canvas 获取文字点阵 (支持中文 + 满屏模式 + 自动竖屏适配)
@@ -1652,7 +1712,7 @@ function animate() {
                 colorKey = 7; // Mystic Violet
             } else if (nextText === "WAVE" || nextText === "TORNADO" || nextText === "AQUARIUS" || nextText === "PISCES") {
                 colorKey = 0; // Deep Ocean
-            } else if (nextText === "OLYMPIC") {
+            } else if (nextText === "OLYMPIC" || nextText === "SPACE_DOG") {
                 // Multi-color handled in updateTextShape
             } else if (nextText === "CAT" || nextText === "DOG") {
                 colorKey = 3; // Orange/Gold for pets
@@ -1678,6 +1738,19 @@ function animate() {
             walkingOffset.y = Math.abs(Math.sin(time * 5)) * 10; // Bobbing
             scene.rotation.y = 0; // Reset rotation
             scene.position.z = 0;
+        } else if (currentModel === "SPACE_DOG") {
+            // 🚀 太空漫游动画
+            // Float like zero gravity + slight forward velocity visual
+            scene.rotation.y = Math.sin(time * 0.5) * 0.3; // Gentle turn
+            scene.rotation.z = Math.sin(time * 0.3) * 0.1; // Gentle banking
+
+            // Bobbing up and down slowly (breathing)
+            scene.position.y = Math.sin(time) * 5;
+
+            // Move Stars relative to dog? 
+            // Actually simplest is just rotate slightly and let particles shimmer.
+            // We can animate the 'helmet' particles separately if we tracked them, but whole scene is easier.
+            walkingOffset.set(0, 0, 0);
         } else {
             walkingOffset.set(0, 0, 0); // Reset
         }
@@ -1693,8 +1766,8 @@ function animate() {
         } else if (currentModel === "WAVE") {
             scene.rotation.x = Math.sin(time * 0.5) * 0.2;
             scene.position.z = 0;
-        } else if (currentModel !== "CAT" && currentModel !== "DOG") {
-            // Default gentle drift (but skip if walking)
+        } else if (currentModel !== "CAT" && currentModel !== "DOG" && currentModel !== "SPACE_DOG") {
+            // Default gentle drift (but skip if walking/flying with custom logic)
             scene.rotation.y += 0.0005;
             scene.position.z = 0;
         }
