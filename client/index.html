@@ -405,6 +405,40 @@
 					}
 				});
 
+				// 自动隐藏逻辑：按钮显示后10秒无操作则隐藏
+				// Auto-hide logic: Hide button if not clicked within 10 seconds after showing
+				const autoHideButton = () => {
+					if (window.btnHideTimer) clearTimeout(window.btnHideTimer);
+					window.btnHideTimer = setTimeout(() => {
+						// Double check if it's still visible
+						if (startBtn.style.display === 'block' || startBtn.style.opacity === '1') {
+							startBtn.style.transition = 'opacity 0.8s ease, transform 0.8s ease';
+							startBtn.style.opacity = '0';
+							startBtn.style.transform = 'scale(0.8)';
+							setTimeout(() => {
+								if (startBtn.style.opacity === '0') {
+									startBtn.style.display = 'none';
+								}
+							}, 800);
+						}
+					}, 10000); // 10s
+				};
+
+				// 在按钮显示的地方调用 autoHideButton
+				const originalDisplay = startBtn.style.display;
+				const observer = new MutationObserver((mutations) => {
+					mutations.forEach((mutation) => {
+						if (mutation.type === 'attributes' && mutation.attributeName === 'style') {
+							// If button becomes visible
+							const isVisible = startBtn.style.display === 'block' && startBtn.style.opacity !== '0';
+							if (isVisible) {
+								autoHideButton();
+							}
+						}
+					});
+				});
+				observer.observe(startBtn, { attributes: true });
+
 				startBtn.addEventListener('click', (e) => {
 					e.stopPropagation(); // 防止冒泡触发上面的计数逻辑
 					// 按钮淡出

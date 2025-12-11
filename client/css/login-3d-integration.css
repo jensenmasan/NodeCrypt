@@ -218,33 +218,44 @@
     /* 减小字体 */
     font-weight: 400;
     letter-spacing: 2px;
-    color: rgba(255, 255, 255, 0.9);
-    background: rgba(0, 0, 0, 0.2);
-    border: 1px solid rgba(0, 217, 255, 0.3);
-    border-radius: 30px;
+    color: #fff;
+    background: rgba(255, 255, 255, 0.1);
+    border: 1px solid rgba(255, 255, 255, 0.2);
+    border-radius: 50px;
     cursor: pointer;
     overflow: hidden;
-    transition: all 0.4s cubic-bezier(0.23, 1, 0.32, 1);
-    backdrop-filter: blur(8px);
+    transition: all 0.5s cubic-bezier(0.23, 1, 0.32, 1);
+    backdrop-filter: blur(20px);
+    -webkit-backdrop-filter: blur(20px);
     text-transform: uppercase;
-    box-shadow: 0 0 15px rgba(0, 217, 255, 0.15);
+    box-shadow:
+        0 10px 30px rgba(0, 0, 0, 0.2),
+        inset 0 0 20px rgba(255, 255, 255, 0.1),
+        0 0 20px rgba(0, 217, 255, 0.2);
 }
 
 /* 按钮内部文字 */
 .start-login-btn span {
     position: relative;
     z-index: 2;
-    text-shadow: 0 0 5px rgba(0, 217, 255, 0.5);
+    background: linear-gradient(to right, #fff, #b4ecff);
+    -webkit-background-clip: text;
+    background-clip: text;
+    color: transparent;
+    font-weight: 600;
+    text-shadow: 0 0 20px rgba(0, 217, 255, 0.3);
 }
 
 /* 按钮悬停效果 */
 .start-login-btn:hover {
-    border-color: #00d9ff;
-    box-shadow: 0 0 25px rgba(0, 217, 255, 0.4), inset 0 0 10px rgba(0, 217, 255, 0.2);
-    transform: translateY(2px);
-    letter-spacing: 3px;
-    background: rgba(0, 217, 255, 0.15);
-    color: #fff;
+    border-color: rgba(255, 255, 255, 0.5);
+    box-shadow:
+        0 15px 40px rgba(0, 0, 0, 0.3),
+        inset 0 0 30px rgba(255, 255, 255, 0.2),
+        0 0 30px rgba(0, 217, 255, 0.4);
+    transform: translateY(-2px) scale(1.02);
+    letter-spacing: 4px;
+    background: rgba(255, 255, 255, 0.15);
 }
 
 /* 按钮点击时的爆炸效果前摇 */

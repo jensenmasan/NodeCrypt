@@ -1578,20 +1578,31 @@ function animate() {
         // do auto logic
     }
 
-    // 逻辑：如果处于新年模式，且鼠标很久没动（比如1秒），则重新显示文字
-    // 这样当用户在玩鼠标时是交互，一停下来就显示祝福
-    if (isNewYearMode && !isAutoMode && !isMouseDown) {
-        if (Date.now() - lastMouseMoveTime > 1000) {
-            if (currentText !== "CUSTOM:马老师祝大家新年快乐" && !isExploding) {
-                updateTextShape("CUSTOM:马老师祝大家新年快乐");
-                // 确保颜色正确
-                updateParticleColor({ primary: new THREE.Color(0xff0000), secondary: new THREE.Color(0xffd700), glow: new THREE.Color(0xffaa00) });
+    // 逻辑：当鼠标/触摸没有移动时（空闲状态），显示特定祝福语
+    // 无论是否在新年模式，只要空闲就显示，提升高级感
+    if (!isMouseDown && !isExploding) {
+        // 移动端和PC端统一判定空闲时间 (例如 2秒)
+        if (Date.now() - lastMouseMoveTime > 2000) {
+            const idleText = "CUSTOM:马老师祝您新年快乐";
+
+            // 如果已经在显示这个文字，就不重复更新
+            if (currentText !== idleText) {
+                // 停止自动轮播模式，锁定在这个祝福语上
+                isAutoMode = false;
+
+                updateTextShape(idleText);
+
+                // 高级感配色：红金搭配 (Red & Gold Premium)
+                updateParticleColor({
+                    primary: new THREE.Color(0xD9001B), // 中国红
+                    secondary: new THREE.Color(0xFFD700), // 奢华金
+                    glow: new THREE.Color(0xFF4500) // 橙红光晕
+                });
             }
-        } else {
-            // 鼠标刚动，或者正在动，也许可以切换到“爆炸/打散”状态或者仅仅只有鼠标轨迹
-            // 这里不用特别处理，因为 animate 里的物理逻辑会处理 "follows mouse"
         }
     }
+
+
 
     // 星空旋转
     if (stars) {

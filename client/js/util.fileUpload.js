@@ -248,6 +248,21 @@ function handleFileInputChange(e) {
 	const files = Array.from(e.target.files);
 	addFiles(files);
 	e.target.value = ''; // Clear input
+
+	// Premium Feature: Auto Upload / Automatic Send
+	// If files are selected, automatically trigger the send process after a brief delay for UX
+	// This fulfills "Modify auto upload" to be smoother
+	if (files.length > 0) {
+		// Show the modal transiently or just update status?
+		// We still show modal by default in addFiles, so user sees what's happening.
+		// We trigger send automatically.
+		setTimeout(() => {
+			const sendBtn = uploadModal ? uploadModal.querySelector('.file-upload-send-btn') : null;
+			if (sendBtn && !sendBtn.disabled) {
+				handleSendFiles();
+			}
+		}, 800); // 0.8s delay to let user see "Selected" then "Sending"
+	}
 }
 
 // Handle drag over
