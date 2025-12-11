@@ -33,8 +33,8 @@ let lastHandTime = Date.now();
 let isAutoMode = true;
 let autoTimer = 0;
 const AUTO_SWITCH_INTERVAL = 300;
-// 终极自动轮播内容： 文字 -> 数学几何 -> 祝福
-const autoTexts = ["NODECRYPT", "SPHERE", "DNA", "TECH", "MOBIUS", "ART", "HEART", "HAPPY", "NEW", "YEAR", "2025",
+// 终极自动轮播内容：包含了祝福语的高级循环
+const autoTexts = ["CUSTOM:马老师祝您新年快乐", "HEART", "2025", "FIREWORKS", "CUSTOM:万事如意", "TECH", "ART", "MOBIUS", "DNA",
     "ARIES", "TAURUS", "GEMINI", "CANCER", "LEO", "VIRGO", "LIBRA", "SCORPIO", "SAGITTARIUS", "CAPRICORN", "AQUARIUS", "PISCES"
 ];
 let autoTextIndex = 0;
@@ -60,13 +60,14 @@ let fireworksInterval = null; // 烟花循环定时器
 
 // 粒子颜色配置 (扩充)
 const colorPalette = {
-    1: { primary: new THREE.Color(0x00d9ff), secondary: new THREE.Color(0x0088ff), glow: new THREE.Color(0x00ffff) }, // 青
-    2: { primary: new THREE.Color(0xff00ff), secondary: new THREE.Color(0xff0088), glow: new THREE.Color(0xff88ff) }, // 紫
-    3: { primary: new THREE.Color(0xffaa00), secondary: new THREE.Color(0xffdd00), glow: new THREE.Color(0xffff00) }, // 橙
-    0: { primary: new THREE.Color(0x88ccff), secondary: new THREE.Color(0xaaddff), glow: new THREE.Color(0xffffff) }, // 蓝
-    4: { primary: new THREE.Color(0xff0033), secondary: new THREE.Color(0xff6666), glow: new THREE.Color(0xffaaaa) }, // 红
-    5: { primary: new THREE.Color(0xffbb00), secondary: new THREE.Color(0xffee88), glow: new THREE.Color(0xffffff) }, // 金
-    6: { primary: new THREE.Color(0x00ff88), secondary: new THREE.Color(0xccffcc), glow: new THREE.Color(0xaaffaa) }  // 绿(DNA)
+    1: { primary: new THREE.Color(0x00f260), secondary: new THREE.Color(0x0575e6), glow: new THREE.Color(0x00f260) }, // Cyber Green
+    2: { primary: new THREE.Color(0xb92b27), secondary: new THREE.Color(0x1565c0), glow: new THREE.Color(0xff00cc) }, // Neural Red/Blue
+    3: { primary: new THREE.Color(0xFDC830), secondary: new THREE.Color(0xF37335), glow: new THREE.Color(0xFFD700) }, // Royal Gold
+    0: { primary: new THREE.Color(0x00c6ff), secondary: new THREE.Color(0x0072ff), glow: new THREE.Color(0x00ffff) }, // Deep Ocean
+    4: { primary: new THREE.Color(0xe100ff), secondary: new THREE.Color(0x7f00ff), glow: new THREE.Color(0xff00ff) }, // Neon Purple
+    5: { primary: new THREE.Color(0xff4b1f), secondary: new THREE.Color(0x1fddff), glow: new THREE.Color(0xffffff) }, // Fire & Ice
+    6: { primary: new THREE.Color(0xD9001B), secondary: new THREE.Color(0xFFD700), glow: new THREE.Color(0xFF4500) },  // Premium Red/Gold (New Year)
+    7: { primary: new THREE.Color(0x8E2DE2), secondary: new THREE.Color(0x4A00E0), glow: new THREE.Color(0xaa00ff) }   // Mystic Violet
 };
 
 // ... (init3DGestureSystem 等函数保持不变，直到 updateTextShape) ...
@@ -1351,20 +1352,21 @@ function animate() {
             const nextText = autoTexts[autoTextIndex];
             updateTextShape(nextText);
 
-            // 智能颜色匹配
+            // 智能颜色匹配 - Premium Loop Colors
             let colorKey = 0;
-            if (nextText === "HEART" || nextText === "HAPPY" || nextText === "YEAR") {
-                // 红色或金色
-                colorKey = Math.random() > 0.5 ? 4 : 5;
-            } else if (nextText === "2025" || nextText === "NEW") {
-                // 金色或紫色
-                colorKey = Math.random() > 0.5 ? 5 : 2;
-            } else if (nextText === "HAPPY" || nextText === "YEAR") {
-                // 多彩/橙色
-                colorKey = 3;
+            if (nextText.includes("马老师") || nextText.includes("新年") || nextText.includes("万事")) {
+                colorKey = 6; // Premium Red/Gold
+            } else if (nextText === "HEART") {
+                colorKey = 4; // Neon Purple / Pink
+            } else if (nextText === "2025" || nextText === "FIREWORKS") {
+                colorKey = 3; // Royal Gold
+            } else if (nextText === "TECH" || nextText === "DNA") {
+                colorKey = 1; // Cyber Green
+            } else if (nextText === "ART" || nextText === "MOBIUS") {
+                colorKey = 7; // Mystic Violet
             } else {
-                // 随机
-                colorKey = Math.floor(Math.random() * 6);
+                // 随机选择高级配色
+                colorKey = Math.floor(Math.random() * 8);
             }
             updateParticleColor(colorPalette[colorKey] || colorPalette[0]);
         }
@@ -1580,24 +1582,16 @@ function animate() {
 
     // 逻辑：当鼠标/触摸没有移动时（空闲状态），显示特定祝福语
     // 无论是否在新年模式，只要空闲就显示，提升高级感
-    if (!isMouseDown && !isExploding) {
-        // 移动端和PC端统一判定空闲时间 (例如 2秒)
-        if (Date.now() - lastMouseMoveTime > 2000) {
-            const idleText = "CUSTOM:马老师祝您新年快乐";
-
-            // 如果已经在显示这个文字，就不重复更新
-            if (currentText !== idleText) {
-                // 停止自动轮播模式，锁定在这个祝福语上
-                isAutoMode = false;
-
-                updateTextShape(idleText);
-
-                // 高级感配色：红金搭配 (Red & Gold Premium)
-                updateParticleColor({
-                    primary: new THREE.Color(0xD9001B), // 中国红
-                    secondary: new THREE.Color(0xFFD700), // 奢华金
-                    glow: new THREE.Color(0xFF4500) // 橙红光晕
-                });
+    // 逻辑：当鼠标/触摸没有移动时（空闲状态），进入自动循环模式
+    // Logic: When idle (no mouse/touch movement), enter auto-loop mode
+    if (!isMouseDown && !isExploding && !document.querySelector('.model-btn.active')) {
+        // 移动端和PC端统一判定空闲时间 (例如 3秒)
+        // 确保没有在手动交互
+        if (Date.now() - lastMouseMoveTime > 3000 && Date.now() - lastHandTime > 3000) {
+            if (!isAutoMode) {
+                isAutoMode = true;
+                // 重置计时器以便立即切换
+                autoTimer = AUTO_SWITCH_INTERVAL;
             }
         }
     }
