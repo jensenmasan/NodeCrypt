@@ -121,7 +121,7 @@
 	<div id="canvas-container"></div>
 
 	<div id="start-screen" class="start-screen">
-		<button id="start-login-btn" class="start-login-btn">
+		<button id="start-login-btn" class="start-login-btn" style="display: none; opacity: 0; transform: scale(0.8);">
 			<span>进入系统</span>
 			<div class="btn-glow"></div>
 		</button>
@@ -373,7 +373,41 @@
 			const loginContainer = document.getElementById('login-container');
 
 			if (startBtn && loginContainer) {
-				startBtn.addEventListener('click', () => {
+				// 隐藏启动按钮的显示逻辑：连续点击3次显示
+				let clickCount = 0;
+				let clickTimer = null;
+
+				document.addEventListener('click', (e) => {
+					// 如果按钮已经显示或登录框已显示，则不处理
+					if (startBtn.style.display === 'block' || loginContainer.style.display === 'flex') return;
+
+					// 忽略在startBtn上的点击（虽然它隐藏了点不到，但为了逻辑严谨）
+					if (e.target === startBtn || startBtn.contains(e.target)) return;
+
+					clickCount++;
+					console.log('Click count:', clickCount);
+
+					if (clickTimer) clearTimeout(clickTimer);
+
+					if (clickCount >= 3) {
+						// 显示按钮
+						startBtn.style.display = 'block';
+						// 强制重排
+						startBtn.offsetHeight;
+						startBtn.style.opacity = '1';
+						startBtn.style.transform = 'scale(1)';
+						clickCount = 0; // 重置
+					} else {
+						// 1秒内没有下一次点击则重置
+						clickTimer = setTimeout(() => {
+							clickCount = 0;
+						}, 1000); // 宽松一点的时间窗口
+					}
+				});
+
+				startBtn.addEventListener('click', (e) => {
+					e.stopPropagation(); // 防止冒泡触发上面的计数逻辑
+					// 按钮淡出
 					// 按钮淡出
 					startBtn.style.transform = 'scale(1.5)';
 					startBtn.style.opacity = '0';
