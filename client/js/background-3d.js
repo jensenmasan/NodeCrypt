@@ -611,6 +611,64 @@ function updateTextShape(text) {
         }
         geometry.attributes.color.needsUpdate = true;
 
+    } else if (text === "CHRISTMAS_TREE") {
+        // 🎄 圣诞树 (螺旋圆锥 + 装饰球)
+        isMultiColor = true;
+
+        const colors = geometry.attributes.color.array;
+
+        for (let i = 0; i < particleCount; i++) {
+            // 90% Foliage (Green Spiral Cone)
+            if (Math.random() > 0.1) {
+                const h = Math.random() * 200 - 100; // -100 to 100
+                // Normalized height 0 (top) to 1 (bottom)
+                const normH = (100 - h) / 200;
+                // Radius increases as we go down
+                const maxR = 60 * normH + 2;
+                const r = Math.random() * maxR;
+                const angle = h * 0.5 + Math.random() * Math.PI * 2;
+
+                const x = r * Math.cos(angle);
+                const z = r * Math.sin(angle);
+                const y = h;
+
+                targetPositions[i] = new THREE.Vector3(x, y, z);
+
+                // Deep Green to Light Green
+                colors[i * 3] = 0.0;
+                colors[i * 3 + 1] = 0.5 + Math.random() * 0.5;
+                colors[i * 3 + 2] = 0.0;
+            } else {
+                // 10% Ornaments (Red/Gold Balls + Star)
+                // Top Star
+                if (i % 100 === 0) {
+                    targetPositions[i] = new THREE.Vector3(0, 105, 0); // Top
+                    colors[i * 3] = 1; colors[i * 3 + 1] = 1; colors[i * 3 + 2] = 0; // Yellow
+                } else {
+                    // Random Balls
+                    const h = Math.random() * 180 - 90;
+                    const normH = (100 - h) / 200;
+                    const r = 60 * normH;
+                    const angle = Math.random() * Math.PI * 2;
+
+                    // Stick out a bit
+                    const x = (r + 2) * Math.cos(angle);
+                    const y = h;
+                    const z = (r + 2) * Math.sin(angle);
+
+                    targetPositions[i] = new THREE.Vector3(x, y, z);
+
+                    // Red or Gold
+                    if (Math.random() > 0.5) {
+                        colors[i * 3] = 1; colors[i * 3 + 1] = 0; colors[i * 3 + 2] = 0; // Red
+                    } else {
+                        colors[i * 3] = 1; colors[i * 3 + 1] = 0.8; colors[i * 3 + 2] = 0; // Gold
+                    }
+                }
+            }
+        }
+        geometry.attributes.color.needsUpdate = true;
+
     } else if (text === "UNIVERSE") {
         // 🌌 宇宙深空隧道
         for (let i = 0; i < particleCount; i++) {
@@ -1710,7 +1768,7 @@ function animate() {
                 colorKey = 7; // Mystic Violet
             } else if (nextText === "WAVE" || nextText === "TORNADO" || nextText === "AQUARIUS" || nextText === "PISCES") {
                 colorKey = 0; // Deep Ocean
-            } else if (nextText === "OLYMPIC" || nextText === "SPACE_DOG") {
+            } else if (nextText === "OLYMPIC" || nextText === "SPACE_DOG" || nextText === "CHRISTMAS_TREE") {
                 // Multi-color handled in updateTextShape
             } else if (nextText === "CAT" || nextText === "DOG") {
                 colorKey = 3; // Orange/Gold for pets
@@ -1997,15 +2055,31 @@ function animate() {
 
 
 
-    // 星空旋转
+    // 星空旋转 / 沉浸式粒子流
     if (stars) {
-        stars.rotation.y += 0.0002;
-        stars.rotation.x += 0.0001;
+        // 让星星向镜头移动，产生穿越感 (Warp effect)
+        const starPositions = stars.geometry.attributes.position.array;
+        const starCount = starPositions.length / 3;
+        for (let i = 0; i < starCount; i++) {
+            // Move Z towards camera
+            starPositions[i * 3 + 2] += 2; // Speed
+            if (starPositions[i * 3 + 2] > 1000) {
+                starPositions[i * 3 + 2] = -2000; // Reset far back
+            }
+        }
+        stars.geometry.attributes.position.needsUpdate = true;
+        stars.rotation.z += 0.001; // Spiral
     }
 
-    // 相机移动
-    camera.position.x = Math.sin(time * 0.2) * 5;
-    camera.position.y = 20 + Math.cos(time * 0.15) * 3;
+    // 相机移动 (LookAt 保持中心，但是位置更具有动感)
+    if (!isAutoMode) {
+        // Manual mode: subtle parallax
+        camera.position.x += (mouse.x * 200 - camera.position.x) * 0.05;
+        camera.position.y += (-mouse.y * 200 - camera.position.y) * 0.05;
+    }
+
+    // Auto Mode 已经在上方逻辑中控制了 camera.position.z
+    // 这里只把 LookAt 锁定中心，确保 "融入" 感
     camera.lookAt(0, 0, 0);
 
     renderer.render(scene, camera);
