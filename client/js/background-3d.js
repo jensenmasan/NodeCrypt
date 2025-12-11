@@ -37,8 +37,11 @@ let autoTimer = 0;
 const AUTO_SWITCH_INTERVAL = 300;
 // 终极自动轮播内容：包含了祝福语的高级循环
 // 终极自动轮播内容：30+ 惊艳场景自动循环
+// 终极自动轮播内容：30+ 惊艳场景自动循环
 const autoTexts = [
     "CUSTOM:马老师祝您新年快乐", "HEART", "FIREWORKS", "2025",
+    "OLYMPIC", "CAT", "DOG", "UNIVERSE",
+    "WORLD", "CHINA", "CHONGQING",
     "GALAXY", "DNA", "ATOM", "SPHERE", "WAVE", "BUTTERFLY", "TORNADO", "DIAMOND",
     "ARIES", "TAURUS", "GEMINI", "CANCER", "LEO", "VIRGO", "LIBRA", "SCORPIO", "SAGITTARIUS", "CAPRICORN", "AQUARIUS", "PISCES",
     "CUSTOM:财富自由", "CUSTOM:身体健康", "CUSTOM:万事如意", "CUSTOM:NodeCrypt", "TECH", "ART"
@@ -1649,6 +1652,14 @@ function animate() {
                 colorKey = 7; // Mystic Violet
             } else if (nextText === "WAVE" || nextText === "TORNADO" || nextText === "AQUARIUS" || nextText === "PISCES") {
                 colorKey = 0; // Deep Ocean
+            } else if (nextText === "OLYMPIC") {
+                // Multi-color handled in updateTextShape
+            } else if (nextText === "CAT" || nextText === "DOG") {
+                colorKey = 3; // Orange/Gold for pets
+            } else if (nextText === "UNIVERSE") {
+                colorKey = 0; // Deep Blue/Black
+            } else if (nextText === "WORLD" || nextText === "CHINA" || nextText === "CHONGQING") {
+                colorKey = 1; // Green/Blue for maps
             } else {
                 // Zodiacs and others: random mix
                 colorKey = Math.floor(Math.random() * 8);
@@ -1659,18 +1670,33 @@ function animate() {
         // --- 自动模式下的动态动画 (Movement/Animation) ---
         // 让特定物体这自动模式下动起来 (旋转、飘动)
         const currentModel = autoTexts[autoTextIndex] || "";
-        if (currentModel === "GALAXY" || currentModel === "ATOM") {
-            // 整体缓慢旋转
+
+        if (currentModel === "CAT" || currentModel === "DOG") {
+            // 🚶 宠物走动动画
+            // We set a global variable for use in the loop
+            walkingOffset.x = Math.sin(time) * 30;
+            walkingOffset.y = Math.abs(Math.sin(time * 5)) * 10; // Bobbing
+            scene.rotation.y = 0; // Reset rotation
+            scene.position.z = 0;
+        } else {
+            walkingOffset.set(0, 0, 0); // Reset
+        }
+
+        if (currentModel === "GALAXY" || currentModel === "ATOM" || currentModel === "UNIVERSE") {
+            // 整体缓慢旋转 / 宇宙穿梭感
             scene.rotation.y += 0.002;
-            scene.rotation.z += 0.001;
+            if (currentModel === "UNIVERSE") scene.position.z = (Math.sin(time * 0.5) * 100) + 50;
+            else scene.position.z = 0;
         } else if (currentModel === "DNA" || currentModel === "TORNADO") {
             scene.rotation.y += 0.005; // Spin faster
+            scene.position.z = 0;
         } else if (currentModel === "WAVE") {
-            // Waving handled in shader/update usually, but we can tilt
             scene.rotation.x = Math.sin(time * 0.5) * 0.2;
-        } else {
-            // Default gentle drift
+            scene.position.z = 0;
+        } else if (currentModel !== "CAT" && currentModel !== "DOG") {
+            // Default gentle drift (but skip if walking)
             scene.rotation.y += 0.0005;
+            scene.position.z = 0;
         }
 
         // 自动模式下的呼吸扩散效果
