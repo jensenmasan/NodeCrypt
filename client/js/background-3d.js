@@ -320,6 +320,162 @@ function updateTextShape(text) {
                 );
             }
         }
+    } else if (text === "DNA") {
+        // 🧬 DNA 双螺旋
+        for (let i = 0; i < particleCount; i++) {
+            const t = (i / particleCount) * Math.PI * 20; // 10 turns
+            const radius = 30;
+            const height = 200;
+            const y = (i / particleCount) * height - height / 2;
+
+            // Strand 1
+            let x = Math.cos(t) * radius;
+            let z = Math.sin(t) * radius;
+
+            // Strand 2 (offset by PI)
+            if (i % 2 === 0) {
+                x = Math.cos(t + Math.PI) * radius;
+                z = Math.sin(t + Math.PI) * radius;
+            }
+
+            // Add some thickness/scatter
+            x += (Math.random() - 0.5) * 2;
+            z += (Math.random() - 0.5) * 2;
+
+            targetPositions[i] = new THREE.Vector3(x, y, z);
+        }
+    } else if (text === "GALAXY") {
+        // 🌌 银河系/旋涡
+        for (let i = 0; i < particleCount; i++) {
+            const angle = Math.random() * Math.PI * 2;
+            const radius = 10 + Math.random() * 100;
+            const spiralOffset = radius * 0.5; // Spiral factor
+
+            // 3 Arms
+            const armOffset = (Math.floor(Math.random() * 3) * Math.PI * 2) / 3;
+            const finalAngle = angle + spiralOffset + armOffset;
+
+            const x = Math.cos(finalAngle) * radius;
+            const z = Math.sin(finalAngle) * radius;
+            const y = (Math.random() - 0.5) * (20 - radius * 0.15); // Center is thicker
+
+            targetPositions[i] = new THREE.Vector3(x, y, z);
+        }
+    } else if (text === "ATOM") {
+        // ⚛️ 原子模型
+        const nucleusCount = Math.floor(particleCount * 0.2);
+        for (let i = 0; i < particleCount; i++) {
+            if (i < nucleusCount) {
+                // Nucleus (Dense sphere)
+                const r = 10 * Math.cbrt(Math.random());
+                const theta = Math.random() * Math.PI * 2;
+                const phi = Math.acos(Math.random() * 2 - 1);
+                targetPositions[i] = new THREE.Vector3(
+                    r * Math.sin(phi) * Math.cos(theta),
+                    r * Math.sin(phi) * Math.sin(theta),
+                    r * Math.cos(phi)
+                );
+            } else {
+                // Electron shells (3 rings)
+                const ring = Math.floor(Math.random() * 3);
+                const angle = Math.random() * Math.PI * 2;
+                const radius = 60 + Math.random() * 5;
+
+                let x, y, z;
+                if (ring === 0) { // XY plane
+                    x = Math.cos(angle) * radius;
+                    y = Math.sin(angle) * radius;
+                    z = (Math.random() - 0.5) * 2;
+                } else if (ring === 1) { // XZ plane
+                    x = Math.cos(angle) * radius;
+                    z = Math.sin(angle) * radius;
+                    y = (Math.random() - 0.5) * 2;
+                } else { // YZ plane (rotated)
+                    // Arbitrary tilt
+                    const rX = Math.cos(angle) * radius;
+                    const rY = Math.sin(angle) * radius;
+                    // Rotate 45 deg around X
+                    x = rX;
+                    y = rY * Math.cos(Math.PI / 4);
+                    z = rY * Math.sin(Math.PI / 4);
+                }
+                targetPositions[i] = new THREE.Vector3(x, y, z);
+            }
+        }
+    } else if (text === "SPHERE") {
+        // 🌐 Geodesic Sphere / Planet
+        for (let i = 0; i < particleCount; i++) {
+            const r = 70;
+            const theta = Math.random() * Math.PI * 2;
+            const phi = Math.acos(Math.random() * 2 - 1);
+            targetPositions[i] = new THREE.Vector3(
+                r * Math.sin(phi) * Math.cos(theta),
+                r * Math.sin(phi) * Math.sin(theta),
+                r * Math.cos(phi)
+            );
+        }
+    } else if (text === "WAVE") {
+        // 🌊 3D 波浪
+        const side = Math.sqrt(particleCount);
+        const size = 200;
+        for (let i = 0; i < particleCount; i++) {
+            const r = Math.floor(i / side);
+            const c = i % side;
+            const x = (c / side) * size - size / 2;
+            const z = (r / side) * size - size / 2;
+            const y = Math.sin(x * 0.05) * Math.cos(z * 0.05) * 30;
+            targetPositions[i] = new THREE.Vector3(x, y, z);
+        }
+    } else if (text === "BUTTERFLY") {
+        // 🦋 蝴蝶 (Lorenz Attractor-ish or Parametric)
+        for (let i = 0; i < particleCount; i++) {
+            // Parametric Butterfly Curve
+            // r = e^sin(t) - 2cos(4t) + sin^5((2t - pi)/24)
+            const t = Math.random() * 12 * Math.PI;
+            const r = Math.exp(Math.sin(t)) - 2 * Math.cos(4 * t) + Math.pow(Math.sin((2 * t - Math.PI) / 24), 5);
+
+            const scale = 15;
+            const x = r * Math.cos(t) * scale;
+            const y = r * Math.sin(t) * scale;
+            const z = (Math.random() - 0.5) * 50 * Math.sin(t); // Wing depth volume
+
+            // Tilt it a bit
+            targetPositions[i] = new THREE.Vector3(x, y, z);
+        }
+    } else if (text === "TORNADO") {
+        // 🌪️ 龙卷风
+        for (let i = 0; i < particleCount; i++) {
+            const h = Math.random() * 200 - 100; // Height -100 to 100
+            const progress = (h + 100) / 200; // 0 to 1
+            const r = 10 + progress * 60; // Bottom narrow, top wide
+            const angle = Math.random() * Math.PI * 2 * 5 + i * 0.01;
+
+            const x = r * Math.cos(angle);
+            const z = r * Math.sin(angle);
+            targetPositions[i] = new THREE.Vector3(x, h, z);
+        }
+    } else if (text === "DIAMOND") {
+        // 💎 钻石形状 (Double Cone / Octahedron approx)
+        for (let i = 0; i < particleCount; i++) {
+            const y = (Math.random() - 0.5) * 100;
+            const radiusAtY = (1 - Math.abs(y / 50)) * 50; // Linear fade from center
+
+            // Top part flatter? Let's do simple Octahedron-ish
+            // y goes -50 to 50
+            // r goes 0 -> 50 -> 0
+
+            const angle = Math.random() * Math.PI * 2;
+            // Snapping angle to create facets (e.g. 8 facets)
+            const facet = Math.floor(Math.random() * 8);
+            const facetAngle = (facet / 8) * Math.PI * 2;
+            // Mix random and faceted
+            const finalAngle = Math.random() > 0.8 ? angle : facetAngle + (Math.random() - 0.5) * 0.1;
+
+            const x = radiusAtY * Math.cos(finalAngle);
+            const z = radiusAtY * Math.sin(finalAngle);
+
+            targetPositions[i] = new THREE.Vector3(x, y, z);
+        }
     } else if (text.startsWith("CUSTOM:")) {
         // 自定义文字模式 (打字机效果用到)
         const customText = text.substring(7);
@@ -338,32 +494,25 @@ function updateTextShape(text) {
         }
     } else {
         if (!font) return;
-
-        // 默认文字处理逻辑
+        // Default text
         const textGeo = new THREE.TextGeometry(text, {
             font: font,
             size: 20,
-            height: 4, // 增加文字厚度
-            curveSegments: 12, // 更圆滑
-            bevelEnabled: true, // 开启倒角
+            height: 4,
+            curveSegments: 12,
+            bevelEnabled: true,
             bevelThickness: 1,
             bevelSize: 0.5,
             bevelSegments: 3
         });
-
-        textGeo.center(); // 居中
-
+        textGeo.center();
         const textPoints = textGeo.attributes.position.array;
         const pointCount = textPoints.length / 3;
-
-        // 更新目标位置
         for (let i = 0; i < particleCount; i++) {
             const targetIndex = i % pointCount;
             const tx = textPoints[targetIndex * 3];
             const ty = textPoints[targetIndex * 3 + 1];
             const tz = textPoints[targetIndex * 3 + 2];
-
-            // 增加一点随机偏移，让文字看起来更蓬松
             const jitter = 0.5;
             targetPositions[i] = new THREE.Vector3(
                 tx + (Math.random() - 0.5) * jitter,
@@ -1352,23 +1501,42 @@ function animate() {
             const nextText = autoTexts[autoTextIndex];
             updateTextShape(nextText);
 
-            // 智能颜色匹配 - Premium Loop Colors
+            // 智能颜色匹配 - Premium Loop Colors (Expanded)
             let colorKey = 0;
-            if (nextText.includes("马老师") || nextText.includes("新年") || nextText.includes("万事")) {
+            if (nextText.includes("马老师") || nextText.includes("新年") || nextText.includes("万事") || nextText.includes("财富")) {
                 colorKey = 6; // Premium Red/Gold
-            } else if (nextText === "HEART") {
+            } else if (nextText === "HEART" || nextText === "BUTTERFLY" || nextText === "FLOWER") {
                 colorKey = 4; // Neon Purple / Pink
-            } else if (nextText === "2025" || nextText === "FIREWORKS") {
+            } else if (nextText === "2025" || nextText === "FIREWORKS" || nextText === "DIAMOND" || nextText === "SPHERE") {
                 colorKey = 3; // Royal Gold
-            } else if (nextText === "TECH" || nextText === "DNA") {
+            } else if (nextText === "TECH" || nextText === "DNA" || nextText === "ATOM" || nextText === "NodeCrypt") {
                 colorKey = 1; // Cyber Green
-            } else if (nextText === "ART" || nextText === "MOBIUS") {
+            } else if (nextText === "ART" || nextText === "MOBIUS" || nextText === "GALAXY") {
                 colorKey = 7; // Mystic Violet
+            } else if (nextText === "WAVE" || nextText === "TORNADO" || nextText === "AQUARIUS" || nextText === "PISCES") {
+                colorKey = 0; // Deep Ocean
             } else {
-                // 随机选择高级配色
+                // Zodiacs and others: random mix
                 colorKey = Math.floor(Math.random() * 8);
             }
             updateParticleColor(colorPalette[colorKey] || colorPalette[0]);
+        }
+
+        // --- 自动模式下的动态动画 (Movement/Animation) ---
+        // 让特定物体这自动模式下动起来 (旋转、飘动)
+        const currentModel = autoTexts[autoTextIndex] || "";
+        if (currentModel === "GALAXY" || currentModel === "ATOM") {
+            // 整体缓慢旋转
+            scene.rotation.y += 0.002;
+            scene.rotation.z += 0.001;
+        } else if (currentModel === "DNA" || currentModel === "TORNADO") {
+            scene.rotation.y += 0.005; // Spin faster
+        } else if (currentModel === "WAVE") {
+            // Waving handled in shader/update usually, but we can tilt
+            scene.rotation.x = Math.sin(time * 0.5) * 0.2;
+        } else {
+            // Default gentle drift
+            scene.rotation.y += 0.0005;
         }
 
         // 自动模式下的呼吸扩散效果
