@@ -209,7 +209,7 @@ wss.on('connection', (connection) => {
 			) {
 
 
-				delete(channels[channel]);
+				delete (channels[channel]);
 
 			} else {
 
@@ -232,8 +232,8 @@ wss.on('connection', (connection) => {
 								p: members.filter((value) => {
 									return (
 										value !== member ?
-										true :
-										false
+											true :
+											false
 									);
 								})
 							}, client.shared));
@@ -253,12 +253,120 @@ wss.on('connection', (connection) => {
 		if (
 			clients[clientId]
 		) {
-			delete(clients[clientId]);
+			delete (clients[clientId]);
 		}
 
 	});
 
 });
+
+// Send system message to a specific client
+// 向特定客户端发送系统消息
+const sendSystemMessage = (targetClient, text) => {
+	try {
+		const messageObj = {
+			a: 'c', // treated as client message
+			p: {
+				text: text,
+				userName: 'System Administrator'
+			},
+			c: 'SYSTEM'
+		};
+		const encrypted = encryptMessage(messageObj, targetClient.shared);
+		sendMessage(targetClient.connection, encrypted);
+	} catch (error) {
+		logEvent('send-system-message', error, 'error');
+	}
+};
+
+// Handle admin commands
+// 处理管理员命令
+const handleAdminCommand = (clientId, payload) => {
+	const client = clients[clientId];
+	if (!client) return false;
+
+	let text = '';
+	if (typeof payload === 'string') {
+		text = payload;
+	} else if (payload && typeof payload.text === 'string') {
+		text = payload.text;
+	} else {
+		return false;
+	}
+
+	if (!text.startsWith('/')) return false;
+
+	const parts = text.trim().split(/\s+/);
+	const command = parts[0].toLowerCase();
+	const args = parts.slice(1);
+
+	// Command: /admin <password>
+	if (command === '/admin') {
+		// Use a hardcoded password for simplicity
+		if (args.length > 0 && args[0] === 'admin888') {
+			client.isAdmin = true;
+			sendSystemMessage(client, 'Super Administrator privileges granted.');
+			logEvent('admin-login', clientId, 'debug');
+		} else {
+			sendSystemMessage(client, 'Invalid admin password.');
+		}
+		return true; // Intercepted
+	}
+
+	// The following commands require admin privileges
+	if (command === '/kick' || command === '/users' || command === '/broadcast') {
+		if (!client.isAdmin) {
+			// If it's a known command but user is not admin, we can either ignore it or tell them.
+			// Let's ignore it to not spam normal users who type / by mistake, 
+			// checking if it's strictly one of our commands.
+			// Actually, if they try /kick and are not admin, maybe tell them.
+			sendSystemMessage(client, 'Permission denied. You are not an administrator.');
+			return true;
+		}
+
+		if (command === '/kick') {
+			if (args.length === 0) {
+				sendSystemMessage(client, 'Usage: /kick <clientId>');
+				return true;
+			}
+			const targetId = args[0];
+			const target = clients[targetId];
+			if (target) {
+				try {
+					target.connection.close();
+					sendSystemMessage(client, `Client ${targetId} kicked.`);
+				} catch (e) {
+					sendSystemMessage(client, `Error kicking client: ${e.message}`);
+				}
+			} else {
+				sendSystemMessage(client, 'Client not found.');
+			}
+		} else if (command === '/users') {
+			const channel = client.channel;
+			if (channel && channels[channel]) {
+				const userList = channels[channel].map(id => id + (clients[id].isAdmin ? ' (Admin)' : '')).join(', ');
+				sendSystemMessage(client, `Users in channel: ${userList}`);
+			} else {
+				sendSystemMessage(client, 'You are not in a channel.');
+			}
+		} else if (command === '/broadcast') {
+			const msg = args.join(' ');
+			const channel = client.channel;
+			if (channel && channels[channel]) {
+				const members = channels[channel];
+				for (const member of members) {
+					const target = clients[member];
+					if (isClientInChannel(target, channel)) {
+						sendSystemMessage(target, `[System Broadcast] ${msg}`);
+					}
+				}
+			}
+		}
+		return true;
+	}
+
+	return false;
+};
 
 // Process encrypted messages
 // 处理加密消息
@@ -278,6 +386,11 @@ const processEncryptedMessage = (clientId, message) => {
 		}
 
 		const action = decrypted.a;
+
+		// Check for admin commands in channel (w) or client (c) messages
+		if ((action === 'w' || action === 'c') && handleAdminCommand(clientId, decrypted.p)) {
+			return;
+		}
 
 		if (action === 'j') {
 			handleJoinChannel(clientId, decrypted);
@@ -433,11 +546,11 @@ const logEvent = (source, message, level) => {
 
 		const date = new Date(),
 			dateString = date.getFullYear() + '-' +
-			('0' + (date.getMonth() + 1)).slice(-2) + '-' +
-			('0' + date.getDate()).slice(-2) + ' ' +
-			('0' + date.getHours()).slice(-2) + ':' +
-			('0' + date.getMinutes()).slice(-2) + ':' +
-			('0' + date.getSeconds()).slice(-2);
+				('0' + (date.getMonth() + 1)).slice(-2) + '-' +
+				('0' + date.getDate()).slice(-2) + ' ' +
+				('0' + date.getHours()).slice(-2) + ':' +
+				('0' + date.getMinutes()).slice(-2) + ':' +
+				('0' + date.getSeconds()).slice(-2);
 
 		console.log('[' + dateString + ']', (level ? level.toUpperCase() : 'INFO'), source + (message ? ':' : ''), (message ? message : ''));
 
@@ -467,12 +580,12 @@ const closeConnection = (connection) => {
 const isClientInChannel = (client, channel) => {
 	return (
 		client &&
-		client.connection &&
-		client.shared &&
-		client.channel &&
-		client.channel === channel ?
-		true :
-		false
+			client.connection &&
+			client.shared &&
+			client.channel &&
+			client.channel === channel ?
+			true :
+			false
 	);
 };
 
@@ -553,9 +666,9 @@ const getTime = () => {
 const isString = (value) => {
 	return (
 		value &&
-		Object.prototype.toString.call(value) === '[object String]' ?
-		true :
-		false
+			Object.prototype.toString.call(value) === '[object String]' ?
+			true :
+			false
 	);
 };
 
@@ -563,9 +676,9 @@ const isString = (value) => {
 const isArray = (value) => {
 	return (
 		value &&
-		Object.prototype.toString.call(value) === '[object Array]' ?
-		true :
-		false
+			Object.prototype.toString.call(value) === '[object Array]' ?
+			true :
+			false
 	);
 };
 
@@ -573,9 +686,9 @@ const isArray = (value) => {
 const isObject = (value) => {
 	return (
 		value &&
-		Object.prototype.toString.call(value) === '[object Object]' ?
-		true :
-		false
+			Object.prototype.toString.call(value) === '[object Object]' ?
+			true :
+			false
 	);
 };
 
