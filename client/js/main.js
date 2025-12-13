@@ -78,7 +78,8 @@ import {
 	autofillRoomPwd,      // 自动填充房间密码 / Autofill room password
 	generateLoginForm,    // 生成登录表单HTML / Generate login form HTML
 	initLoginForm,        // 初始化登录表单 / Initialize login form
-	initFlipCard          // 初始化翻转卡片功能 / Initialize flip card functionality
+	initFlipCard,         // 初始化翻转卡片功能 / Initialize flip card functionality
+	setupContextMenu      // 设置上下文菜单 / Setup context menu
 } from './ui.js';
 
 // Import message swipe gesture functionality (replaces recall)
@@ -233,6 +234,7 @@ window.addEventListener('DOMContentLoaded', () => {
 	// Initialize autofill, input placeholders, and menus
 	autofillRoomPwd(); setupInputPlaceholder();
 	setupMoreBtnMenu();
+	setupContextMenu();
 	setupImagePreview(); setupEmojiPicker();
 	// 由于我们已经在DOM加载前预先初始化了语言设置，这里不需要重复初始化
 	// initSettings();

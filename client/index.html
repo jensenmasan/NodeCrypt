@@ -48,6 +48,7 @@
 		crossorigin="anonymous"></script>
 	<script src="https://cdn.jsdelivr.net/npm/@mediapipe/hands/hands.js" crossorigin="anonymous"></script>
 	<link rel="stylesheet" href="css/gesture-bg.css">
+	<link rel="stylesheet" href="css/context-menu.css">
 </head>
 
 <body class="preload">
@@ -464,6 +465,28 @@
 			}
 		}
 	</script>
+
+	<!-- Context Menu Overlay and Menu -->
+	<div class="context-menu-overlay" id="context-menu-overlay"></div>
+	<div class="context-menu" id="message-context-menu">
+		<div class="context-menu-item" data-action="copy">复制</div>
+		<div class="context-menu-item" data-action="zoom">放大阅读</div>
+		<div class="context-menu-divider"></div>
+		<div class="context-menu-item" data-action="translate">翻译</div>
+		<div class="context-menu-item" data-action="search">搜一搜</div>
+		<div class="context-menu-item" data-action="forward">转发..</div>
+		<div class="context-menu-divider"></div>
+		<div class="context-menu-item" data-action="favorite">收藏</div>
+		<div class="context-menu-item" data-action="remind">提醒</div>
+		<div class="context-menu-item" data-action="multiselect">多选</div>
+		<div class="context-menu-item" data-action="pin">置顶</div>
+	</div>
+
+	<!-- Zoom Reading Modal -->
+	<div class="zoom-modal" id="zoom-modal">
+		<div class="zoom-close" id="zoom-close">&times;</div>
+		<div class="zoom-content" id="zoom-content"></div>
+	</div>
 </body>
 
 </html>

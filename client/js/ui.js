@@ -666,3 +666,156 @@ export function initFlipCard() {
 		toggleFlip();
 	});
 }
+
+// Setup message context menu
+// 设置消息上下文菜单
+export function setupContextMenu() {
+	const chatArea = document.getElementById('chat-area');
+	const menu = document.getElementById('message-context-menu');
+	const overlay = document.getElementById('context-menu-overlay');
+
+	if (!chatArea || !menu || !overlay) return;
+
+	let longPressTimer;
+	let selectedMessageText = '';
+	let selectedMessageElement = null;
+
+	// Show menu function
+	function showMenu(x, y, text, element) {
+		// Vibrate on mobile
+		if (navigator.vibrate) navigator.vibrate(50);
+
+		selectedMessageText = text || '';
+		selectedMessageElement = element;
+
+		const menuWidth = 160;
+		// Initial height might be 0 if hidden, estimate or measure
+		// Make it visible but transparent to measure? Or just guess max height
+		const menuHeight = 350;
+		const winWidth = window.innerWidth;
+		const winHeight = window.innerHeight;
+
+		let left = x;
+		let top = y;
+
+		// Prevent menu from going off-screen
+		if (left + menuWidth > winWidth) left = winWidth - menuWidth - 10;
+		if (top + menuHeight > winHeight) top = winHeight - menuHeight - 10;
+		if (left < 0) left = 10;
+		if (top < 0) top = 10;
+
+		menu.style.left = `${left}px`;
+		menu.style.top = `${top}px`;
+
+		menu.classList.add('show');
+		overlay.classList.add('show');
+	}
+
+	function hideMenu() {
+		menu.classList.remove('show');
+		overlay.classList.remove('show');
+	}
+
+	// Event Delegation for bubbles
+	chatArea.addEventListener('contextmenu', (e) => {
+		// Find closest bubble content
+		const bubbleContent = e.target.closest('.bubble-content');
+		if (bubbleContent) {
+			e.preventDefault();
+			const text = bubbleContent.innerText;
+			const bubble = bubbleContent.closest('.bubble');
+			showMenu(e.clientX, e.clientY, text, bubble);
+		}
+	});
+
+	chatArea.addEventListener('touchstart', (e) => {
+		const bubbleContent = e.target.closest('.bubble-content');
+		if (bubbleContent) {
+			longPressTimer = setTimeout(() => {
+				const touch = e.touches[0];
+				const text = bubbleContent.innerText;
+				const bubble = bubbleContent.closest('.bubble');
+				showMenu(touch.clientX, touch.clientY, text, bubble);
+			}, 500); // 500ms for long press
+		}
+	}, { passive: true });
+
+	chatArea.addEventListener('touchend', () => {
+		if (longPressTimer) clearTimeout(longPressTimer);
+	});
+
+	chatArea.addEventListener('touchmove', () => {
+		if (longPressTimer) clearTimeout(longPressTimer);
+	});
+
+	// Close menu on overlay click
+	overlay.addEventListener('click', hideMenu);
+
+	// Handle menu actions
+	menu.addEventListener('click', (e) => {
+		const item = e.target.closest('.context-menu-item');
+		if (!item) return;
+
+		const action = item.dataset.action;
+		handleMenuAction(action);
+		hideMenu();
+	});
+
+	function handleMenuAction(action) {
+		switch (action) {
+			case 'copy':
+				copyToClipboard(selectedMessageText);
+				break;
+			case 'zoom':
+				showZoomModal(selectedMessageText);
+				break;
+			case 'search':
+				window.open(`https://www.google.com/search?q=${encodeURIComponent(selectedMessageText)}`, '_blank');
+				break;
+			case 'translate':
+				window.addSystemMsg && window.addSystemMsg('翻译功能开发中...(Translation feature coming soon)');
+				break;
+			case 'forward':
+				window.addSystemMsg && window.addSystemMsg('转发功能开发中...(Forward feature coming soon)');
+				break;
+			case 'favorite':
+				window.addSystemMsg && window.addSystemMsg('收藏功能开发中...(Favorite feature coming soon)');
+				break;
+			case 'remind':
+				window.addSystemMsg && window.addSystemMsg('提醒功能开发中...(Remind feature coming soon)');
+				break;
+			case 'multiselect':
+				window.addSystemMsg && window.addSystemMsg('多选功能开发中...(Multi-select feature coming soon)');
+				break;
+			case 'pin':
+				window.addSystemMsg && window.addSystemMsg('置顶功能开发中...(Pin feature coming soon)');
+				break;
+			default:
+				console.log('Action not implemented:', action);
+				break;
+		}
+	}
+
+	// Zoom Modal Logic
+	const zoomModal = document.getElementById('zoom-modal');
+	const zoomContent = document.getElementById('zoom-content');
+	const zoomClose = document.getElementById('zoom-close');
+
+	function showZoomModal(text) {
+		if (!zoomModal || !zoomContent) return;
+		zoomContent.textContent = text;
+		zoomModal.classList.add('show');
+	}
+
+	if (zoomClose) {
+		zoomClose.addEventListener('click', () => {
+			if (zoomModal) zoomModal.classList.remove('show');
+		});
+	}
+
+	if (zoomModal) {
+		zoomModal.addEventListener('click', (e) => {
+			if (e.target === zoomModal) zoomModal.classList.remove('show');
+		});
+	}
+}
