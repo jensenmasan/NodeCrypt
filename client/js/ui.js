@@ -316,18 +316,8 @@ export function renderUserList(updateHeader = false) {
 		return name.includes(adminName);
 	});
 
-	// 1. Static Admin Placeholder
-	// If the real admin is NOT online, show the placeholder
-	if (!realAdmin) {
-		const adminUser = {
-			clientId: 'admin-system-id',
-			userName: '马老师 (管理员)',
-			isStatic: true
-		};
-		const adminDiv = createUserItem(adminUser, false);
-		adminDiv.classList.add('admin-user');
-		userListEl.appendChild(adminDiv);
-	}
+	// 1. Static Admin Placeholder REMOVED
+
 
 	// 2. Real Admin (If online and NOT "Me")
 	// If the real admin is online and is someone else, put them at the top
@@ -525,6 +515,27 @@ export function loginFormHandler(modal) {
 				}
 				return;
 			}
+			// Allow empty room name for admin
+			if (!roomName) {
+				roomName = '*';
+			}
+		} else {
+			// Regular user must have room name
+			if (!roomName) {
+				if (roomInput) {
+					roomInput.style.border = '1.5px solid #e74c3c';
+					roomInput.style.background = '#fff6f6';
+					warnTip = document.createElement('div');
+					warnTip.style.color = '#e74c3c';
+					warnTip.style.fontSize = '13px';
+					warnTip.style.marginTop = '4px';
+					warnTip.textContent = t('ui.node_required', 'Node name is required');
+					roomInput.parentNode.appendChild(warnTip);
+					roomInput._warnTip = warnTip;
+					roomInput.focus()
+				}
+				return;
+			}
 		}
 
 		if (btn) {
@@ -549,8 +560,8 @@ export function generateLoginForm(isModal = false) {
 			<label for="userName${idPrefix}" class="floating-label">${t('ui.username', 'Username')}</label>
 		</div>
 		<div class="input-group">
-			<input id="roomName${idPrefix}" type="text" required minlength="1" maxlength="15" placeholder="">
-			<label for="roomName${idPrefix}" class="floating-label">${t('ui.node_name', 'Node Name')}</label>
+			<input id="roomName${idPrefix}" type="text" minlength="1" maxlength="15" placeholder="">
+			<label for="roomName${idPrefix}" class="floating-label">${t('ui.node_name', 'Node Name')} <span class="optional" style="display:none" id="roomOptional${idPrefix}">(optional for Admin)</span></label>
 		</div>
 		<div class="input-group">
 			<input id="password${idPrefix}" type="password" autocomplete="${isModal ? 'off' : 'current-password'}" minlength="1" maxlength="15" placeholder="">
