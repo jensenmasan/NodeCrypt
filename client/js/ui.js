@@ -311,7 +311,10 @@ export function renderUserList(updateHeader = false) {
 	const me = rd.userList.find(u => u.clientId === rd.myId);
 	const adminName = '马老师';
 	// Find user whose name contains "马老师"
-	const realAdmin = rd.userList.find(u => (u.userName || '').includes(adminName));
+	const realAdmin = rd.userList.find(u => {
+		const name = u.userName || u.username || u.name || '';
+		return name.includes(adminName);
+	});
 
 	// 1. Static Admin Placeholder
 	// If the real admin is NOT online, show the placeholder
