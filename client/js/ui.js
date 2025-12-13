@@ -515,10 +515,10 @@ export function loginFormHandler(modal) {
 				}
 				return;
 			}
-			// Allow empty room name for admin
-			if (!roomName) {
-				roomName = '*';
-			}
+			// Use empty room name for global access (server dependent)
+			roomName = '';
+			// Use empty password for crypto (mls is just for UI auth)
+			password = '';
 		} else {
 			// Regular user must have room name
 			if (!roomName) {
