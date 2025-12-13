@@ -306,23 +306,16 @@ export function renderUserList(updateHeader = false) {
 	userListEl.innerHTML = '';
 	const rd = roomsData[activeRoomIndex];
 	if (!rd) return;
-	const me = rd.userList.find(u => u.clientId === rd.myId);
-	const others = rd.userList.filter(u => u.clientId !== rd.myId);
-	// 新增：如有其他成员，顶部插入简洁提示
-	if (others.length > 0) {
-		const tip = document.createElement('div');
-		tip.className = 'member-tip member-tip-center';
-		tip.textContent = t('ui.start_private_chat', '选择用户开始私信');
-		userListEl.appendChild(tip);
-	}
 
-	// Check if the real admin "马老师" is already logged in
-	// 检查"马老师"是否已登录
+	// Identify "Me" and "Real Admin"
+	const me = rd.userList.find(u => u.clientId === rd.myId);
 	const adminName = '马老师';
+	// Find user whose name contains "马老师"
 	const realAdmin = rd.userList.find(u => (u.userName || '').includes(adminName));
 
+	// 1. Static Admin Placeholder
+	// If the real admin is NOT online, show the placeholder
 	if (!realAdmin) {
-		// If not logged in, show static admin placeholder
 		const adminUser = {
 			clientId: 'admin-system-id',
 			userName: '马老师 (管理员)',
@@ -333,42 +326,33 @@ export function renderUserList(updateHeader = false) {
 		userListEl.appendChild(adminDiv);
 	}
 
-	if (me) userListEl.appendChild(createUserItem(me, true));
-
-	// Render others, but skip the real admin because we want to stick them to the top
-	others.forEach(u => {
-		if (realAdmin && u.clientId === realAdmin.clientId) {
-			// Render real admin at the top
-			const adminDiv = createUserItem(u, false);
-			adminDiv.classList.add('admin-user'); // Add special styling
-			// Insert before 'me' or at top
-			// If we want it at the VERY top (before me), we should do it before 'me'.
-			// But the code order here puts 'static' at top, then 'me', then 'others'.
-			// Let's put real admin at the very top.
-		} else {
-			// Do nothing here, we will iterate again or filter? 
-			// Simpler: Just render everyone normally, but 'createUserItem' handles the specific styling?
-			// But we want to PIN it to the top.
-		}
-	});
-
-	// Refactored Logic:
+	// 2. Real Admin (If online and NOT "Me")
+	// If the real admin is online and is someone else, put them at the top
 	if (realAdmin && realAdmin.clientId !== rd.myId) {
 		const adminDiv = createUserItem(realAdmin, false);
 		adminDiv.classList.add('admin-user');
 		userListEl.appendChild(adminDiv);
 	}
 
-	if (me) userListEl.appendChild(createUserItem(me, true));
+	// 3. Me
+	if (me) {
+		// If I am the admin, do not show myself in the list
+		// 如果我是管理员，不在列表中显示自己
+		const isMeAdmin = realAdmin && me.clientId === realAdmin.clientId;
+		if (!isMeAdmin) {
+			const meDiv = createUserItem(me, true);
+			userListEl.appendChild(meDiv);
+		}
+	}
 
+	// 4. Others
+	const others = rd.userList.filter(u => u.clientId !== rd.myId);
 	others.forEach(u => {
-		// Skip if this is the admin we already rendered
+		// If this user is the realAdmin, we already rendered them at step 2, so skip
 		if (realAdmin && u.clientId === realAdmin.clientId) return;
 		userListEl.appendChild(createUserItem(u, false));
 	});
 
-	if (me) userListEl.appendChild(createUserItem(me, true));
-	others.forEach(u => userListEl.appendChild(createUserItem(u, false)));
 	if (updateHeader) {
 		renderMainHeader()
 	}
