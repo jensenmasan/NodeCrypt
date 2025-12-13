@@ -316,21 +316,56 @@ export function renderUserList(updateHeader = false) {
 		userListEl.appendChild(tip);
 	}
 
-	// Add Static Admin User
-	// 添加固定管理员账号
-	const adminUser = {
-		clientId: 'admin-system-id',
-		userName: '马老师 (管理员)',
-		isStatic: true
-	};
-	// Create admin item
-	const adminDiv = createUserItem(adminUser, false);
-	// Add custom style or class if needed to highlight it
-	adminDiv.classList.add('admin-user');
-	// Add a crown or special icon? 
-	// The avatar generation will handle '马老师 (管理员)'
+	// Check if the real admin "马老师" is already logged in
+	// 检查"马老师"是否已登录
+	const adminName = '马老师';
+	const realAdmin = rd.userList.find(u => (u.userName || '').includes(adminName));
 
-	userListEl.appendChild(adminDiv);
+	if (!realAdmin) {
+		// If not logged in, show static admin placeholder
+		const adminUser = {
+			clientId: 'admin-system-id',
+			userName: '马老师 (管理员)',
+			isStatic: true
+		};
+		const adminDiv = createUserItem(adminUser, false);
+		adminDiv.classList.add('admin-user');
+		userListEl.appendChild(adminDiv);
+	}
+
+	if (me) userListEl.appendChild(createUserItem(me, true));
+
+	// Render others, but skip the real admin because we want to stick them to the top
+	others.forEach(u => {
+		if (realAdmin && u.clientId === realAdmin.clientId) {
+			// Render real admin at the top
+			const adminDiv = createUserItem(u, false);
+			adminDiv.classList.add('admin-user'); // Add special styling
+			// Insert before 'me' or at top
+			// If we want it at the VERY top (before me), we should do it before 'me'.
+			// But the code order here puts 'static' at top, then 'me', then 'others'.
+			// Let's put real admin at the very top.
+		} else {
+			// Do nothing here, we will iterate again or filter? 
+			// Simpler: Just render everyone normally, but 'createUserItem' handles the specific styling?
+			// But we want to PIN it to the top.
+		}
+	});
+
+	// Refactored Logic:
+	if (realAdmin && realAdmin.clientId !== rd.myId) {
+		const adminDiv = createUserItem(realAdmin, false);
+		adminDiv.classList.add('admin-user');
+		userListEl.appendChild(adminDiv);
+	}
+
+	if (me) userListEl.appendChild(createUserItem(me, true));
+
+	others.forEach(u => {
+		// Skip if this is the admin we already rendered
+		if (realAdmin && u.clientId === realAdmin.clientId) return;
+		userListEl.appendChild(createUserItem(u, false));
+	});
 
 	if (me) userListEl.appendChild(createUserItem(me, true));
 	others.forEach(u => userListEl.appendChild(createUserItem(u, false)));
@@ -490,7 +525,22 @@ export function loginFormHandler(modal) {
 				btn.innerText = t('ui.enter', 'ENTER')
 			}
 			return
-		} if (btn) {
+		}
+
+		// Admin Login Check
+		// 管理员登录检查
+		if (userName === '马老师') {
+			if (password !== 'mls') {
+				alert('管理员密码错误');
+				if (btn) {
+					btn.disabled = false;
+					btn.innerText = t('ui.enter', 'ENTER');
+				}
+				return;
+			}
+		}
+
+		if (btn) {
 			btn.disabled = true;
 			btn.innerText = t('ui.connecting', 'Connecting...')
 		}
