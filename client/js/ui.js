@@ -70,32 +70,64 @@ function validateRoomData(roomData) {
 
 // Copy text to clipboard with fallback
 // 复制文本到剪贴板（含降级处理）
+// Copy text to clipboard with legacy fallback for mobile
+// 复制文本到剪贴板（包含移动端兼容的降级处理）
 function copyToClipboard(text, successMessage = t('action.copied', 'Copied to clipboard!'), errorPrefix = t('action.copy_failed', 'Copy failed, url:')) {
 	if (!text) {
 		window.addSystemMsg && window.addSystemMsg(t('action.nothing_to_copy', 'Nothing to copy'));
 		return;
 	}
 
+	// Try the modern Clipboard API first
 	if (navigator.clipboard && navigator.clipboard.writeText) {
 		navigator.clipboard.writeText(text).then(() => {
 			window.addSystemMsg && window.addSystemMsg(successMessage);
-		}).catch((error) => {
-			console.error('Clipboard write failed:', error);
-			showFallbackCopy(text, errorPrefix);
+		}).catch((err) => {
+			console.warn('Clipboard API failed, trying legacy execCommand:', err);
+			fallbackCopyText(text, successMessage, errorPrefix);
 		});
 	} else {
+		fallbackCopyText(text, successMessage, errorPrefix);
+	}
+}
+
+// Fallback copy using textarea and execCommand
+// 使用 textarea 和 execCommand 的降级复制方案
+function fallbackCopyText(text, successMessage, errorPrefix) {
+	try {
+		const textArea = document.createElement("textarea");
+		textArea.value = text;
+
+		// Ensure it's not visible but part of the DOM
+		textArea.style.position = "fixed";
+		textArea.style.left = "-9999px";
+		textArea.style.top = "0";
+		document.body.appendChild(textArea);
+
+		textArea.focus();
+		textArea.select();
+
+		const successful = document.execCommand('copy');
+		document.body.removeChild(textArea);
+
+		if (successful) {
+			window.addSystemMsg && window.addSystemMsg(successMessage);
+		} else {
+			showFallbackCopy(text, errorPrefix);
+		}
+	} catch (err) {
+		console.error('Fallback copy failed:', err);
 		showFallbackCopy(text, errorPrefix);
 	}
 }
 
-// Show fallback copy method
-// 显示降级复制方法
+// Show manual copy fallback (prompt)
+// 显示手动复制降级方案 (弹窗)
 function showFallbackCopy(text, prefix) {
 	if (typeof prompt === 'function') {
 		prompt(prefix, text);
 	} else {
-		// For environments where prompt is not available
-		window.addSystemMsg && window.addSystemMsg(t('action.copy_not_supported', 'Copy not supported in this environment'));
+		window.addSystemMsg && window.addSystemMsg(t('action.copy_not_supported', 'Copy not supported'));
 	}
 }
 
@@ -788,7 +820,14 @@ export function setupContextMenu() {
 	}
 
 	// Event Delegation for bubbles
+	let isLongPress = false;
+
 	chatArea.addEventListener('contextmenu', (e) => {
+		if (isLongPress) {
+			e.preventDefault();
+			isLongPress = false; // Reset
+			return;
+		}
 		// Find closest bubble content
 		const bubbleContent = e.target.closest('.bubble-content');
 		if (bubbleContent) {
@@ -800,9 +839,11 @@ export function setupContextMenu() {
 	});
 
 	chatArea.addEventListener('touchstart', (e) => {
+		isLongPress = false;
 		const bubbleContent = e.target.closest('.bubble-content');
 		if (bubbleContent) {
 			longPressTimer = setTimeout(() => {
+				isLongPress = true;
 				const touch = e.touches[0];
 				const text = bubbleContent.innerText;
 				const bubble = bubbleContent.closest('.bubble');
@@ -813,6 +854,9 @@ export function setupContextMenu() {
 
 	chatArea.addEventListener('touchend', () => {
 		if (longPressTimer) clearTimeout(longPressTimer);
+		// Note: We don't reset isLongPress here effectively because contextmenu might fire after touchend
+		// We rely on contextmenu handler to reset it, or a timeout
+		setTimeout(() => { isLongPress = false; }, 100);
 	});
 
 	chatArea.addEventListener('touchmove', () => {
@@ -844,22 +888,12 @@ export function setupContextMenu() {
 				window.open(`https://www.google.com/search?q=${encodeURIComponent(selectedMessageText)}`, '_blank');
 				break;
 			case 'translate':
-				window.addSystemMsg && window.addSystemMsg('翻译功能开发中...(Translation feature coming soon)');
-				break;
 			case 'forward':
-				window.addSystemMsg && window.addSystemMsg('转发功能开发中...(Forward feature coming soon)');
-				break;
 			case 'favorite':
-				window.addSystemMsg && window.addSystemMsg('收藏功能开发中...(Favorite feature coming soon)');
-				break;
 			case 'remind':
-				window.addSystemMsg && window.addSystemMsg('提醒功能开发中...(Remind feature coming soon)');
-				break;
 			case 'multiselect':
-				window.addSystemMsg && window.addSystemMsg('多选功能开发中...(Multi-select feature coming soon)');
-				break;
 			case 'pin':
-				window.addSystemMsg && window.addSystemMsg('置顶功能开发中...(Pin feature coming soon)');
+				window.addSystemMsg && window.addSystemMsg(t('action.feature_coming_soon', 'Feature coming soon!'));
 				break;
 			default:
 				console.log('Action not implemented:', action);
