@@ -35,7 +35,9 @@ import { t, updateStaticTexts } from './util.i18n.js';
 // 从 util.theme.js 中导入主题功能函数
 // Import theme functions from util.theme.js
 import {
-	initTheme            // 初始化主题 / Initialize theme
+	initTheme,            // 初始化主题 / Initialize theme
+	applyTheme,           // 应用主题
+	getCurrentTheme       // 获取当前主题
 } from './util.theme.js';
 
 // 从 util.dom.js 中导入常用 DOM 操作函数
@@ -256,6 +258,23 @@ window.addEventListener('DOMContentLoaded', () => {
 			e.stopPropagation();
 			closeSettingsPanel(); // 关闭设置面板 / Close settings panel
 		}
+	}
+
+	// Setup theme toggle button
+	const themeToggleBtn = $id('theme-toggle-btn');
+	if (themeToggleBtn) {
+		themeToggleBtn.onclick = (e) => {
+			e.stopPropagation();
+			const current = getCurrentTheme();
+			// Toggle between light (theme1) and dark (theme12 or theme10)
+			// theme1 is light default. theme12 is Metallic Dark.
+			const newThemeId = (current.id === 'theme1' || current.id === 'theme2' || current.id === 'theme3') ? 'theme12' : 'theme1';
+			applyTheme(newThemeId);
+			// Save to local storage
+			const settings = JSON.parse(localStorage.getItem('settings') || '{}');
+			settings.theme = newThemeId;
+			localStorage.setItem('settings', JSON.stringify(settings));
+		};
 	}
 	// 点击其他地方时关闭设置面板 (已移除，因为现在使用侧边栏形式)
 	// Close settings panel when clicking outside (removed since we now use sidebar format)

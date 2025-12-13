@@ -366,7 +366,15 @@ export function updateStaticTexts() {
 	// Update login title
 	const loginTitle = document.getElementById('login-title');
 	if (loginTitle) {
-		loginTitle.textContent = t('ui.enter_node', 'Enter a Node');
+		// loginTitle.textContent = t('ui.enter_node', 'Enter a Node');
+		loginTitle.innerHTML = `<img src="https://tc.688650.xyz/file/1765641970646_图片.png" alt="NodeCrypt" style="height: 60px; cursor: pointer; vertical-align: middle;">`;
+		loginTitle.onclick = (e) => {
+			e.stopPropagation();
+			// Trigger Fireworks
+			const fwBtn = document.querySelector('button[data-model="FIREWORKS"]');
+			if (fwBtn) fwBtn.click();
+			window.addSystemMsg && window.addSystemMsg('🎆 ' + (getCurrentLanguage() === 'zh' ? '马老师祝大家新年快乐！' : 'Happy New Year!'));
+		};
 	}
 	// Update login form content with new translations
 	const loginFormContainer = document.getElementById('login-form');
@@ -386,7 +394,16 @@ export function updateStaticTexts() {
 	// Update "Enter a Node" text in sidebar
 	const joinRoomText = document.getElementById('join-room-text');
 	if (joinRoomText) {
-		joinRoomText.textContent = t('ui.enter_node', 'Enter a Node');
+		// joinRoomText.textContent = t('ui.enter_node', 'Enter a Node');
+		joinRoomText.innerHTML = `<img src="https://tc.688650.xyz/file/1765641970646_图片.png" alt="NodeCrypt" style="height: 48px; cursor: pointer; vertical-align: middle; margin-top: -2px;">`;
+		joinRoomText.onclick = (e) => {
+			e.stopPropagation();
+			// Trigger Fireworks
+			const fwBtn = document.querySelector('button[data-model="FIREWORKS"]');
+			if (fwBtn) fwBtn.click();
+			// Optional: Show a nice message?
+			window.addSystemMsg && window.addSystemMsg('🎆 ' + (getCurrentLanguage() === 'zh' ? '马老师祝大家新年快乐！' : 'Happy New Year!'));
+		};
 	}
 
 	// Update Members title in rightbar
