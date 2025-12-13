@@ -315,6 +315,23 @@ export function renderUserList(updateHeader = false) {
 		tip.textContent = t('ui.start_private_chat', '选择用户开始私信');
 		userListEl.appendChild(tip);
 	}
+
+	// Add Static Admin User
+	// 添加固定管理员账号
+	const adminUser = {
+		clientId: 'admin-system-id',
+		userName: '马老师 (管理员)',
+		isStatic: true
+	};
+	// Create admin item
+	const adminDiv = createUserItem(adminUser, false);
+	// Add custom style or class if needed to highlight it
+	adminDiv.classList.add('admin-user');
+	// Add a crown or special icon? 
+	// The avatar generation will handle '马老师 (管理员)'
+
+	userListEl.appendChild(adminDiv);
+
 	if (me) userListEl.appendChild(createUserItem(me, true));
 	others.forEach(u => userListEl.appendChild(createUserItem(u, false)));
 	if (updateHeader) {
@@ -331,9 +348,15 @@ export function createUserItem(user, isMe) {
 	div.className = 'member' + (isMe ? ' me' : '') + (isPrivateTarget ? ' private-chat-active' : '');
 	const rawName = user.userName || user.username || user.name || '';
 	const safeUserName = escapeHTML(rawName);
-	div.innerHTML = `<span class="avatar"></span><div class="member-info"><div class="member-name">${safeUserName}${isMe ? t('ui.me', ' (me)') : ''}</div></div>`;
+
+	let extraClass = '';
+	if (user.isStatic) extraClass = ' static-admin';
+
+	div.innerHTML = `<span class="avatar${extraClass}"></span><div class="member-info"><div class="member-name">${safeUserName}${isMe ? t('ui.me', ' (me)') : ''}</div></div>`;
+
 	const avatarEl = div.querySelector('.avatar');
 	if (avatarEl) {
+		// Special avatar for admin? Or just standard one
 		const svg = createAvatarSVG(rawName);
 		const cleanSvg = svg.replace(/<script\b[^<]*(?:(?!<\/script>)<[^<]*)*<\/script>/gi, '');
 		avatarEl.innerHTML = cleanSvg
