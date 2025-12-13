@@ -242,13 +242,26 @@ function resetSwipe() {
 function triggerRecall(bubble) {
     const bubbleContent = bubble.querySelector('.bubble-content');
     if (bubbleContent) {
-        bubbleContent.innerHTML = '<i style="color: #999;">你撤回了一条消息</i>';
-        bubble.classList.add('recalled');
+        // Add recall animation
+        bubble.style.transition = 'all 0.3s ease';
+        bubble.style.transform = 'scale(0.95)';
+        bubble.style.opacity = '0.7';
+
+        setTimeout(() => {
+            bubbleContent.innerHTML = '<i style="color: #999;">你撤回了一条消息</i>';
+            bubble.classList.add('recalled');
+            bubble.style.transform = '';
+            bubble.style.opacity = '';
+        }, 300);
     }
     window.addSystemMsg && window.addSystemMsg(t('system.message_recalled', '你撤回了一条消息'));
 }
 
 function triggerQuote(bubble) {
+    // Add cool quote effect
+    bubble.classList.add('quoting');
+    setTimeout(() => bubble.classList.remove('quoting'), 600);
+
     const content = bubble.querySelector('.bubble-content');
     if (!content) return;
 

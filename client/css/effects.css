@@ -1,0 +1,110 @@
+/* Auto-destruct cool effect */
+@keyframes destruct-implode {
+    0% {
+        transform: scale(1);
+        opacity: 1;
+        filter: blur(0);
+    }
+
+    50% {
+        transform: scale(1.1);
+        opacity: 0.8;
+        filter: blur(2px) hue-rotate(90deg);
+    }
+
+    100% {
+        transform: scale(0);
+        opacity: 0;
+        filter: blur(10px) hue-rotate(180deg);
+    }
+}
+
+.destructing-active {
+    animation: destruct-implode 0.5s forwards ease-in-out;
+    pointer-events: none;
+}
+
+/* Swipe actions cool effects */
+.swipe-indicator {
+    position: absolute;
+    top: 50%;
+    transform: translateY(-50%);
+    font-size: 24px;
+    opacity: 0;
+    transition: opacity 0.2s;
+    pointer-events: none;
+    z-index: 10;
+    font-weight: bold;
+    text-shadow: 0 2px 4px rgba(0, 0, 0, 0.2);
+}
+
+.swipe-recall {
+    left: -50px;
+    color: #ff3b30;
+    animation: glow-red 1s infinite alternate;
+}
+
+.swipe-quote {
+    right: -50px;
+    color: #30a8f7;
+    animation: glow-blue 1s infinite alternate;
+}
+
+@keyframes glow-red {
+    from {
+        text-shadow: 0 0 5px #ff3b30;
+    }
+
+    to {
+        text-shadow: 0 0 20px #ff3b30, 0 0 10px #ff0000;
+    }
+}
+
+@keyframes glow-blue {
+    from {
+        text-shadow: 0 0 5px #30a8f7;
+    }
+
+    to {
+        text-shadow: 0 0 20px #30a8f7, 0 0 10px #0000ff;
+    }
+}
+
+/* Back button in header */
+.header-back-btn {
+    background: none;
+    border: none;
+    cursor: pointer;
+    padding: 8px;
+    margin-right: 5px;
+    display: flex;
+    align-items: center;
+    color: #30a8f7;
+    transition: transform 0.2s;
+}
+
+.header-back-btn:hover {
+    transform: scale(1.1);
+}
+
+.header-back-btn svg {
+    width: 24px;
+    height: 24px;
+    stroke: currentColor;
+    stroke-width: 2.5;
+}
+
+/* Quote flash effect */
+@keyframes quote-flash {
+    0% {
+        background-color: rgba(48, 168, 247, 0.5);
+    }
+
+    100% {
+        background-color: transparent;
+    }
+}
+
+.bubble.quoting {
+    animation: quote-flash 0.5s ease-out;
+}

@@ -45,10 +45,17 @@ function handleAutoDestruct(element, expireTime) {
 			if (element.parentElement && element.parentElement.classList.contains('bubble-other-main')) {
 				// It's an other message, remove the whole wrap
 				const wrap = element.closest('.bubble-other-wrap');
-				if (wrap) wrap.remove();
-				else element.remove();
+				if (wrap) {
+					wrap.classList.add('destructing-active');
+					wrap.addEventListener('animationend', () => wrap.remove(), { once: true });
+					setTimeout(() => { if (wrap.parentNode) wrap.remove(); }, 600);
+				} else {
+					element.remove();
+				}
 			} else {
-				element.remove();
+				element.classList.add('destructing-active');
+				element.addEventListener('animationend', () => element.remove(), { once: true });
+				setTimeout(() => { if (element.parentNode) element.remove(); }, 600);
 			}
 			return false; // Stop
 		}
