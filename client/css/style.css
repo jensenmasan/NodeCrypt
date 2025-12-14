@@ -2421,6 +2421,7 @@ h2 {
 .bubble.me .quoted-message .quote-text {
 	color: rgba(255, 255, 255, 0.8);
 }
+
 /* Self-destruct timer menu */
 .destruct-time-menu {
 	position: absolute;
@@ -2485,129 +2486,279 @@ h2 {
 }
 
 
-/* Effects Button and Menu */
+
+
+
+/* Enhanced Effects Button and Menu */
 .chat-effects-btn {
-    background: none;
-    border: none;
-    cursor: pointer;
-    color: #808080;
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    margin: 0 5px 3px 0;
-    padding: 0;
-    transition: all 0.2s ease;
+	background: none;
+	border: none;
+	cursor: pointer;
+	color: #808080;
+	display: flex;
+	align-items: center;
+	justify-content: center;
+	margin: 0 5px 3px 0;
+	padding: 0;
+	transition: all 0.2s ease;
 }
 
-.chat-effects-btn:hover, .chat-effects-btn.active {
-    background: #f5f5f5;
-    border-radius: 50%;
-    color: #f1c40f; /* Star color */
+.chat-effects-btn:hover,
+.chat-effects-btn.active,
+.chat-effects-btn:active {
+	background: #f5f5f5;
+	border-radius: 50%;
+	color: #f1c40f;
+	/* Star color */
 }
 
-.chat-effects-btn:hover svg path, .chat-effects-btn.active svg path {
-    stroke: #f1c40f;
-    fill: #f1c40f; /* Filled star */
+.chat-effects-btn:hover svg path,
+.chat-effects-btn.active svg path,
+.chat-effects-btn:active svg path {
+	stroke: #f1c40f;
+	fill: #f1c40f;
+	/* Filled star */
 }
 
 .effects-menu {
-    position: absolute;
-    bottom: 50px;
-    left: 50%; /* Approx center relative to button */
-    transform: translateX(-50%);
-    background: #fff;
-    border-radius: 12px;
-    box-shadow: 0 8px 24px rgba(0,0,0,0.2);
-    padding: 10px;
-    z-index: 200;
-    display: none;
-    flex-direction: column;
-    width: 140px;
-    border: 1px solid #eee;
-    animation: fadeInUp 0.2s cubic-bezier(0.34, 1.56, 0.64, 1);
+	position: absolute;
+	width: 280px;
+	background: #fff;
+	border-radius: 12px;
+	box-shadow: 0 8px 24px rgba(0, 0, 0, 0.25);
+	padding: 12px;
+	z-index: 10000;
+	/* High z-index */
+	display: none;
+	grid-template-columns: 1fr 1fr;
+	gap: 8px;
+	border: 1px solid #eee;
+	animation: fadeInUp 0.2s cubic-bezier(0.34, 1.56, 0.64, 1);
+
+	/* Position relative to parent (.new-message-wrapper) */
+	bottom: 60px;
+	left: 50%;
+	transform: translateX(-50%);
+
+	/* Scroll properties - Enhanced for mobile */
+	max-height: 50vh;
+	overflow-y: auto;
+	overflow-x: hidden;
+	-webkit-overflow-scrolling: touch;
+	/* Smooth scroll on iOS */
+	overscroll-behavior: contain;
+	/* Prevent scrolling parent */
+	touch-action: pan-y;
+	/* Allow vertical scrolling */
+	scroll-behavior: smooth;
+	/* Smooth scrolling */
 }
 
 .effects-menu.show {
-    display: flex;
+	display: grid;
 }
 
 .effect-item {
-    padding: 10px 12px;
-    font-size: 14px;
-    color: #333;
-    cursor: pointer;
-    display: flex;
-    align-items: center;
-    border-radius: 8px;
-    transition: background-color 0.2s;
-    font-weight: 500;
+	display: flex;
+	justify-content: center;
+	align-items: center;
+	text-align: center;
+	flex-direction: column;
+	padding: 12px 8px;
+	border: 1px solid transparent;
+	font-size: 13px;
+	color: #333;
+	border-radius: 8px;
+	cursor: pointer;
+	user-select: none;
+	transition: all 0.2s ease;
+	background: #f9f9f9;
 }
 
 .effect-item:hover {
-    background: #f0f7ff;
-    color: #007bff;
+	border-color: #e0efff;
+	background: #f0f7ff;
+	color: #007bff;
+	transform: translateY(-2px);
+	box-shadow: 0 2px 8px rgba(0, 0, 0, 0.05);
+}
+
+.effect-item:active {
+	transform: scale(0.95);
+	background: #e6f2ff;
 }
 
 .effect-icon {
-    margin-right: 10px;
-    font-size: 18px;
+	margin-right: 0;
+	margin-bottom: 6px;
+	font-size: 24px;
+	display: block;
+	line-height: 1;
 }
 
 /* Mobile specific for effects menu */
 @media (max-width: 768px) {
-    .effects-menu {
-        left: auto;
-        right: 0;
-        bottom: 60px;
-        transform: none;
-    }
+	.effects-menu {
+		width: 90vw;
+		/* Wider on mobile */
+		left: 50%;
+		transform: translateX(-50%);
+		bottom: 70px;
+		max-height: 60vh;
+		/* More height on mobile for better scrolling */
+		padding: 10px;
+		grid-template-columns: repeat(3, 1fr);
+		/* 3 columns on mobile */
+		gap: 6px;
+		/* Ensure scrolling works */
+		overflow-y: scroll !important;
+		-webkit-overflow-scrolling: touch !important;
+	}
+
+	.effect-item {
+		padding: 10px 4px;
+		font-size: 12px;
+		/* Better touch targets */
+		min-height: 60px;
+	}
+
+	.effect-icon {
+		font-size: 20px;
+	}
 }
 
-
-/* Enhanced Effects Menu */
-.effects-menu {
-    width: 280px;
-    display: none; /* Changed from previous flex/none, grid will be applied in .show */
-    grid-template-columns: 1fr 1fr;
-    gap: 8px;
-    padding: 12px;
-    bottom: 60px; /* Give more space */
-    max-height: 400px;
-    overflow-y: auto;
+/* Cosmic Theme Button Style - Enhanced Universe Effect */
+[data-theme='theme12'] .theme-toggle-btn {
+	position: relative;
+	background: linear-gradient(135deg, #1e3c72 0%, #2a5298 50%, #7e22ce 100%);
+	background-size: 200% 200%;
+	box-shadow:
+		0 0 20px rgba(99, 164, 255, 0.9),
+		0 0 40px rgba(99, 164, 255, 0.5),
+		0 0 60px rgba(126, 34, 206, 0.3),
+		inset 0 0 20px rgba(255, 255, 255, 0.1);
+	border: 2px solid rgba(255, 255, 255, 0.4);
+	color: white;
+	animation: cosmic-universe 6s infinite ease-in-out, cosmic-rotate 20s linear infinite;
+	overflow: hidden;
 }
 
-.effects-menu.show {
-    display: grid; /* Use grid for 2 columns */
+/* Add stars effect using pseudo-element */
+[data-theme='theme12'] .theme-toggle-btn::before {
+	content: '✨';
+	position: absolute;
+	top: 50%;
+	left: 50%;
+	transform: translate(-50%, -50%);
+	font-size: 8px;
+	opacity: 0;
+	animation: twinkle 3s infinite;
 }
 
-.effect-item {
-    justify-content: center;
-    text-align: center;
-    flex-direction: column;
-    padding: 12px 8px;
-    border: 1px solid transparent;
+/* Add nebula glow effect */
+[data-theme='theme12'] .theme-toggle-btn::after {
+	content: '';
+	position: absolute;
+	top: -50%;
+	left: -50%;
+	width: 200%;
+	height: 200%;
+	background: radial-gradient(circle, rgba(147, 51, 234, 0.3) 0%, transparent 70%);
+	animation: nebula-drift 8s infinite alternate;
 }
 
-.effect-item:hover {
-    border-color: #e0efff;
-    background: #f0f7ff;
+[data-theme='theme12'] .theme-toggle-btn svg {
+	position: relative;
+	z-index: 1;
+	filter: drop-shadow(0 0 8px rgba(255, 255, 255, 0.8));
 }
 
-.effect-icon {
-    margin-right: 0;
-    margin-bottom: 5px;
-    font-size: 24px;
-    display: block;
+[data-theme='theme12'] .theme-toggle-btn svg path {
+	stroke: white;
+	fill: rgba(255, 255, 255, 0.3);
+	animation: star-glow 2s infinite alternate;
 }
 
-/* Mobile specific for effects menu */
-@media (max-width: 768px) {
-    .effects-menu {
-        width: 95%; /* Full width on mobile mostly */
-        left: 50%;
-        right: auto;
-        transform: translateX(-50%);
-        bottom: 70px;
-    }
+[data-theme='theme12'] .theme-toggle-btn:hover {
+	box-shadow:
+		0 0 30px rgba(99, 164, 255, 1),
+		0 0 60px rgba(99, 164, 255, 0.7),
+		0 0 90px rgba(126, 34, 206, 0.5),
+		inset 0 0 30px rgba(255, 255, 255, 0.2);
+	transform: scale(1.1);
 }
 
+@keyframes cosmic-universe {
+	0% {
+		background-position: 0% 50%;
+		box-shadow:
+			0 0 20px rgba(99, 164, 255, 0.9),
+			0 0 40px rgba(99, 164, 255, 0.5),
+			0 0 60px rgba(126, 34, 206, 0.3),
+			inset 0 0 20px rgba(255, 255, 255, 0.1);
+	}
+
+	50% {
+		background-position: 100% 50%;
+		box-shadow:
+			0 0 30px rgba(126, 34, 206, 1),
+			0 0 60px rgba(167, 139, 250, 0.7),
+			0 0 90px rgba(99, 164, 255, 0.4),
+			inset 0 0 30px rgba(255, 255, 255, 0.2);
+	}
+
+	100% {
+		background-position: 0% 50%;
+		box-shadow:
+			0 0 20px rgba(99, 164, 255, 0.9),
+			0 0 40px rgba(99, 164, 255, 0.5),
+			0 0 60px rgba(126, 34, 206, 0.3),
+			inset 0 0 20px rgba(255, 255, 255, 0.1);
+	}
+}
+
+@keyframes cosmic-rotate {
+	from {
+		filter: hue-rotate(0deg);
+	}
+
+	to {
+		filter: hue-rotate(360deg);
+	}
+}
+
+@keyframes twinkle {
+
+	0%,
+	100% {
+		opacity: 0;
+		transform: translate(-50%, -50%) scale(0.5);
+	}
+
+	50% {
+		opacity: 1;
+		transform: translate(-50%, -50%) scale(1.5);
+	}
+}
+
+@keyframes nebula-drift {
+	from {
+		transform: translate(-10%, -10%) rotate(0deg);
+		opacity: 0.3;
+	}
+
+	to {
+		transform: translate(10%, 10%) rotate(360deg);
+		opacity: 0.6;
+	}
+}
+
+@keyframes star-glow {
+	from {
+		filter: drop-shadow(0 0 4px rgba(255, 255, 255, 0.6));
+	}
+
+	to {
+		filter: drop-shadow(0 0 12px rgba(255, 255, 255, 1));
+	}
+}

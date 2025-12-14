@@ -52,9 +52,17 @@ export function setupEmojiPicker({
 			}, 300);
 		}
 
-		// Button click toggles picker
-		// 按钮点击切换选择器显示
+		// Button click toggles picker - Enhanced for mobile
+		// 按钮点击切换选择器显示 - 移动端增强
+		let lastToggleTime = 0;
 		const togglePicker = (ev) => {
+			// Prevent duplicate events (touchend + click firing together on mobile)
+			const now = Date.now();
+			if (now - lastToggleTime < 500) {
+				return;
+			}
+			lastToggleTime = now;
+
 			ev.preventDefault();
 			ev.stopPropagation();
 			if (picker.style.display === 'none') {
@@ -64,18 +72,9 @@ export function setupEmojiPicker({
 			}
 		};
 
-		on(btn, 'click', (ev) => {
-			ev.stopPropagation();
-			if (picker.style.display === 'none') showPickerWithAnimation();
-			else hidePickerWithAnimation();
-		});
-
-		on(btn, 'touchend', (ev) => {
-			ev.preventDefault();
-			ev.stopPropagation();
-			if (picker.style.display === 'none') showPickerWithAnimation();
-			else hidePickerWithAnimation();
-		});
+		// Use both click and touchend for maximum compatibility
+		on(btn, 'click', togglePicker);
+		on(btn, 'touchend', togglePicker);
 
 		// Hide picker when clicking outside
 		// 点击外部隐藏选择器
@@ -96,48 +95,63 @@ export function setupEmojiPicker({
 }
 // Insert emoji into input at cursor
 // 在光标处插入 emoji 到输入框
+// Insert emoji into input at cursor
+// 在光标处插入 emoji 到输入框
 function insertEmoji(input, emoji) {
+	// Focus input first
 	input.focus();
-	// Small delay to ensure focus on mobile
-	setTimeout(() => {
-		let inserted = false;
-		// Try execCommand first (best for preserving undo buffer and events)
-		if (document.queryCommandSupported('insertText')) {
-			try {
-				inserted = document.execCommand('insertText', false, emoji);
-			} catch (e) { }
-		}
 
-		if (!inserted) {
-			if (document.getSelection && window.getSelection) {
-				let sel = window.getSelection();
-				if (sel.rangeCount > 0 && input.contains(sel.anchorNode)) {
-					let range = sel.getRangeAt(0);
-					range.deleteContents();
-					range.insertNode(document.createTextNode(emoji));
-					range.collapse(false);
-					sel.removeAllRanges();
-					sel.addRange(range);
-					inserted = true;
-				}
-			}
-		}
+	// Function to dispatch events
+	const triggerInputEvent = () => {
+		input.dispatchEvent(new Event('input', { bubbles: true }));
+		input.dispatchEvent(new Event('change', { bubbles: true }));
+	};
 
-		// Fallback: Append relative to cursor or end
-		if (!inserted) {
-			// Check if input is empty and clear potential br tag? No, just append
-			input.innerHTML += emoji;
-			// Move cursor to end
-			try {
-				const range = document.createRange();
-				const sel = window.getSelection();
-				range.selectNodeContents(input);
-				range.collapse(false);
+	let inserted = false;
+
+	// Try execCommand first (best for undo/redo history)
+	try {
+		inserted = document.execCommand('insertText', false, emoji);
+	} catch (e) {
+		console.warn('execCommand insertText failed', e);
+	}
+
+	// Fallback 1: Selection/Range API
+	if (!inserted && window.getSelection) {
+		const sel = window.getSelection();
+		if (sel.getRangeAt && sel.rangeCount) {
+			const range = sel.getRangeAt(0);
+			// Check if range is inside input
+			if (input.contains(range.commonAncestorContainer)) {
+				range.deleteContents();
+				const textNode = document.createTextNode(emoji);
+				range.insertNode(textNode);
+				range.setStartAfter(textNode);
+				range.setEndAfter(textNode);
 				sel.removeAllRanges();
 				sel.addRange(range);
-			} catch (e) { }
+				inserted = true;
+			}
 		}
+	}
 
-		input.dispatchEvent(new Event('input', { bubbles: true }));
-	}, 10);
+	// Fallback 2: Direct text manipulation
+	if (!inserted) {
+		input.innerText += emoji;
+		// Move cursor to end
+		const range = document.createRange();
+		range.selectNodeContents(input);
+		range.collapse(false);
+		const sel = window.getSelection();
+		sel.removeAllRanges();
+		sel.addRange(range);
+	}
+
+	// Always trigger input event
+	triggerInputEvent();
+
+	// Force check empty state explicitly if needed
+	if (input.classList.contains('is-empty')) {
+		input.classList.remove('is-empty');
+	}
 }

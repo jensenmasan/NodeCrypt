@@ -266,10 +266,20 @@ window.addEventListener('DOMContentLoaded', () => {
 		themeToggleBtn.onclick = (e) => {
 			e.stopPropagation();
 			const current = getCurrentTheme();
-			// Toggle between light (theme1) and dark (theme12 or theme10)
-			// theme1 is light default. theme12 is Metallic Dark.
+			// Toggle between light (theme1) and dark (theme12)
+			// theme1 is light default. theme12 is "Warm Starry Night" (now Upgraded to Universe).
 			const newThemeId = (current.id === 'theme1' || current.id === 'theme2' || current.id === 'theme3') ? 'theme12' : 'theme1';
 			applyTheme(newThemeId);
+
+			// If switching to dark theme (theme12), trigger starry sky effect
+			// 如果切换到暗黑主题（theme12），触发星空特效
+			if (newThemeId === 'theme12') {
+				// Ensure effects are initialized
+				if (window.startStarrySky) {
+					window.startStarrySky();
+				}
+			}
+
 			// Save to local storage
 			const settings = JSON.parse(localStorage.getItem('settings') || '{}');
 			settings.theme = newThemeId;
@@ -473,6 +483,10 @@ window.addEventListener('DOMContentLoaded', () => {
 	const sendButton = document.querySelector('.send-message-btn');
 	if (sendButton) {
 		sendButton.addEventListener('click', sendMessage);
+		sendButton.addEventListener('touchend', (e) => {
+			e.preventDefault();
+			sendMessage();
+		});
 	}
 
 	// Setup Voice Recording
@@ -766,6 +780,15 @@ if (effectsBtn) {
 		effectsBtn.classList.toggle('active');
 	}, { passive: false });
 
+	// Better touch handling for mobile scrolling and clicking
+	let touchStartY = 0;
+	let touchStartTime = 0;
+
+	effectsMenu.addEventListener('touchstart', (e) => {
+		touchStartY = e.touches[0].clientY;
+		touchStartTime = Date.now();
+	}, { passive: true });
+
 	const handleItemClick = (e) => {
 		e.stopPropagation(); // Stop bubbling
 		const item = e.target.closest('.effect-item');
@@ -778,11 +801,22 @@ if (effectsBtn) {
 	};
 
 	effectsMenu.addEventListener('click', handleItemClick);
-	// Explicit regular touch handling
+
+	// Handle touchend for better mobile responsiveness
 	effectsMenu.addEventListener('touchend', (e) => {
-		e.preventDefault();
-		handleItemClick(e);
+		const touchEndY = e.changedTouches[0].clientY;
+		const touchEndTime = Date.now();
+		const deltaY = Math.abs(touchEndY - touchStartY);
+		const deltaTime = touchEndTime - touchStartTime;
+
+		// Only trigger click if it's a tap (not a scroll)
+		// Less than 10px movement and less than 200ms
+		if (deltaY < 10 && deltaTime < 200) {
+			e.preventDefault();
+			handleItemClick(e);
+		}
 	}, { passive: false });
+
 
 
 	// Close on click outside

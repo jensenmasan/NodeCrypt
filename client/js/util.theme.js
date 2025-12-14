@@ -49,7 +49,8 @@ export const THEMES = [
 	},
 	{
 		id: 'theme12',
-		background: 'radial-gradient(circle at 50% 100%, #2b3595 0%, #101530 60%, #050710 100%)' // Warm Starry Night
+		background: 'url(https://images.unsplash.com/photo-1534796636912-3b95b3ab5986?ixlib=rb-1.2.1&auto=format&fit=crop&w=1920&q=80)' // Immersive Universe
+		// Fallback or if image fails: 'radial-gradient(circle at 50% 100%, #1b2735 0%, #090a0f 100%)'
 	},
 	{
 		id: 'theme13',
@@ -126,6 +127,9 @@ export function applyTheme(themeId) {
 		} else {
 			mainElement.style.background = theme.background;
 		}
+		// Set data-theme attribute for CSS targeting
+		document.body.setAttribute('data-theme', themeId);
+
 		// Add transition effect for smooth theme switching		// 添加过渡效果，实现平滑的主题切换
 		mainElement.style.transition = 'background 0.5s ease-in-out, background-image 0.5s ease-in-out';
 

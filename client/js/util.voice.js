@@ -11,7 +11,20 @@ export function setupVoiceRecording(onSend, onCancel) {
     const voiceBtn = $id('chat-voice-btn');
     if (!voiceBtn) return;
 
-    voiceBtn.onclick = async () => {
+    // Prevent duplicate events on mobile
+    let lastActionTime = 0;
+
+    async function handleVoiceClick(e) {
+        // Prevent duplicate events (touchend + click)
+        const now = Date.now();
+        if (now - lastActionTime < 500) {
+            return;
+        }
+        lastActionTime = now;
+
+        e.preventDefault();
+        e.stopPropagation();
+
         if (isRecording) {
             // Stop recording and send
             stopRecording(onSend);
@@ -19,7 +32,11 @@ export function setupVoiceRecording(onSend, onCancel) {
             // Start recording
             await startRecording();
         }
-    };
+    }
+
+    // Use both click and touchend for mobile compatibility
+    voiceBtn.onclick = handleVoiceClick;
+    voiceBtn.addEventListener('touchend', handleVoiceClick, { passive: false });
 }
 
 async function startRecording() {
