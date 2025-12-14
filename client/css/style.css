@@ -2764,6 +2764,103 @@ h2 {
 	}
 }
 
+/* Global Dynamic Cosmic Background for Dark Mode (Theme 12) */
+/* 黑夜模式全局动态宇宙背景 */
+[data-theme='theme12'] body {
+	background: radial-gradient(ellipse at bottom, #090a0f 0%, #000000 100%);
+	/* Ensure animation container covers everything */
+	position: relative;
+	overflow-x: hidden;
+	/* Prevent horizontal scroll from stars */
+}
+
+/* Cosmic Stars Layer - Global */
+[data-theme='theme12'] body::before {
+	content: " ";
+	position: fixed;
+	/* Fixed position to stay while scrolling */
+	top: 0;
+	left: 0;
+	width: 100%;
+	height: 100%;
+	background: transparent;
+	/* Procedural stars using box-shadow for performance vs many divs */
+	background-image:
+		radial-gradient(2px 2px at 20px 30px, #eee, rgba(0, 0, 0, 0)),
+		radial-gradient(2px 2px at 40px 70px, #fff, rgba(0, 0, 0, 0)),
+		radial-gradient(2px 2px at 50px 160px, #ddd, rgba(0, 0, 0, 0)),
+		radial-gradient(2px 2px at 90px 40px, #fff, rgba(0, 0, 0, 0)),
+		radial-gradient(2px 2px at 130px 80px, #fff, rgba(0, 0, 0, 0)),
+		radial-gradient(2px 2px at 160px 120px, #ddd, rgba(0, 0, 0, 0));
+	background-repeat: repeat;
+	background-size: 200px 200px;
+	animation: global-star-move 100s linear infinite;
+	opacity: 0.5;
+	z-index: -2;
+	pointer-events: none;
+}
+
+/* Nebula/Aurora Layer - Global */
+[data-theme='theme12'] body::after {
+	content: " ";
+	position: fixed;
+	top: -50%;
+	left: -50%;
+	width: 200%;
+	height: 200%;
+	background:
+		radial-gradient(circle at 50% 50%, rgba(30, 60, 114, 0.15), transparent 50%),
+		radial-gradient(circle at 20% 80%, rgba(76, 29, 149, 0.1), transparent 40%),
+		radial-gradient(circle at 80% 20%, rgba(59, 130, 246, 0.1), transparent 40%);
+	filter: blur(60px);
+	animation: global-nebula-flow 30s ease-in-out infinite alternate;
+	z-index: -1;
+	pointer-events: none;
+}
+
+@keyframes global-star-move {
+	from {
+		background-position: 0 0;
+	}
+
+	to {
+		background-position: 0 1000px;
+	}
+
+	/* Vertical flow like moving forward */
+}
+
+@keyframes global-nebula-flow {
+	0% {
+		transform: rotate(0deg) scale(1);
+	}
+
+	50% {
+		transform: rotate(2deg) scale(1.1);
+	}
+
+	100% {
+		transform: rotate(-2deg) scale(1);
+	}
+}
+
+/* Ensure text is readable on dark background */
+[data-theme='theme12'] .main,
+[data-theme='theme12'] .sidebar,
+[data-theme='theme12'] .rightbar {
+	background-color: rgba(18, 18, 18, 0.6) !important;
+	/* Semi-transparent panel */
+	backdrop-filter: blur(10px);
+	/* Glassmorphism */
+	-webkit-backdrop-filter: blur(10px);
+}
+
+[data-theme='theme12'] .message-text,
+[data-theme='theme12'] .group-title,
+[data-theme='theme12'] .member-name {
+	text-shadow: 0 1px 2px rgba(0, 0, 0, 0.5);
+}
+
 /* Nudge Shake Animation */
 @keyframes nudge-shake {
 	0% {
@@ -2815,4 +2912,10 @@ h2 {
 	animation: nudge-shake 0.5s cubic-bezier(.36, .07, .19, .97) both;
 	transform: translate3d(0, 0, 0);
 	backface-visibility: hidden;
+}
+
+.nudge-pulse {
+	animation: pulse-recording 0.3s ease-in-out;
+	background-color: rgba(48, 168, 247, 0.2);
+	border-radius: 8px;
 }
