@@ -418,29 +418,79 @@ export function createUserItem(user, isMe) {
 		const cleanSvg = svg.replace(/<script\b[^<]*(?:(?!<\/script>)<[^<]*)*<\/script>/gi, '');
 		avatarEl.innerHTML = cleanSvg
 	}
-	if (!isMe) {
-		div.onclick = () => togglePrivateChat(user.clientId, safeUserName);
-	}
 
-	// Add "Nudge" (Pai Yi Pai) feature on double click
-	// 添加双击“拍一拍”功能
-	let lastTapTime = 0;
-	div.addEventListener('touchend', (e) => {
+	// Intelligent Click Handling (Single Tap vs Double Tap)
+	// 智能点击处理（单击私聊 vs 双击拍一拍）
+	let clickTimer = null;
+	let lastTouchTime = 0;
+
+	const handleTap = (e) => {
+		e.preventDefault(); // Prevent ghost clicks logic
+		e.stopPropagation();
+
 		const currentTime = new Date().getTime();
-		const tapLength = currentTime - lastTapTime;
-		if (tapLength < 500 && tapLength > 0) {
-			// Double tap detected
-			e.preventDefault();
-			e.stopPropagation();
-			if (window.sendNudge) window.sendNudge(user.clientId, safeUserName);
+		const tapLength = currentTime - lastTouchTime;
+
+		if (tapLength < 300 && tapLength > 0) {
+			// --- Double Tap / Double Click: Nudge ---
+			if (clickTimer) clearTimeout(clickTimer);
+			clickTimer = null;
+
+			// Trigger Nudge
+			if (window.sendNudge) {
+				window.sendNudge(user.clientId, safeUserName);
+				// Add a visual feedback on the item itself
+				div.classList.add('nudge-pulse');
+				setTimeout(() => div.classList.remove('nudge-pulse'), 300);
+			}
+		} else {
+			// --- Single Tap / Click: Private Chat ---
+			// Delay slightly to wait for potential second tap
+			if (!isMe) {
+				clickTimer = setTimeout(() => {
+					togglePrivateChat(user.clientId, safeUserName);
+					clickTimer = null;
+				}, 300); // 300ms delay to wait for double tap
+			}
 		}
-		lastTapTime = currentTime;
+		lastTouchTime = currentTime;
+	};
+
+	// Bind events
+	// 绑定事件
+
+	// For PC Check: Mouse events don't naturally have "doubles" unless we check detail or timing
+	// But standard click covers mouse. We need to prevent conflict.
+
+	div.addEventListener('click', (e) => {
+		// If lastTouchTime is recent (within 500ms), this is a ghost click from touch, ignore it
+		if (new Date().getTime() - lastTouchTime < 500) return;
+
+		// For mouse click, e.detail counts consecutive clicks
+		if (e.detail === 2) {
+			// Native Double Click detected via standard property
+			if (clickTimer) clearTimeout(clickTimer);
+			clickTimer = null;
+			if (window.sendNudge) {
+				window.sendNudge(user.clientId, safeUserName);
+				div.classList.add('nudge-pulse');
+				setTimeout(() => div.classList.remove('nudge-pulse'), 300);
+			}
+		} else if (e.detail === 1) {
+			// Single click
+			if (!isMe) {
+				// Clear any existing timer just in case
+				if (clickTimer) clearTimeout(clickTimer);
+				clickTimer = setTimeout(() => {
+					togglePrivateChat(user.clientId, safeUserName);
+				}, 250);
+			}
+		}
 	});
 
-	div.addEventListener('dblclick', (e) => {
-		e.preventDefault();
-		e.stopPropagation();
-		if (window.sendNudge) window.sendNudge(user.clientId, safeUserName);
+	// For Mobile (touchend) - Critical for responsiveness
+	div.addEventListener('touchend', (e) => {
+		handleTap(e);
 	});
 
 	return div
