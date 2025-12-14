@@ -80,7 +80,7 @@ const colorPalette = {
 };
 
 // --- 2. 初始化系统 ---
-function init3DGestureSystem() {
+function init3DGestureSystem_deprecated() {
     // 1. Scene & Camera
     scene = new THREE.Scene();
     // 稍微带一点迷雾，增强深邃感
@@ -204,7 +204,7 @@ function init3DGestureSystem() {
     animate();
 }
 
-function cleanup3DGestureSystem() {
+function cleanup3DGestureSystem_deprecated() {
     if (animationFrameId) cancelAnimationFrame(animationFrameId);
 
     // Remove canvas
