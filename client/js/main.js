@@ -662,9 +662,18 @@ document.addEventListener('dragover', (e) => {
 // Import effects
 // 导入特效模块
 import { Effects } from './util.effects.js';
-window.startFireworks = Effects.startFireworks; // Expose as fallback
+
+// Expose all effects globally for signal handlers
+window.startFireworks = Effects.startFireworks;
 window.startStarrySky = Effects.startStarrySky;
 window.startConfetti = Effects.startConfetti;
+window.startHearts = Effects.startHearts;
+window.startBubbles = Effects.startBubbles;
+window.startSnow = Effects.startSnow;
+window.startRain = Effects.startRain;
+window.startSakura = Effects.startSakura;
+window.startLightning = Effects.startLightning;
+window.startMatrix = Effects.startMatrix;
 
 // Listen for fireworks trigger event (from logo click)
 window.addEventListener('triggerFireworks', () => {
@@ -675,9 +684,15 @@ window.addEventListener('triggerFireworks', () => {
 // 触发本地特效并向远程发送信号
 function triggerEffect(effectName) {
 	// Local trigger
-	if (effectName === 'fireworks') Effects.startFireworks();
-	else if (effectName === 'starry_sky') Effects.startStarrySky();
-	else if (effectName === 'confetti') Effects.startConfetti();
+	const method = 'start' + effectName.charAt(0).toUpperCase() + effectName.slice(1).replace(/_([a-z])/g, (g) => g[1].toUpperCase());
+
+	if (Effects[method]) {
+		Effects[method]();
+	} else {
+		// Fallback
+		if (effectName === 'fireworks') Effects.startFireworks();
+		if (effectName === 'matrix') Effects.startMatrix();
+	}
 
 	// Send Signal
 	const rd = roomsData[activeRoomIndex];
@@ -710,8 +725,15 @@ if (effectsBtn) {
 	// Menu content
 	effectsMenu.innerHTML = `
         <div class="effect-item" data-effect="fireworks"><span class="effect-icon">🎆</span> Fireworks</div>
-        <div class="effect-item" data-effect="starry_sky"><span class="effect-icon">🌌</span> Starry Sky</div>
+        <div class="effect-item" data-effect="starry_sky"><span class="effect-icon">🌌</span> Galaxy</div>
         <div class="effect-item" data-effect="confetti"><span class="effect-icon">🎊</span> Celebrate</div>
+        <div class="effect-item" data-effect="hearts"><span class="effect-icon">❤</span> Love</div>
+        <div class="effect-item" data-effect="bubbles"><span class="effect-icon">🫧</span> Bubbles</div>
+        <div class="effect-item" data-effect="snow"><span class="effect-icon">❄</span> Snow</div>
+        <div class="effect-item" data-effect="rain"><span class="effect-icon">🌧</span> Rain</div>
+        <div class="effect-item" data-effect="sakura"><span class="effect-icon">🌸</span> Sakura</div>
+        <div class="effect-item" data-effect="lightning"><span class="effect-icon">⚡</span> Lightning</div>
+        <div class="effect-item" data-effect="matrix"><span class="effect-icon">💻</span> Matrix</div>
     `;
 	effectsBtn.parentElement.appendChild(effectsMenu);
 
@@ -734,7 +756,7 @@ if (effectsBtn) {
 
 	// Close on click outside
 	document.addEventListener('click', (e) => {
-		if (!effectsMenu.contains(e.target) && e.target !== effectsBtn) {
+		if (!effectsMenu.contains(e.target) && e.target !== effectsBtn && !effectsBtn.contains(e.target)) {
 			effectsMenu.classList.remove('show');
 			effectsBtn.classList.remove('active');
 		}

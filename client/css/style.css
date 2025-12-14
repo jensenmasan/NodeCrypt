@@ -2563,3 +2563,51 @@ h2 {
     }
 }
 
+
+/* Enhanced Effects Menu */
+.effects-menu {
+    width: 280px;
+    display: none; /* Changed from previous flex/none, grid will be applied in .show */
+    grid-template-columns: 1fr 1fr;
+    gap: 8px;
+    padding: 12px;
+    bottom: 60px; /* Give more space */
+    max-height: 400px;
+    overflow-y: auto;
+}
+
+.effects-menu.show {
+    display: grid; /* Use grid for 2 columns */
+}
+
+.effect-item {
+    justify-content: center;
+    text-align: center;
+    flex-direction: column;
+    padding: 12px 8px;
+    border: 1px solid transparent;
+}
+
+.effect-item:hover {
+    border-color: #e0efff;
+    background: #f0f7ff;
+}
+
+.effect-icon {
+    margin-right: 0;
+    margin-bottom: 5px;
+    font-size: 24px;
+    display: block;
+}
+
+/* Mobile specific for effects menu */
+@media (max-width: 768px) {
+    .effects-menu {
+        width: 95%; /* Full width on mobile mostly */
+        left: 50%;
+        right: auto;
+        transform: translateX(-50%);
+        bottom: 70px;
+    }
+}
+

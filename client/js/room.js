@@ -261,25 +261,14 @@ export function handleClientMessage(idx, msg) {
 		// Identify effect
 		const effectType = msgType.replace('_signal', '');
 
-		let triggerFunc = null;
-		let effectName = '';
-		let icon = '';
+		// Convert snake_case to CamelCase for function name: startSnakeCase -> startSnakeCase
+		// Actually our convention is startStarrySky (CamelCase)
+		const pascalCase = effectType.split('_').map(w => w.charAt(0).toUpperCase() + w.slice(1)).join('');
+		const funcName = 'start' + pascalCase;
 
-		if (effectType === 'fireworks') {
-			triggerFunc = window.startFireworks;
-			effectName = 'Fireworks';
-			icon = '🎆';
-		} else if (effectType === 'starry_sky') {
-			triggerFunc = window.startStarrySky;
-			effectName = 'Starry Sky';
-			icon = '🌌';
-		} else if (effectType === 'confetti') {
-			triggerFunc = window.startConfetti;
-			effectName = 'Celebration';
-			icon = '🎊';
-		}
+		const triggerFunc = window[funcName];
 
-		if (triggerFunc) {
+		if (typeof triggerFunc === 'function') {
 			triggerFunc();
 
 			// Optional: Add a system message saying who sent it
@@ -289,20 +278,45 @@ export function handleClientMessage(idx, msg) {
 			}
 			const lang = getCurrentLanguage() || 'en';
 			let actionText = '';
+			let effectDisplayName = effectType;
+			let icon = '✨';
+
+			// Icon mapping
+			const iconMap = {
+				fireworks: '🎆', starry_sky: '🌌', confetti: '🎊',
+				hearts: '❤', bubbles: '🫧', snow: '❄',
+				rain: '🌧', sakura: '🌸', lightning: '⚡', matrix: '💻'
+			};
+			if (iconMap[effectType]) icon = iconMap[effectType];
+
+			// Display Name mapping
+			const nameMap = {
+				fireworks: ['Fireworks', '烟花'],
+				starry_sky: ['Galaxy', '星空'],
+				confetti: ['Celebration', '庆典'],
+				hearts: ['Love', '爱心'],
+				bubbles: ['Bubbles', '气泡'],
+				snow: ['Snow', '下雪'],
+				rain: ['Rain', '下雨'],
+				sakura: ['Sakura', '樱花'],
+				lightning: ['Lightning', '闪电'],
+				matrix: ['Matrix', '代码雨']
+			};
+
 			if (lang === 'zh') {
+				actionText = '展示了';
 				if (effectType === 'fireworks') actionText = '燃放了';
-				else if (effectType === 'starry_sky') actionText = '展示了';
-				else if (effectType === 'confetti') actionText = '开始了';
+				if (effectType === 'lightning') actionText = '召唤了';
+				if (effectType === 'rain' || effectType === 'snow') actionText = '让天';
 
 				// Simple mapping for now
-				if (effectType === 'fireworks') effectName = '烟花';
-				if (effectType === 'starry_sky') effectName = '星空';
-				if (effectType === 'confetti') effectName = '庆典';
+				if (nameMap[effectType]) effectDisplayName = nameMap[effectType][1];
 			} else {
 				actionText = 'triggered';
+				if (nameMap[effectType]) effectDisplayName = nameMap[effectType][0];
 			}
 
-			const text = `${senderName} ${actionText} ${effectName} ${icon}`;
+			const text = `${senderName} ${actionText} ${effectDisplayName} ${icon}`;
 
 			// Let's add it locally only to the chat
 			if (activeRoomIndex === idx && window.addSystemMsg) {
