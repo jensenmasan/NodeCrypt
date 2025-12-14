@@ -2873,14 +2873,37 @@ body.theme-3d-active canvas {
 [data-theme='theme12'] .modal-content,
 [data-theme='theme12'] .settings-panel,
 [data-theme='theme12'] .context-menu,
-[data-theme='theme12'] .more-menu,
-[data-theme='theme12'] .effects-menu {
+[data-theme='theme12'] .more-menu {
 	background-color: rgba(8, 12, 20, 0.90) !important;
 	backdrop-filter: blur(12px);
 	-webkit-backdrop-filter: blur(12px);
 	border: 1px solid rgba(100, 100, 255, 0.15);
 	color: #eee;
 	box-shadow: 0 8px 32px 0 rgba(0, 0, 0, 0.7);
+}
+
+/* Fix: Effects menu should NOT be blurry */
+[data-theme='theme12'] .effects-menu {
+	background-color: rgba(8, 12, 20, 0.98) !important;
+	/* Higher opacity, no blur */
+	backdrop-filter: none !important;
+	-webkit-backdrop-filter: none !important;
+	border: 1px solid rgba(100, 100, 255, 0.25);
+	color: #eee;
+	box-shadow: 0 8px 32px 0 rgba(0, 0, 0, 0.7);
+}
+
+/* Effect items in dark mode should be clearly visible */
+[data-theme='theme12'] .effect-item {
+	background: rgba(30, 35, 45, 0.8) !important;
+	color: #eee !important;
+	border: 1px solid rgba(100, 100, 255, 0.2);
+}
+
+[data-theme='theme12'] .effect-item:hover {
+	background: rgba(50, 60, 80, 0.95) !important;
+	border-color: rgba(100, 150, 255, 0.5);
+	color: #fff !important;
 }
 
 /* 3. Inputs & Textareas */
