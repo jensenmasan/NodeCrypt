@@ -2806,6 +2806,22 @@ body.theme-3d-active canvas {
 	opacity: 0 !important;
 }
 
+/* FIX: Ensure input area is above the cosmic background layer */
+[data-theme='theme12'] .chat-input-area {
+	position: relative;
+	z-index: 50 !important;
+	background: rgba(10, 16, 25, 0.6) !important;
+	backdrop-filter: blur(10px);
+}
+
+[data-theme='theme12'] .chat-input-wrapper {
+	z-index: 51 !important;
+}
+
+[data-theme='theme12'] .new-message-wrapper {
+	z-index: 52 !important;
+}
+
 [data-theme='theme12'] .message-text,
 [data-theme='theme12'] .group-title,
 [data-theme='theme12'] .member-name {
@@ -2891,6 +2907,8 @@ body.theme-3d-active canvas {
 	border: 1px solid rgba(100, 100, 255, 0.25);
 	color: #eee;
 	box-shadow: 0 8px 32px 0 rgba(0, 0, 0, 0.7);
+	z-index: 10001 !important;
+	/* Force top layer */
 }
 
 /* Effect items in dark mode should be clearly visible */
