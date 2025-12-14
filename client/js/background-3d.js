@@ -37,14 +37,16 @@ let autoTimer = 0;
 const AUTO_SWITCH_INTERVAL = 300;
 // 终极自动轮播内容：包含了祝福语的高级循环
 // 终极自动轮播内容：30+ 惊艳场景自动循环
-// 终极自动轮播内容：30+ 惊艳场景自动循环
+// 终极自动轮播内容：50+ 惊艳场景自动循环
 const autoTexts = [
-    "NEWYEAR_PREMIUM", "HEART", "FIREWORKS",
+    "NEWYEAR_PREMIUM", "HEART", "FIREWORKS", "NODECRYPT",
     "OLYMPIC", "CAT", "DOG", "UNIVERSE",
     "WORLD", "CHINA", "CHONGQING",
-    "GALAXY", "DNA", "ATOM", "SPHERE", "WAVE", "BUTTERFLY", "TORNADO", "DIAMOND",
+    "GALAXY", "DNA", "ATOM", "SPHERE", "WAVE", "BUTTERFLY", "TORNADO", "DIAMOND", "SATURN", "BUDDHA",
     "ARIES", "TAURUS", "GEMINI", "CANCER", "LEO", "VIRGO", "LIBRA", "SCORPIO", "SAGITTARIUS", "CAPRICORN", "AQUARIUS", "PISCES",
-    "CUSTOM:财富自由", "CUSTOM:身体健康", "CUSTOM:万事如意", "CUSTOM:NodeCrypt", "TECH", "ART"
+    "CUSTOM:财富自由", "CUSTOM:身体健康", "CUSTOM:万事如意", "CUSTOM:一帆风顺", "CUSTOM:步步高升", "CUSTOM:吉祥如意",
+    "CUSTOM:龙马精神", "CUSTOM:心想事成", "CUSTOM:平安喜乐", "CUSTOM:前程似锦",
+    "TECH", "ART", "LOVE", "PEACE", "DREAM", "HOPE", "SMILE"
 ];
 let autoTextIndex = 0;
 
@@ -998,9 +1000,9 @@ function createPointsFromCanvas(text, isPattern = false) {
     else {
         // 主标题：如果竖排且文字较长
         if (useVertical && text.length > 5) {
-            fontSize = isMobile ? 28 : 45; // 手机28，PC 45 (防止竖排过高)
+            fontSize = isMobile ? 50 : 80; // 手机50，PC 80 (增大尺寸)
         } else {
-            fontSize = isMobile ? 40 : 60;
+            fontSize = isMobile ? 80 : 120; // 手机80，PC 120 (显著增大)
         }
     }
 
@@ -1092,8 +1094,8 @@ function createPointsFromCanvas(text, isPattern = false) {
 
     // 采样步长 (1=最精细)
     const step = 1;
-    // 缩放系数：手机端要稍微小一点以免爆屏
-    let scaleFactor = isMobile ? 0.8 : 1.2;
+    // 缩放系数：增大整体显示尺寸
+    let scaleFactor = isMobile ? 1.2 : 1.8;
 
     // 针对长文本竖排的特殊处理，动态计算最佳缩放比例
     if (useVertical && text.length > 5 && !isPattern) {
