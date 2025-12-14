@@ -1532,20 +1532,6 @@ function fallbackToMouseMode() {
     isAutoMode = false;
 }
 
-// Basic UI Controls Init
-function initUIControls() {
-    // Usually sets up context menu or click handlers
-    document.addEventListener('contextmenu', event => event.preventDefault());
-}
-
-// Auto Hide UI
-function initAutoHideUI() {
-    // Hide UI elements if idle
-    setTimeout(() => {
-        const overlay = document.querySelector('.loading-overlay');
-        if (overlay) overlay.style.display = 'none';
-    }, 3000); // Force hide after 3 seconds anyway
-}
 function onDocumentMouseDown(event) {
     isMouseDown = true;
     lastMouseMoveTime = Date.now();
@@ -1797,55 +1783,7 @@ function createGlowTexture() {
 
 
 // --- 4. MediaPipe 手势识别逻辑 ---
-function initMediaPipe() {
-    const videoElement = document.getElementById('input-video');
-
-    // 如果没有 video 元素，可能是在非登录页，或者初始化失败
-    if (!videoElement) return;
-
-    // 检查 Hands 是否已定义 (全局变量)
-    if (typeof Hands === 'undefined') {
-        setTimeout(initMediaPipe, 500); // 重试
-        return;
-    }
-
-    const hands = new Hands({
-        locateFile: (file) => {
-            return `https://cdn.jsdelivr.net/npm/@mediapipe/hands/${file}`;
-        }
-    });
-
-    hands.setOptions({
-        maxNumHands: 2,
-        modelComplexity: 1,
-        minDetectionConfidence: 0.5,
-        minTrackingConfidence: 0.5
-    });
-
-    hands.onResults(onHandsResults);
-
-    const cameraUtils = new Camera(videoElement, {
-        onFrame: async () => {
-            await hands.send({ image: videoElement });
-        },
-        width: 320,
-        height: 240
-    });
-    cameraUtils.start().catch(err => {
-        console.warn("Camera init failed, falling back to Auto Mode", err);
-        isAutoMode = true; // 确保启用自动模式
-        // 隐藏视频预览框，因为没摄像头
-        const videoContainer = document.getElementById('video-container');
-        if (videoContainer) videoContainer.style.display = 'none';
-
-        const uiLayer = document.getElementById('ui-layer');
-        if (uiLayer) {
-            // 修改提示文字
-            const status = document.getElementById('gesture-status');
-            if (status) status.innerText = "鼠标交互模式";
-        }
-    });
-}
+// (initMediaPipe 函数在前面已定义)
 
 function onHandsResults(results) {
     const gestureStatus = document.getElementById('gesture-status');
