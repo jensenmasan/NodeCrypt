@@ -89,7 +89,7 @@ export function init3DGestureSystem() {
     scene.fog = new THREE.FogExp2(0x050505, 0.002);
 
     camera = new THREE.PerspectiveCamera(75, window.innerWidth / window.innerHeight, 1, 3000);
-    camera.position.z = 1000;
+    camera.position.z = 600; // 拉近相机，让文字更大
 
     // 2. Renderer
     if (!renderer) {
@@ -1000,9 +1000,9 @@ function createPointsFromCanvas(text, isPattern = false) {
     else {
         // 主标题：如果竖排且文字较长
         if (useVertical && text.length > 5) {
-            fontSize = isMobile ? 50 : 80; // 手机50，PC 80 (增大尺寸)
+            fontSize = isMobile ? 100 : 180; // 手机100，PC 180 (超大尺寸)
         } else {
-            fontSize = isMobile ? 80 : 120; // 手机80，PC 120 (显著增大)
+            fontSize = isMobile ? 180 : 300; // 手机180，PC 300 (铺满屏幕)
         }
     }
 
@@ -1094,8 +1094,8 @@ function createPointsFromCanvas(text, isPattern = false) {
 
     // 采样步长 (1=最精细)
     const step = 1;
-    // 缩放系数：增大整体显示尺寸
-    let scaleFactor = isMobile ? 1.2 : 1.8;
+    // 缩放系数：超大缩放，铺满整个屏幕
+    let scaleFactor = isMobile ? 2.5 : 3.5;
 
     // 针对长文本竖排的特殊处理，动态计算最佳缩放比例
     if (useVertical && text.length > 5 && !isPattern) {
@@ -1127,8 +1127,8 @@ function createPointsFromCanvas(text, isPattern = false) {
                     // 注意：Y轴方向py本身已经是居中的（减去了 canvas.height/2）
                     // 但由于相机 LookAt 问题，如果觉得偏了，可以在这里微调
 
-                    px = (x - canvas.width / 2) * (scaleFactor * 1.5);
-                    py = -(y - canvas.height / 2) * (scaleFactor * 1.5);
+                    px = (x - canvas.width / 2) * (scaleFactor * 2.0); // 进一步放大
+                    py = -(y - canvas.height / 2) * (scaleFactor * 2.0);
 
                     if (useVertical) {
                         // 竖排时，如果文字太长，稍微往上提一点，因为相机好像偏高(y=20)
