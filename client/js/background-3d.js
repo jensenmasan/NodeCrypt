@@ -1238,7 +1238,7 @@ function initUIControls() {
 }
 
 // 新增：清理函数，用于登录成功后关闭3D系统
-export function cleanup3DGestureSystem() {
+function cleanup3DGestureSystem_unused() {
     console.log('Cleaning up 3D Gesture System...');
 
     // 取消动画循环
