@@ -103,10 +103,15 @@ export function init3DGestureSystem() {
         renderer.domElement.style.top = '0';
         renderer.domElement.style.left = '0';
         renderer.domElement.style.zIndex = '-1'; // 确保在最底层
-        renderer.domElement.style.pointerEvents = 'none'; // 让鼠标穿透（除非有交互需求，后面再改）
+        renderer.domElement.style.pointerEvents = 'auto'; // 启用全屏交互，接收所有鼠标和触摸事件
+        renderer.domElement.style.width = '100vw'; // 满屏宽度
+        renderer.domElement.style.height = '100vh'; // 满屏高度
         document.body.appendChild(renderer.domElement);
     } else {
-        // 如果已存在，确保它是可见的
+        // 如果已存在，确保它是可见的并启用交互
+        renderer.domElement.style.pointerEvents = 'auto';
+        renderer.domElement.style.width = '100vw';
+        renderer.domElement.style.height = '100vh';
         document.body.appendChild(renderer.domElement);
     }
 
@@ -1414,23 +1419,19 @@ function startNewYearMode() {
     playSequence();
 }
 
-// 鼠标移动事件
+// 鼠标移动事件 - 增强全屏交互
 function onDocumentMouseMove(event) {
     event.preventDefault();
+
+    // 归一化鼠标坐标到 -1 到 1 之间
+    // 使用更大的系数让粒子响应更灵敏
     mouse.x = (event.clientX / window.innerWidth) * 2 - 1;
     mouse.y = -(event.clientY / window.innerHeight) * 2 + 1;
+
     lastMouseMoveTime = Date.now();
     isAutoMode = false; // 鼠标移动时退出自动模式
 
-    // 更新UI隐藏计时器
-    const controlPanel = document.getElementById('main-control-panel');
-    if (controlPanel) {
-        controlPanel.classList.remove('hidden');
-        if (uiHideTimer) clearTimeout(uiHideTimer);
-        uiHideTimer = setTimeout(() => {
-            if (!controlPanel.matches(':hover')) controlPanel.classList.add('hidden');
-        }, UI_HIDE_DELAY);
-    }
+    // UI控制面板已被移除，不需要更新隐藏计时器
 }
 
 
@@ -1688,10 +1689,24 @@ function initConnections() {
     scene.add(connections);
 }
 
+// 窗口大小调整事件 - 确保满屏交互
 function onWindowResize() {
+    // 更新相机宽高比
     camera.aspect = window.innerWidth / window.innerHeight;
     camera.updateProjectionMatrix();
+
+    // 更新渲染器尺寸，始终填满整个窗口
     renderer.setSize(window.innerWidth, window.innerHeight);
+
+    // 确保canvas样式也更新为满屏
+    if (renderer && renderer.domElement) {
+        renderer.domElement.style.width = '100vw';
+        renderer.domElement.style.height = '100vh';
+    }
+
+    // 更新鼠标坐标计算的窗口尺寸缓存
+    windowHalfX = window.innerWidth / 2;
+    windowHalfY = window.innerHeight / 2;
 }
 
 function initParticles() {
@@ -2314,22 +2329,28 @@ function animate() {
     }
 
     // 相机移动 (LookAt 保持中心，但是位置更具有动感)
+    /* 
     if (!isAutoMode) {
         // Manual mode: subtle parallax
         camera.position.x += (mouse.x * 200 - camera.position.x) * 0.05;
         camera.position.y += (-mouse.y * 200 - camera.position.y) * 0.05;
     }
+    */
 
     // Auto Mode 已经在上方逻辑中控制了 camera.position.z
     // 这里只把 LookAt 锁定中心，确保 "融入" 感
     camera.lookAt(0, 0, 0);
 
-    // 新增：手动滑动交互（针对 NEWYEAR_PREMIUM 和其他 3D 模型）
-    // 如果不在自动模式，允许用户水平滑动旋转场景
-    if (!isAutoMode && (currentText === "NEWYEAR_PREMIUM" || currentText === "HEART" || currentText === "SATURN")) {
-        // 使用鼠标/触摸的 X 轴偏移来控制场景旋转
-        // mouse.x 范围 -1 到 1
-        scene.rotation.y = mouse.x * 1.5; // 最大旋转约 90 度
+    // 新增：手动滑动交互（针对所有模型）
+    // 如果不在自动模式，允许用户全屏 360 度无死角拖动
+    if (!isAutoMode) {
+        // Mouse X (-1 to 1) -> Rotation Y (-PI to PI) -> 360 degrees
+        // 增加灵敏度，让拖动范围更大
+        scene.rotation.y = mouse.x * Math.PI;
+
+        // Mouse Y (-1 to 1) -> Rotation X (-0.5 to 0.5) -> Approx 30 degrees tilt
+        // 允许上下视角微调
+        scene.rotation.x = mouse.y * 0.5;
     }
 
     renderer.render(scene, camera);

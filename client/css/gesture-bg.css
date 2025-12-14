@@ -59,37 +59,11 @@ body {
     object-fit: cover;
 }
 
-/* UI 层信息 - 高级玻璃态 (精致版) */
+/* UI 层信息 - 完全隐藏，不再显示控制面板 */
 #ui-layer {
-    position: fixed;
-    top: 20px;
-    left: 20px;
-    color: rgba(255, 255, 255, 0.9);
-    z-index: 100;
-    pointer-events: none;
-    font-family: 'Segoe UI', 'Roboto', 'Arial', sans-serif;
-    padding: 15px 20px;
-    /* 减小内边距 */
-    border-radius: 12px;
-    background: linear-gradient(135deg,
-            rgba(255, 255, 255, 0.05),
-            rgba(255, 255, 255, 0.02));
-    backdrop-filter: blur(10px) saturate(120%);
-    border: 1px solid rgba(255, 255, 255, 0.08);
-    box-shadow:
-        0 4px 16px rgba(0, 0, 0, 0.2),
-        inset 0 1px 0 rgba(255, 255, 255, 0.05);
-    min-width: auto;
-    /* 移除最小宽度限制 */
-    max-width: 240px;
-    /* 限制最大宽度 */
-    transform: scale(0.9);
-    /* 整体稍微缩小 */
-    transform-origin: top left;
-
-    /* 默认隐藏，识别到手势时通过JS修改为 opacity: 1 */
-    opacity: 0;
-    transition: opacity 0.5s ease;
+    display: none !important;
+    opacity: 0 !important;
+    pointer-events: none !important;
 }
 
 #ui-layer.visible {
