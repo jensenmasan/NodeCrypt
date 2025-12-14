@@ -2772,39 +2772,44 @@ h2 {
 }
 
 /* Ensure 3D Canvas is visible */
+#clean-starfield-canvas,
 body.theme-3d-active canvas {
-	position: fixed !important;
-	top: 0;
-	left: 0;
-	width: 100vw;
-	height: 100vh;
-	z-index: 0;
-	/* Lowest level */
 	display: block !important;
 	opacity: 1 !important;
-	pointer-events: auto;
-	/* Allow interaction with stars */
+	pointer-events: none;
+	/* Allow click through */
 }
 
-/* Ensure UI sits above canvas with glass effect */
+/* Force Transparency for ALL Chat Containers in Theme 12 */
 [data-theme='theme12'] .main,
 [data-theme='theme12'] .sidebar,
-[data-theme='theme12'] .rightbar {
+[data-theme='theme12'] .rightbar,
+[data-theme='theme12'] .chat-container,
+[data-theme='theme12'] .chat-box,
+[data-theme='theme12'] .chat-area,
+[data-theme='theme12'] .message-container,
+[data-theme='theme12'] .active-chat {
 	background-color: rgba(10, 16, 25, 0.45) !important;
 	/* Semi-transparent glass */
+	background-image: none !important;
+	/* Remove any doodle images */
 	backdrop-filter: blur(4px);
-	/* Slight blur to make text readable */
 	-webkit-backdrop-filter: blur(4px);
 	z-index: 10;
-	/* Above canvas */
-	position: relative;
+}
+
+/* Specific fix for the doodle background if it's on a pseudo element */
+[data-theme='theme12'] .chat-area::before,
+[data-theme='theme12'] .main::before,
+[data-theme='theme12'] .main::after {
+	display: none !important;
+	opacity: 0 !important;
 }
 
 [data-theme='theme12'] .message-text,
 [data-theme='theme12'] .group-title,
 [data-theme='theme12'] .member-name {
 	text-shadow: 0 0 4px rgba(0, 0, 0, 0.8);
-	/* Text shadow for legibility */
 }
 
 /* Remove CSS Stars if we are using JS 3D Stars */

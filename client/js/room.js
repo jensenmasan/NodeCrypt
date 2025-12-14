@@ -121,9 +121,8 @@ export function joinRoom(userName, roomName, password, modal = null, onResult) {
 				const chatContainer = $id('chat-container');
 				if (chatContainer) chatContainer.style.display = '';
 
-				// 清理3D背景系统 (仅当不是黑夜模式时)
-				const currentTheme = document.body.getAttribute('data-theme');
-				if (currentTheme !== 'theme12' && typeof window.cleanup3DGestureSystem === 'function') {
+				// 总是清理登录页的3D系统，聊天页有自己的背景逻辑
+				if (typeof window.cleanup3DGestureSystem === 'function') {
 					window.cleanup3DGestureSystem();
 				}
 			}

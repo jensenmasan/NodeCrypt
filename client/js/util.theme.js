@@ -119,20 +119,31 @@ export function applyTheme(themeId) {
 
 		// Handle Special 3D Background for Theme 12
 		if (themeId === 'theme12') {
-			if (typeof window.init3DGestureSystem === 'function') {
-				window.init3DGestureSystem();
+			// Start Lightweight Starfield
+			if (typeof window.initStarfield === 'function') {
+				window.initStarfield();
 			}
-			// Make sure main element is translucent
-			mainElement.style.background = 'rgba(10, 10, 16, 0.4)'; // Ensure visibility of stars
-			mainElement.style.backgroundImage = '';
-
-			// Add helper class to body for global styles (like z-indexes)
-			document.body.classList.add('theme-3d-active');
-		} else {
-			// Cleanup 3D background if leaving theme12
+			// Stop the heavy gesture system if it's running (e.g. from login)
 			if (typeof window.cleanup3DGestureSystem === 'function') {
 				window.cleanup3DGestureSystem();
 			}
+
+			// Make sure main element is transparent (CSS handles most, but enforce here)
+			mainElement.style.background = 'transparent';
+			mainElement.style.backgroundImage = 'none';
+
+			// Add helper class to body for global styles
+			document.body.classList.add('theme-3d-active');
+		} else {
+			// Cleanup Starfield
+			if (typeof window.stopStarfield === 'function') {
+				window.stopStarfield();
+			}
+			// Cleanup Gesture System
+			if (typeof window.cleanup3DGestureSystem === 'function') {
+				window.cleanup3DGestureSystem();
+			}
+
 			document.body.classList.remove('theme-3d-active');
 
 			// Apply new background
