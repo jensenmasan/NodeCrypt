@@ -49,10 +49,16 @@
 		crossorigin="anonymous"></script>
 	<script src="https://cdn.jsdelivr.net/npm/@mediapipe/hands/hands.js" crossorigin="anonymous"></script>
 	<link rel="stylesheet" href="css/gesture-bg.css">
+	<link rel="stylesheet" href="css/hacker-intro.css">
 	<link rel="stylesheet" href="css/context-menu.css">
 </head>
 
 <body class="preload">
+	<!-- Hacker Intro Screen -->
+	<div id="hacker-intro">
+		<div id="terminal-content"></div>
+	</div>
+
 	<!-- 3D 手势交互 UI 元素 -->
 	<div id="ui-layer">
 		<h1>3D 粒子手势交互</h1>
@@ -377,6 +383,10 @@
 
 		import { init3DGestureSystem, cleanup3DGestureSystem } from './js/background-3d.js';
 		import { initStarfield, stopStarfield } from './js/clean-starfield.js';
+		import { initHackerIntro } from './js/hacker-intro.js';
+
+		// 启动黑客 Intro
+		initHackerIntro();
 
 		// 导出到window对象
 		window.cleanup3DGestureSystem = cleanup3DGestureSystem;

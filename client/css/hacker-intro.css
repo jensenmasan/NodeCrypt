@@ -1,0 +1,133 @@
+/* 黑客终端启动页样式 */
+#hacker-intro {
+    position: fixed;
+    top: 0;
+    left: 0;
+    width: 100vw;
+    height: 100vh;
+    background-color: #000;
+    z-index: 99999;
+    /* 确保在最顶层 */
+    font-family: 'Courier New', 'Consolas', monospace;
+    color: #0f0;
+    /* 经典黑客绿 */
+    overflow: hidden;
+    padding: 20px;
+    box-sizing: border-box;
+    display: flex;
+    flex-direction: column;
+    justify-content: flex-end;
+    /* 内容从底部开始，像真实的终端 */
+    pointer-events: none;
+    /* 让它不阻挡后续可能的交互，虽然它会消失 */
+    transition: opacity 2s ease-in-out, filter 2s ease-in-out;
+    /* 慢速淡出 */
+}
+
+/* 扫描线效果 */
+#hacker-intro::before {
+    content: " ";
+    display: block;
+    position: absolute;
+    top: 0;
+    left: 0;
+    bottom: 0;
+    right: 0;
+    background: linear-gradient(rgba(18, 16, 16, 0) 50%, rgba(0, 0, 0, 0.25) 50%), linear-gradient(90deg, rgba(255, 0, 0, 0.06), rgba(0, 255, 0, 0.02), rgba(0, 0, 255, 0.06));
+    z-index: 2;
+    background-size: 100% 2px, 3px 100%;
+    pointer-events: none;
+}
+
+#terminal-content {
+    width: 100%;
+    height: 100%;
+    font-size: 16px;
+    line-height: 1.5;
+    text-shadow: 0 0 5px rgba(0, 255, 0, 0.7);
+    white-space: pre-wrap;
+    overflow-y: hidden;
+    /* 隐藏滚动条，脚本控制滚动 */
+}
+
+/* 闪烁光标 */
+.cursor {
+    display: inline-block;
+    width: 10px;
+    height: 18px;
+    background-color: #0f0;
+    animation: blink 1s step-end infinite;
+    vertical-align: middle;
+    margin-left: 5px;
+}
+
+@keyframes blink {
+
+    0%,
+    100% {
+        opacity: 1;
+    }
+
+    50% {
+        opacity: 0;
+    }
+}
+
+/* 重要的日志行 */
+.log-error {
+    color: #f00;
+    text-shadow: 0 0 5px rgba(255, 0, 0, 0.7);
+}
+
+.log-warn {
+    color: #ff0;
+    text-shadow: 0 0 5px rgba(255, 255, 0, 0.7);
+}
+
+.log-success {
+    color: #00ff00;
+    font-weight: bold;
+}
+
+.log-info {
+    color: #00ccff;
+}
+
+/* 青色 */
+.log-system {
+    color: #ff00ff;
+}
+
+/* 紫色 */
+
+/* 粒子容器初始隐藏，准备淡入 */
+#three-canvas {
+    opacity: 0;
+    transition: opacity 3s ease-in-out;
+    /* 3秒慢速淡入 */
+}
+
+/* 当黑客界面淡出时，给 body 加个类来控制 canvas 淡入 */
+body.intro-finished #three-canvas {
+    opacity: 1;
+}
+
+/* 进度条样式 */
+.hacker-progress {
+    width: 100%;
+    max-width: 600px;
+    height: 20px;
+    border: 1px solid #0f0;
+    margin-top: 10px;
+    position: relative;
+    display: none;
+    /* 动态显示 */
+}
+
+.hacker-progress-bar {
+    height: 100%;
+    background-color: #0f0;
+    width: 0%;
+    box-shadow: 0 0 10px #0f0;
+    transition: width 0.1s linear;
+}
