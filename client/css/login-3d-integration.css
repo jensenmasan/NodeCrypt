@@ -1,324 +1,279 @@
-/* 登录页面与3D粒子背景融合的额外样式 */
-/* Additional Styles for Login Page 3D Particle Integration */
+/* 登录页面与3D粒子背景融合的额外样式 - Premium Edition */
 
-/* 为卡片添加呼吸动画 */
-@keyframes cardBreathing {
+/* 全局字体优化 (如果父级没加载) */
+@import url('https://fonts.googleapis.com/css2?family=Jura:wght@300;400;500;600&display=swap');
+
+/* 通用呼吸动画 */
+@keyframes deepBreathing {
 
     0%,
     100% {
-        box-shadow:
-            0 8px 32px 0 rgba(0, 0, 0, 0.5),
-            0 4px 16px 0 rgba(0, 200, 255, 0.2),
-            0 1px 3px 0 rgba(0, 0, 0, 0.3),
-            inset 0 0 0 1px rgba(0, 200, 255, 0.2),
-            inset 0 1px 0 rgba(255, 255, 255, 0.1);
+        box-shadow: 0 0 20px rgba(0, 0, 0, 0.5), inset 0 0 0 1px rgba(255, 255, 255, 0.05);
+        border-color: rgba(255, 255, 255, 0.1);
     }
 
     50% {
-        box-shadow:
-            0 8px 32px 0 rgba(0, 0, 0, 0.5),
-            0 4px 16px 0 rgba(0, 200, 255, 0.4),
-            0 1px 3px 0 rgba(0, 0, 0, 0.3),
-            inset 0 0 0 1px rgba(0, 200, 255, 0.3),
-            inset 0 1px 0 rgba(255, 255, 255, 0.15),
-            0 0 60px rgba(0, 217, 255, 0.3);
+        box-shadow: 0 0 40px rgba(0, 100, 200, 0.2), inset 0 0 0 1px rgba(255, 255, 255, 0.1);
+        border-color: rgba(255, 255, 255, 0.2);
     }
 }
 
-/* 应用呼吸动画到卡片 */
+/* 翻转卡片核心样式重构 */
 .flip-card-front,
 .flip-card-back {
-    animation: cardBreathing 4s ease-in-out infinite;
+    background: rgba(5, 5, 8, 0.75) !important;
+    /* 深空黑，带透明度 */
+    backdrop-filter: blur(20px) saturate(150%) !important;
+    /* 高级毛玻璃 */
+    -webkit-backdrop-filter: blur(20px) saturate(150%) !important;
+    border: 1px solid rgba(255, 255, 255, 0.08) !important;
+    border-radius: 20px !important;
+    box-shadow: 0 20px 60px rgba(0, 0, 0, 0.6), inset 0 1px 0 rgba(255, 255, 255, 0.1) !important;
+    color: #fff !important;
+    font-family: 'Jura', sans-serif !important;
+    animation: deepBreathing 6s ease-in-out infinite !important;
 }
 
-/* 登录页面背景叠加层 */
-.login-container::before {
-    content: '';
-    position: fixed;
-    top: 0;
-    left: 0;
-    right: 0;
-    bottom: 0;
-    background: radial-gradient(ellipse at center,
-            transparent 0%,
-            rgba(0, 0, 0, 0.3) 100%);
-    pointer-events: none;
-    z-index: -1;
-}
-
-/* 输入框聚焦时的发光效果增强 */
-.input-group input:focus {
-    animation: inputGlow 2s ease-in-out infinite;
-}
-
-@keyframes inputGlow {
-
-    0%,
-    100% {
-        box-shadow: 0 0 0 3px rgba(0, 217, 255, 0.2), 0 0 20px rgba(0, 217, 255, 0.3);
-    }
-
-    50% {
-        box-shadow: 0 0 0 3px rgba(0, 217, 255, 0.3), 0 0 30px rgba(0, 217, 255, 0.5);
-    }
-}
-
-/* 按钮脉冲效果 */
-@keyframes buttonPulse {
-
-    0%,
-    100% {
-        box-shadow: 0 4px 20px rgba(0, 217, 255, 0.4);
-    }
-
-    50% {
-        box-shadow: 0 4px 30px rgba(0, 217, 255, 0.6), 0 0 40px rgba(0, 217, 255, 0.4);
-    }
-}
-
-.login-btn {
-    animation: buttonPulse 3s ease-in-out infinite;
-}
-
-/* 帮助按钮脉冲 */
-@keyframes helpPulse {
-
-    0%,
-    100% {
-        box-shadow: 0 0 0 rgba(0, 217, 255, 0);
-    }
-
-    50% {
-        box-shadow: 0 0 15px rgba(0, 217, 255, 0.4);
-    }
-}
-
-.help-btn {
-    animation: helpPulse 2s ease-in-out infinite;
-}
-
-/* 加载状态样式 */
-.login-loading {
-    display: inline-block;
-    width: 20px;
-    height: 20px;
-    border: 3px solid rgba(255, 255, 255, 0.3);
-    border-radius: 50%;
-    border-top-color: #00d9ff;
-    animation: spin 1s ease-in-out infinite;
-}
-
-@keyframes spin {
-    to {
-        transform: rotate(360deg);
-    }
-}
-
-/* 标题闪烁效果 */
-@keyframes titleShimmer {
-    0% {
-        filter: drop-shadow(0 0 10px rgba(0, 217, 255, 0.5));
-    }
-
-    50% {
-        filter: drop-shadow(0 0 20px rgba(0, 217, 255, 0.8)) drop-shadow(0 0 30px rgba(0, 255, 170, 0.5));
-    }
-
-    100% {
-        filter: drop-shadow(0 0 10px rgba(0, 217, 255, 0.5));
-    }
-}
-
+/* 标题样式 */
 .login-container h1 {
-    animation: titleShimmer 3s ease-in-out infinite;
+    font-weight: 300 !important;
+    letter-spacing: 4px !important;
+    color: rgba(255, 255, 255, 0.9) !important;
+    text-shadow: 0 0 20px rgba(255, 255, 255, 0.2) !important;
+    text-transform: uppercase !important;
+    margin-bottom: 30px !important;
+    font-size: 24px !important;
+    text-align: center;
 }
 
-/* 响应式调整 */
-@media (max-width: 768px) {
-    .flip-card {
-        max-width: 95%;
-    }
-
-    .flip-card-front,
-    .flip-card-back {
-        padding: 36px 28px;
-    }
-
-    .login-container h1 {
-        font-size: 1.6rem;
-    }
-}
-
-/* 平滑出现动画 */
-@keyframes fadeInUp {
-    from {
-        opacity: 0;
-        transform: translateY(30px);
-    }
-
-    to {
-        opacity: 1;
-        transform: translateY(0);
-    }
-}
-
-.flip-card {
-    animation: fadeInUp 0.8s ease-out;
-}
-
-/* 输入框顺序出现动画 */
+/* 输入框组样式 */
 .input-group {
-    animation: fadeInUp 0.6s ease-out backwards;
+    position: relative;
+    margin-bottom: 25px;
+    background: transparent !important;
 }
 
-.input-group:nth-child(1) {
-    animation-delay: 0.1s;
+.input-group input {
+    background: rgba(255, 255, 255, 0.03) !important;
+    border: 1px solid rgba(255, 255, 255, 0.1) !important;
+    border-radius: 8px !important;
+    color: #fff !important;
+    padding: 12px 15px !important;
+    font-family: 'Jura', sans-serif !important;
+    transition: all 0.3s ease !important;
+    font-size: 15px !important;
+    letter-spacing: 1px;
 }
 
-.input-group:nth-child(2) {
-    animation-delay: 0.2s;
+.input-group input:focus {
+    background: rgba(255, 255, 255, 0.08) !important;
+    border-color: rgba(0, 200, 255, 0.5) !important;
+    box-shadow: 0 0 15px rgba(0, 200, 255, 0.15) !important;
+    outline: none !important;
 }
 
-.input-group:nth-child(3) {
-    animation-delay: 0.3s;
+.floating-label {
+    color: rgba(255, 255, 255, 0.4) !important;
+    font-size: 13px !important;
+    letter-spacing: 1px;
+    pointer-events: none;
+    transition: all 0.3s ease !important;
 }
 
+.input-group input:focus~.floating-label,
+.input-group input:not(:placeholder-shown)~.floating-label {
+    color: rgba(0, 200, 255, 0.8) !important;
+}
+
+/* 登录按钮样式重构 */
 .login-btn {
-    animation: fadeInUp 0.6s ease-out backwards, buttonPulse 3s ease-in-out infinite;
-    animation-delay: 0.4s, 1s;
+    background: linear-gradient(135deg, rgba(255, 255, 255, 0.1), rgba(255, 255, 255, 0.05)) !important;
+    border: 1px solid rgba(255, 255, 255, 0.2) !important;
+    color: #fff !important;
+    font-family: 'Jura', sans-serif !important;
+    font-size: 14px !important;
+    letter-spacing: 3px !important;
+    text-transform: uppercase !important;
+    padding: 12px 0 !important;
+    border-radius: 50px !important;
+    margin-top: 10px !important;
+    transition: all 0.4s cubic-bezier(0.23, 1, 0.32, 1) !important;
+    box-shadow: 0 5px 20px rgba(0, 0, 0, 0.3) !important;
+    position: relative;
+    overflow: hidden;
 }
 
-/* --- 新增：开始界面与入口按钮样式 --- */
+.login-btn::before {
+    content: '';
+    position: absolute;
+    top: 0;
+    left: -100%;
+    width: 100%;
+    height: 100%;
+    background: linear-gradient(90deg, transparent, rgba(255, 255, 255, 0.2), transparent);
+    transition: 0.5s;
+}
 
+.login-btn:hover::before {
+    left: 100%;
+}
+
+.login-btn:hover {
+    background: rgba(255, 255, 255, 0.15) !important;
+    border-color: rgba(255, 255, 255, 0.4) !important;
+    box-shadow: 0 10px 30px rgba(0, 200, 255, 0.2) !important;
+    transform: translateY(-2px);
+    letter-spacing: 5px !important;
+    /* 文字拉开效果 */
+}
+
+/* 帮助按钮微调 */
+.help-btn {
+    color: rgba(255, 255, 255, 0.3) !important;
+    background: transparent !important;
+    border: 1px solid rgba(255, 255, 255, 0.05) !important;
+    backdrop-filter: blur(5px);
+    transition: all 0.3s ease !important;
+}
+
+.help-btn:hover {
+    color: #fff !important;
+    background: rgba(255, 255, 255, 0.1) !important;
+    border-color: rgba(255, 255, 255, 0.3) !important;
+    transform: rotate(90deg);
+}
+
+/* --- 启动按钮(Enter System)样式升级 --- */
 .start-screen {
     position: fixed;
     top: 0;
     left: 0;
-    width: 100vw;
-    height: 100vh;
+    width: 100%;
+    height: 100%;
     display: flex;
     justify-content: center;
-    align-items: flex-start;
-    /* 改为定部对齐 */
-    padding-top: 8vh;
-    /* 距离顶部一定距离 */
+    align-items: center;
+    /* 居中显示 */
     z-index: 50;
-    /* 在3D背景之上，登录框之下(如果显示的话) */
     pointer-events: none;
-    /* 让点击穿透，只让按钮可点 */
 }
 
 .start-login-btn {
     pointer-events: auto;
-    /* 恢复按钮点击 */
+    background: transparent;
+    border: none;
     position: relative;
-    padding: 12px 30px;
-    /* 减小内边距 */
-    font-size: 16px;
-    /* 减小字体 */
-    font-weight: 400;
-    letter-spacing: 2px;
-    color: #fff;
-    background: rgba(255, 255, 255, 0.1);
-    border: 1px solid rgba(255, 255, 255, 0.2);
-    border-radius: 50px;
+    padding: 20px 60px;
     cursor: pointer;
-    overflow: hidden;
-    transition: all 0.5s cubic-bezier(0.23, 1, 0.32, 1);
-    backdrop-filter: blur(20px);
-    -webkit-backdrop-filter: blur(20px);
-    text-transform: uppercase;
-    box-shadow:
-        0 10px 30px rgba(0, 0, 0, 0.2),
-        inset 0 0 20px rgba(255, 255, 255, 0.1),
-        0 0 20px rgba(0, 217, 255, 0.2);
+    overflow: visible;
+    /* 允许光晕溢出 */
+    perspective: 1000px;
 }
 
-/* 按钮内部文字 */
+/* 极简文字 */
 .start-login-btn span {
-    position: relative;
-    z-index: 2;
-    background: linear-gradient(to right, #fff, #b4ecff);
-    -webkit-background-clip: text;
-    background-clip: text;
-    color: transparent;
-    font-weight: 600;
-    text-shadow: 0 0 20px rgba(0, 217, 255, 0.3);
+    display: block;
+    font-family: 'Jura', sans-serif;
+    font-size: 14px;
+    font-weight: 300;
+    letter-spacing: 8px;
+    /* 极宽间距 */
+    color: rgba(255, 255, 255, 0.8);
+    text-transform: uppercase;
+    transition: all 0.5s ease;
+    mix-blend-mode: overlay;
 }
 
-/* 按钮悬停效果 */
-.start-login-btn:hover {
-    border-color: rgba(255, 255, 255, 0.5);
-    box-shadow:
-        0 15px 40px rgba(0, 0, 0, 0.3),
-        inset 0 0 30px rgba(255, 255, 255, 0.2),
-        0 0 30px rgba(0, 217, 255, 0.4);
-    transform: translateY(-2px) scale(1.02);
-    letter-spacing: 4px;
-    background: rgba(255, 255, 255, 0.15);
+/* 上下括号装饰 */
+.start-login-btn::before,
+.start-login-btn::after {
+    content: '';
+    position: absolute;
+    left: 50%;
+    width: 0%;
+    height: 1px;
+    background: linear-gradient(90deg, transparent, rgba(255, 255, 255, 0.8), transparent);
+    transition: all 0.6s cubic-bezier(0.19, 1, 0.22, 1);
+    opacity: 0;
 }
 
-/* 按钮点击时的爆炸效果前摇 */
-.start-login-btn:active {
+.start-login-btn::before {
+    top: 10px;
+    transform: translateX(-50%);
+}
+
+.start-login-btn::after {
+    bottom: 10px;
+    transform: translateX(-50%);
+}
+
+/* 悬停状态 */
+.start-login-btn:hover span {
+    color: #fff;
+    letter-spacing: 10px;
+    text-shadow: 0 0 15px rgba(255, 255, 255, 0.6);
+}
+
+.start-login-btn:hover::before,
+.start-login-btn:hover::after {
+    width: 80%;
+    opacity: 1;
+}
+
+/* 点击时的涟漪 */
+.start-login-btn:active span {
     transform: scale(0.95);
-    box-shadow: 0 0 5px rgba(0, 217, 255, 0.8);
+    opacity: 0.7;
 }
 
 /* 移动端适配 */
 @media (max-width: 768px) {
-    .start-screen {
-        padding-top: 15vh;
-        /* 移动端稍微往下一点 */
+    .flip-card {
+        max-width: 90% !important;
     }
 
-    .start-login-btn {
-        padding: 10px 24px;
-        font-size: 14px;
-        background: rgba(0, 0, 0, 0.4);
-        /* 移动端背景稍微深一点以保证可读性 */
+    .start-login-btn span {
+        font-size: 12px !important;
+        letter-spacing: 5px !important;
     }
 }
 
-/* 按钮中心的辉光动画 */
-.btn-glow {
-    position: absolute;
-    top: 50%;
-    left: 50%;
-    width: 0;
-    height: 0;
-    background: radial-gradient(circle, rgba(255, 255, 255, 0.8) 0%, rgba(0, 217, 255, 0) 70%);
-    border-radius: 50%;
-    transform: translate(-50%, -50%);
-    transition: width 0.6s, height 0.6s;
-    opacity: 0;
-    z-index: 1;
-}
-
-.start-login-btn:hover .btn-glow {
-    width: 200px;
-    /* 减小半径 */
-    height: 200px;
-    opacity: 0.15;
-}
-
-/* 给按钮添加一个心跳动画 */
-@keyframes btnHeartbeat {
-    0% {
-        box-shadow: 0 0 10px rgba(0, 217, 255, 0.1);
-        border-color: rgba(0, 217, 255, 0.3);
+/* 淡入动画 */
+@keyframes fadeIn {
+    from {
+        opacity: 0;
+        filter: blur(10px);
+        transform: scale(0.95);
     }
 
-    50% {
-        box-shadow: 0 0 20px rgba(0, 217, 255, 0.3);
-        border-color: rgba(0, 217, 255, 0.6);
-    }
-
-    100% {
-        box-shadow: 0 0 10px rgba(0, 217, 255, 0.1);
-        border-color: rgba(0, 217, 255, 0.3);
+    to {
+        opacity: 1;
+        filter: blur(0);
+        transform: scale(1);
     }
 }
 
+/* UI 显示控制 - 与 Hacker Intro 配合 */
+.login-container,
 .start-login-btn {
-    animation: btnHeartbeat 4s infinite;
+    opacity: 0;
+    pointer-events: none;
+    transition: opacity 1s ease;
+}
+
+/* 当 Intro 结束，Body 获得 intro-finished 类时显示 */
+body.intro-finished .start-screen .start-login-btn {
+    opacity: 1 !important;
+    pointer-events: auto;
+    animation: fadeIn 1.5s cubic-bezier(0.19, 1, 0.22, 1) forwards;
+    animation-delay: 1s;
+    /* Intro 消失后再等 1秒 出现 */
+}
+
+/* 如果登录框本身是隐藏的（还没点进入系统），这个逻辑由 JS 控制 display，不需要在此强制显示 */
+body.intro-finished .login-container[style*="display: block"],
+body.intro-finished .login-container[style*="display: flex"] {
+    opacity: 1 !important;
+    pointer-events: auto;
+    animation: fadeIn 1.5s cubic-bezier(0.19, 1, 0.22, 1) forwards;
 }
