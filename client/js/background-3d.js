@@ -1645,10 +1645,10 @@ function onHandsResults(results) {
                     newText = "HEART";
                     gestureName = "🤟 (Love)";
                 } else if (fingers[0] && fingers[1] && fingers[2] && fingers[3] && fingers[4]) {
-                    // High Five - 2025
+                    // High Five - NEWYEAR_PREMIUM
                     currentGesture = 5;
-                    newText = "2025";
-                    gestureName = "🖐 (2025)";
+                    newText = "NEWYEAR_PREMIUM";
+                    gestureName = "🖐 (新年快乐)";
                 } else {
                     currentGesture = 0;
                     gestureName = "自由交互";
@@ -1666,7 +1666,7 @@ function onHandsResults(results) {
                         if (newText === "TECH") updateParticleColor(colorPalette[2]);
                         if (newText === "ART") updateParticleColor(colorPalette[3]);
                         if (newText === "HEART") updateParticleColor(colorPalette[4]);
-                        if (newText === "2025") updateParticleColor(colorPalette[5]);
+                        if (newText === "NEWYEAR_PREMIUM") updateParticleColor(colorPalette[6]);
                         if (newText === "NODECRYPT") updateParticleColor(colorPalette[1]);
                     }
                 }
