@@ -1,63 +1,209 @@
-/* 黑客终端启动页样式 */
+/* 高级黑客系统启动页样式 */
 #hacker-intro {
     position: fixed;
     top: 0;
     left: 0;
     width: 100vw;
     height: 100vh;
-    background-color: #000;
+    background-color: #030303;
     z-index: 99999;
-    /* 确保在最顶层 */
-    font-family: 'Courier New', 'Consolas', monospace;
+    font-family: 'Share Tech Mono', 'Courier New', monospace;
+    /* 更加科技感的字体 */
     color: #0f0;
-    /* 经典黑客绿 */
     overflow: hidden;
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    perspective: 1000px;
+    /* 为3D变换做准备 */
+}
+
+/* 引入 Google Fonts (如果环境允许，否则回退到 monospace) */
+@import url('https://fonts.googleapis.com/css2?family=Share+Tech+Mono&display=swap');
+
+/* CRT 屏幕容器 - 模拟曲面屏 */
+#screen-container {
+    width: 100%;
+    height: 100%;
+    position: relative;
+    background: radial-gradient(circle, #111 0%, #000 100%);
+    overflow: hidden;
+    /* 强烈的 CRT 扫描线和光晕 */
+    box-shadow: inset 0 0 10rem rgba(0, 0, 0, 0.9);
+}
+
+/* CRT 扫描线覆盖层 */
+.scanlines {
+    position: absolute;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+    background: linear-gradient(to bottom,
+            rgba(255, 255, 255, 0),
+            rgba(255, 255, 255, 0) 50%,
+            rgba(0, 0, 0, 0.2) 50%,
+            rgba(0, 0, 0, 0.2));
+    background-size: 100% 4px;
+    z-index: 10;
+    pointer-events: none;
+    animation: scrollLines 10s linear infinite;
+}
+
+@keyframes scrollLines {
+    0% {
+        background-position: 0 0;
+    }
+
+    100% {
+        background-position: 0 100%;
+    }
+}
+
+/* 屏幕闪烁和噪点 */
+.noise-overlay {
+    position: absolute;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+    z-index: 15;
+    opacity: 0.05;
+    background-image: url("data:image/svg+xml,%3Csvg viewBox='0 0 200 200' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='noiseFilter'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.65' numOctaves='3' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23noiseFilter)'/%3E%3C/svg%3E");
+    pointer-events: none;
+    animation: grain 0.5s steps(10) infinite;
+}
+
+/* 终端主内容区 */
+#terminal-wrapper {
+    position: absolute;
+    top: 50%;
+    left: 50%;
+    transform: translate(-50%, -50%);
+    width: 90%;
+    height: 90%;
+    max-width: 1200px;
+    border: 1px solid rgba(0, 255, 0, 0.3);
     padding: 20px;
     box-sizing: border-box;
     display: flex;
     flex-direction: column;
-    justify-content: flex-end;
-    /* 内容从底部开始，像真实的终端 */
-    pointer-events: none;
-    /* 让它不阻挡后续可能的交互，虽然它会消失 */
-    transition: opacity 2s ease-in-out, filter 2s ease-in-out;
-    /* 慢速淡出 */
+    /* 添加辉光 */
+    text-shadow: 0 0 5px rgba(0, 255, 0, 0.5), 0 0 10px rgba(0, 255, 0, 0.3);
+    background: rgba(0, 20, 0, 0.2);
+    box-shadow: 0 0 20px rgba(0, 255, 0, 0.1), inset 0 0 20px rgba(0, 255, 0, 0.05);
 }
 
-/* 扫描线效果 */
-#hacker-intro::before {
-    content: " ";
-    display: block;
-    position: absolute;
-    top: 0;
-    left: 0;
-    bottom: 0;
-    right: 0;
-    background: linear-gradient(rgba(18, 16, 16, 0) 50%, rgba(0, 0, 0, 0.25) 50%), linear-gradient(90deg, rgba(255, 0, 0, 0.06), rgba(0, 255, 0, 0.02), rgba(0, 0, 255, 0.06));
-    z-index: 2;
-    background-size: 100% 2px, 3px 100%;
-    pointer-events: none;
+/* 顶部状态栏 */
+.terminal-header {
+    border-bottom: 1px solid rgba(0, 255, 0, 0.4);
+    padding-bottom: 10px;
+    margin-bottom: 15px;
+    display: flex;
+    justify-content: space-between;
+    font-size: 14px;
+    text-transform: uppercase;
+    letter-spacing: 2px;
 }
 
+.header-left {
+    display: flex;
+    gap: 20px;
+}
+
+.header-right {
+    font-weight: bold;
+    animation: blink 2s infinite;
+}
+
+/* 日志区域 */
 #terminal-content {
-    width: 100%;
-    height: 100%;
-    font-size: 16px;
-    line-height: 1.5;
-    text-shadow: 0 0 5px rgba(0, 255, 0, 0.7);
-    white-space: pre-wrap;
+    flex: 1;
     overflow-y: hidden;
-    /* 隐藏滚动条，脚本控制滚动 */
+    /* JS 控制滚动 */
+    font-size: 16px;
+    line-height: 1.6;
+    display: flex;
+    flex-direction: column;
+    justify-content: flex-end;
+    /* 从底部堆叠 */
+    font-weight: 500;
+}
+
+/* 日志样式 */
+.log-line {
+    margin: 2px 0;
+    display: flex;
+}
+
+.log-time {
+    color: #008f11;
+    margin-right: 15px;
+    min-width: 80px;
+}
+
+.log-message {
+    color: #cfc;
+}
+
+.log-error .log-message {
+    color: #ff3333;
+    text-shadow: 0 0 8px rgba(255, 0, 0, 0.6);
+}
+
+.log-warn .log-message {
+    color: #ffff33;
+    text-shadow: 0 0 8px rgba(255, 255, 0, 0.6);
+}
+
+.log-success .log-message {
+    color: #00ff00;
+    font-weight: bold;
+    text-shadow: 0 0 8px rgba(0, 255, 0, 0.8);
+}
+
+.log-system .log-message {
+    color: #00ffff;
+    text-shadow: 0 0 8px rgba(0, 255, 255, 0.6);
+}
+
+/* 进度条区域 */
+.progress-area {
+    margin-top: 20px;
+    border-top: 1px solid rgba(0, 255, 0, 0.2);
+    padding-top: 15px;
+}
+
+.progress-label {
+    margin-bottom: 5px;
+    font-size: 12px;
+    color: rgba(0, 255, 0, 0.7);
+}
+
+.hacker-progress {
+    width: 100%;
+    height: 6px;
+    background: rgba(0, 50, 0, 0.5);
+    position: relative;
+    overflow: hidden;
+}
+
+.hacker-progress-bar {
+    height: 100%;
+    width: 0%;
+    background: #0f0;
+    box-shadow: 0 0 10px #0f0, 0 0 20px #0f0;
+    transition: width 0.1s linear;
 }
 
 /* 闪烁光标 */
 .cursor {
     display: inline-block;
-    width: 10px;
-    height: 18px;
-    background-color: #0f0;
-    animation: blink 1s step-end infinite;
-    vertical-align: middle;
+    width: 8px;
+    height: 1em;
+    background: #0f0;
+    animation: blink 0.8s steps(2) infinite;
+    vertical-align: text-bottom;
     margin-left: 5px;
 }
 
@@ -73,61 +219,67 @@
     }
 }
 
-/* 重要的日志行 */
-.log-error {
-    color: #f00;
-    text-shadow: 0 0 5px rgba(255, 0, 0, 0.7);
+@keyframes grain {
+
+    0%,
+    100% {
+        transform: translate(0, 0);
+    }
+
+    10% {
+        transform: translate(-5%, -10%);
+    }
+
+    20% {
+        transform: translate(-15%, 5%);
+    }
+
+    30% {
+        transform: translate(7%, -25%);
+    }
+
+    40% {
+        transform: translate(-5%, 25%);
+    }
+
+    50% {
+        transform: translate(-15%, 10%);
+    }
+
+    60% {
+        transform: translate(15%, 0%);
+    }
+
+    70% {
+        transform: translate(0%, 15%);
+    }
+
+    80% {
+        transform: translate(3%, 35%);
+    }
+
+    90% {
+        transform: translate(-10%, 10%);
+    }
 }
 
-.log-warn {
-    color: #ff0;
-    text-shadow: 0 0 5px rgba(255, 255, 0, 0.7);
-}
-
-.log-success {
-    color: #00ff00;
-    font-weight: bold;
-}
-
-.log-info {
-    color: #00ccff;
-}
-
-/* 青色 */
-.log-system {
-    color: #ff00ff;
-}
-
-/* 紫色 */
-
-/* 粒子容器初始隐藏，准备淡入 */
-#three-canvas {
+/* 淡出动画 */
+#hacker-intro.fade-out {
     opacity: 0;
-    transition: opacity 3s ease-in-out;
-    /* 3秒慢速淡入 */
+    transform: scale(1.1);
+    filter: blur(20px);
+    transition: opacity 1.5s ease-in-out, transform 1.5s ease-in-out, filter 1.5s ease-in-out;
 }
 
-/* 当黑客界面淡出时，给 body 加个类来控制 canvas 淡入 */
-body.intro-finished #three-canvas {
-    opacity: 1;
-}
-
-/* 进度条样式 */
-.hacker-progress {
+/* 矩阵雨画布 */
+#matrix-canvas {
+    position: absolute;
+    top: 0;
+    left: 0;
     width: 100%;
-    max-width: 600px;
-    height: 20px;
-    border: 1px solid #0f0;
-    margin-top: 10px;
-    position: relative;
-    display: none;
-    /* 动态显示 */
-}
-
-.hacker-progress-bar {
     height: 100%;
-    background-color: #0f0;
-    width: 0%;
-    box-shadow: 0 0 10px #0f0;
-    transition: width 0.1s linear;
+    z-index: 5;
+    /* 在扫描线下面，但在终端背景上面(如果终端透明) */
+    opacity: 0.15;
+    /* 淡淡的背景 */
 }
