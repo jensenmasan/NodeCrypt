@@ -2421,3 +2421,66 @@ h2 {
 .bubble.me .quoted-message .quote-text {
 	color: rgba(255, 255, 255, 0.8);
 }
+/* Self-destruct timer menu */
+.destruct-time-menu {
+	position: absolute;
+	bottom: 50px;
+	left: 50%;
+	transform: translateX(-50%);
+	background: #fff;
+	border-radius: 8px;
+	box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
+	padding: 8px 0;
+	z-index: 20;
+	display: none;
+	width: 100px;
+	border: 1px solid #eee;
+}
+
+.destruct-time-menu.show {
+	display: block;
+	animation: fadeInUp 0.2s ease;
+}
+
+.destruct-time-option {
+	padding: 8px 16px;
+	font-size: 14px;
+	color: #333;
+	cursor: pointer;
+	text-align: center;
+	transition: background-color 0.2s;
+}
+
+.destruct-time-option:hover {
+	background: #f5f5f5;
+}
+
+.destruct-time-option.active {
+	background: #e3f2fd;
+	color: #2196f3;
+	font-weight: 500;
+}
+
+/* Chat destruct button active state */
+.chat-destruct-btn.active {
+	color: #e74c3c;
+}
+
+.chat-destruct-btn.active svg {
+	stroke: #e74c3c;
+}
+
+.chat-destruct-btn.active svg path {
+	stroke: #e74c3c;
+}
+
+/* Mobile specific adjustment for destruct menu */
+@media (max-width: 768px) {
+	.destruct-time-menu {
+		left: auto;
+		right: -10px;
+		transform: translateX(0);
+		bottom: 60px;
+	}
+}
+

@@ -366,13 +366,14 @@ export function updateStaticTexts() {
 	// Update login title
 	const loginTitle = document.getElementById('login-title');
 	if (loginTitle) {
-		// loginTitle.textContent = t('ui.enter_node', 'Enter a Node');
-		loginTitle.innerHTML = `<img src="https://tc.688650.xyz/file/1765641970646_图片.png" alt="NodeCrypt" style="height: 60px; cursor: pointer; vertical-align: middle;">`;
+		loginTitle.innerHTML = `<img src="https://tc.688650.xyz/file/1765641970646_图片.png" alt="NodeCrypt" style="height: 3.5rem; max-width: 100%; object-fit: contain; cursor: pointer; vertical-align: middle;">`;
 		loginTitle.onclick = (e) => {
 			e.stopPropagation();
-			// Trigger Fireworks
+			// Trigger Local 3D Fireworks
 			const fwBtn = document.querySelector('button[data-model="FIREWORKS"]');
 			if (fwBtn) fwBtn.click();
+			// Trigger Global Real Fireworks
+			window.dispatchEvent(new CustomEvent('triggerFireworks'));
 			window.addSystemMsg && window.addSystemMsg('🎆 ' + (getCurrentLanguage() === 'zh' ? '马老师祝大家新年快乐！' : 'Happy New Year!'));
 		};
 	}
@@ -394,13 +395,14 @@ export function updateStaticTexts() {
 	// Update "Enter a Node" text in sidebar
 	const joinRoomText = document.getElementById('join-room-text');
 	if (joinRoomText) {
-		// joinRoomText.textContent = t('ui.enter_node', 'Enter a Node');
-		joinRoomText.innerHTML = `<img src="https://tc.688650.xyz/file/1765641970646_图片.png" alt="NodeCrypt" style="height: 48px; cursor: pointer; vertical-align: middle; margin-top: -2px;">`;
+		joinRoomText.innerHTML = `<img src="https://tc.688650.xyz/file/1765641970646_图片.png" alt="NodeCrypt" style="height: 3rem; max-width: 100%; object-fit: contain; cursor: pointer; vertical-align: middle; margin-top: -2px;">`;
 		joinRoomText.onclick = (e) => {
 			e.stopPropagation();
-			// Trigger Fireworks
+			// Trigger Local 3D Fireworks
 			const fwBtn = document.querySelector('button[data-model="FIREWORKS"]');
 			if (fwBtn) fwBtn.click();
+			// Trigger Global Real Fireworks
+			window.dispatchEvent(new CustomEvent('triggerFireworks'));
 			// Optional: Show a nice message?
 			window.addSystemMsg && window.addSystemMsg('🎆 ' + (getCurrentLanguage() === 'zh' ? '马老师祝大家新年快乐！' : 'Happy New Year!'));
 		};

@@ -37,21 +37,21 @@ export function setupEmojiPicker({
 			insertEmoji(input, event.detail.unicode);
 			hidePickerWithAnimation();
 		});
-		
+
 		function showPickerWithAnimation() {
 			picker.style.display = 'block';
 			// 强制触发重绘，然后添加打开动画
 			picker.offsetHeight; // 强制重绘
 			picker.classList.add('show');
 		}
-		
+
 		function hidePickerWithAnimation() {
 			picker.classList.remove('show');
 			setTimeout(() => {
 				picker.style.display = 'none';
 			}, 300);
 		}
-		
+
 		// Button click toggles picker
 		// 按钮点击切换选择器显示
 		on(btn, 'click', (ev) => {
@@ -66,7 +66,7 @@ export function setupEmojiPicker({
 		// 点击外部隐藏选择器
 		on(document, 'click', (ev) => {
 			if (!picker.contains(ev.target) && ev.target !== btn) {
-		hidePickerWithAnimation();
+				hidePickerWithAnimation();
 			}
 		});
 	} catch (error) {
@@ -77,17 +77,41 @@ export function setupEmojiPicker({
 // 在光标处插入 emoji 到输入框
 function insertEmoji(input, emoji) {
 	input.focus();
-	if (document.getSelection && window.getSelection) {
-		let sel = window.getSelection();
-		if (!sel.rangeCount) return;
-		let range = sel.getRangeAt(0);
-		range.deleteContents();
-		range.insertNode(document.createTextNode(emoji));
-		range.collapse(false);
-		sel.removeAllRanges();
-		sel.addRange(range)
-	} else {
-		input.innerText += emoji
-	}
-	input.dispatchEvent(new Event('input'))
+	// Small delay to ensure focus on mobile
+	setTimeout(() => {
+		let inserted = false;
+		// Try execCommand first (best for preserving undo buffer and events)
+		if (document.queryCommandSupported('insertText')) {
+			inserted = document.execCommand('insertText', false, emoji);
+		}
+
+		if (!inserted) {
+			if (document.getSelection && window.getSelection) {
+				let sel = window.getSelection();
+				if (sel.rangeCount) {
+					let range = sel.getRangeAt(0);
+					range.deleteContents();
+					range.insertNode(document.createTextNode(emoji));
+					range.collapse(false);
+					sel.removeAllRanges();
+					sel.addRange(range);
+					inserted = true;
+				}
+			}
+		}
+
+		// Fallback: Append relative to cursor or end
+		if (!inserted) {
+			input.innerText += emoji;
+			// Move cursor to end
+			const range = document.createRange();
+			const sel = window.getSelection();
+			range.selectNodeContents(input);
+			range.collapse(false);
+			sel.removeAllRanges();
+			sel.addRange(range);
+		}
+
+		input.dispatchEvent(new Event('input', { bubbles: true }));
+	}, 10);
 }

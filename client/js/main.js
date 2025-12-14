@@ -658,6 +658,45 @@ document.addEventListener('dragover', (e) => {
 	e.preventDefault();
 });
 
+
+// Import fireworks effect
+import { startFireworks } from './fireworks.js';
+window.startFireworks = startFireworks; // Expose to window
+
+// Listen for fireworks trigger event (from logo click)
+window.addEventListener('triggerFireworks', () => {
+	startFireworks(); // Trigger locally immediately
+
+	const rd = roomsData[activeRoomIndex];
+	if (rd && rd.chat) {
+		// Send signal to others
+		if (rd.privateChatTargetId) {
+			// Private fireworks? Maybe just text for now, or use same signal
+			// For now, let's just send to public if in public, private if in private
+			const targetClient = rd.chat.channel[rd.privateChatTargetId];
+			if (targetClient && targetClient.shared) {
+				const clientMessagePayload = {
+					a: 'm',
+					t: 'fireworks_signal',
+					d: {}
+				};
+				const encryptedClientMessage = rd.chat.encryptClientMessage(clientMessagePayload, targetClient.shared);
+				const serverRelayPayload = {
+					a: 'c',
+					p: encryptedClientMessage,
+					c: rd.privateChatTargetId
+				};
+				const encryptedMessageForServer = rd.chat.encryptServerMessage(serverRelayPayload, rd.chat.serverShared);
+				rd.chat.sendMessage(encryptedMessageForServer);
+			}
+		} else {
+			// Public fireworks
+			// We can use 'fireworks_signal' type
+			rd.chat.sendChannelMessage('fireworks_signal', {});
+		}
+	}
+});
+
 document.addEventListener('drop', (e) => {
 	e.preventDefault();
 	dragCounter = 0;

@@ -20,7 +20,7 @@ import {
 	$id,
 	createElement
 } from './util.dom.js';
-import { t } from './util.i18n.js';
+import { t, getCurrentLanguage } from './util.i18n.js';
 let roomsData = [];
 let activeRoomIndex = -1;
 
@@ -254,6 +254,38 @@ export function handleClientMessage(idx, msg) {
 			window.handleWebRTCSignal(msg.clientId, msg.data);
 		}
 		return; // Signal messages are not displayed in chat
+	}
+
+	// Handle Fireworks Signal
+	if (msgType === 'fireworks_signal') {
+		if (window.startFireworks) {
+			window.startFireworks();
+			// Optional: Add a system message saying who sent it
+			let senderName = msg.userName;
+			if (!senderName && msg.clientId && newRd.userMap[msg.clientId]) {
+				senderName = newRd.userMap[msg.clientId].userName || 'Someone';
+			}
+			const lang = getCurrentLanguage() || 'en';
+			const text = lang === 'zh' ? `${senderName} 燃放了烟花！🎆` : `${senderName} ignited fireworks! 🎆`;
+
+			// Show as small system toast/msg (optional, reusing addSystemMsg but maybe too spammy if clicked often?)
+			// Let's add it locally only to the chat
+			if (activeRoomIndex === idx && window.addSystemMsg) {
+				window.addSystemMsg(text);
+			} else {
+				// Push to history?
+				newRd.messages.push({
+					type: 'system',
+					text: text,
+					timestamp: Date.now()
+				});
+				if (activeRoomIndex !== idx) {
+					newRd.unreadCount = (newRd.unreadCount || 0) + 1;
+					renderRooms(activeRoomIndex);
+				}
+			}
+		}
+		return;
 	}
 
 	// Handle file messages
