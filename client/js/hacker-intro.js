@@ -2,19 +2,19 @@ export function initHackerIntro() {
     const introContainer = document.getElementById('hacker-intro');
     if (!introContainer) return;
 
-    // 清空并重建 DOM
+    // 清空并重建 DOM - 适配新的蓝色 HUD 风格
     introContainer.innerHTML = `
-        <canvas id="matrix-canvas"></canvas>
+        <canvas id="warp-canvas"></canvas>
         <div class="crt-overlay"></div>
         <div class="scanlines"></div>
         <div id="terminal-wrapper">
             <div class="terminal-header">
-                <div>NodeCrypt OS v4.0 [SECURE]</div>
-                <div id="status-text">INITIALIZING...</div>
+                <div>HYPERSPACE LINK</div>
+                <div id="status-text">CALIBRATING...</div>
             </div>
             <div id="terminal-content"></div>
             <div class="progress-area">
-                <div class="progress-label">decrypting_assets...</div>
+                <div class="progress-label"><span>SYSTEM_INTEGRITY</span><span id="pct-num">0%</span></div>
                 <div class="hacker-progress">
                     <div class="hacker-progress-bar" id="load-bar"></div>
                 </div>
@@ -22,14 +22,20 @@ export function initHackerIntro() {
         </div>
     `;
 
-    const canvas = document.getElementById('matrix-canvas');
+    const canvas = document.getElementById('warp-canvas');
     const ctx = canvas.getContext('2d');
     const terminal = document.getElementById('terminal-content');
     const loadBar = document.getElementById('load-bar');
     const statusText = document.getElementById('status-text');
+    const pctNum = document.getElementById('pct-num');
 
-    // --- 终极代码雨引擎 ---
+    // --- Hyperspace Warp Engine ---
     let width, height;
+    let stars = [];
+    const STAR_COUNT = 1000;
+    let speed = 2; // 初始速度
+    let warpState = 'normal'; // normal -> acc -> warp -> stop
+
     function resize() {
         width = canvas.width = window.innerWidth;
         height = canvas.height = window.innerHeight;
@@ -37,107 +43,105 @@ export function initHackerIntro() {
     resize();
     window.addEventListener('resize', resize);
 
-    // 字符集：片假名 + 拉丁 + 数字
-    const chars = "ｱｲｳｴｵｶｷｸｹｺｻｼｽｾｿﾀﾁﾂﾃﾄﾅﾆﾇﾈﾉﾊﾋﾌﾍﾎﾏﾐﾑﾒﾓﾔﾕﾖﾗﾘﾙﾚﾛﾜﾝABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789";
-
-    // 我们创建多层雨，每层有不同的属性
-    // Layer: { fontSize, speed, color_alpha, columns[] }
-    // column: { y, chars[], headChar }
-    const layers = [
-        { fontSize: 32, speed: 6, alpha: 0.15, blur: 4 },  // 远景（大而淡，模糊）-> 实际上如果要制造景深，远的应该小，近的大。反过来：小的在后面
-        { fontSize: 16, speed: 3, alpha: 0.3, blur: 2 },   // 中景
-        { fontSize: 24, speed: 7, alpha: 0.95, blur: 0 }   // 近景（大字，清晰，快速）
-    ];
-    // 修正策略：不管3D了，我们做那种满屏覆盖的密集感。
-    // 方案：单一强大的图层，但每列有独立速度。
-
-    const columns = [];
-    const fontSize = 16;
-    let colCount = 0;
-
-    function initMatrix() {
-        colCount = Math.floor(width / fontSize);
-        for (let i = 0; i < colCount; i++) {
-            columns[i] = {
-                x: i * fontSize,
-                y: Math.random() * -height, // 随机初始高度
-                speed: 2 + Math.random() * 5, // 随机速度
-                chars: [], // 存储这一列的尾迹字符
-                trailLen: 15 + Math.floor(Math.random() * 20), // 随机尾迹长度
-                changeRate: Math.random() * 0.1 // 字符变换概率
-            };
-        }
+    // 初始化星星
+    for (let i = 0; i < STAR_COUNT; i++) {
+        stars.push({
+            x: (Math.random() - 0.5) * width,
+            y: (Math.random() - 0.5) * height,
+            z: Math.random() * width // 深度
+        });
     }
-    initMatrix();
 
-    function drawMatrix() {
-        // 拖尾效果：绘制半透明黑色矩形覆盖上一帧
-        ctx.fillStyle = "rgba(0, 0, 0, 0.08)";
+    function drawWarp() {
+        // 残影效果：不用全清，而是覆盖半透明黑
+        ctx.fillStyle = "rgba(0, 0, 0, 0.4)"; // 稍微拖一点尾巴，不需要太长
         ctx.fillRect(0, 0, width, height);
 
-        ctx.font = "bold " + fontSize + "px 'Courier New'";
+        const cx = width / 2;
+        const cy = height / 2;
 
-        for (let i = 0; i < colCount; i++) {
-            const col = columns[i];
+        ctx.fillStyle = "#fff";
 
-            // 产生新的头部字符
-            const char = chars[Math.floor(Math.random() * chars.length)];
+        for (let i = 0; i < STAR_COUNT; i++) {
+            const star = stars[i];
 
-            // 绘制头部（高亮白）
-            ctx.fillStyle = "#fff";
-            ctx.shadowBlur = 10;
-            ctx.shadowColor = "#fff";
-            ctx.fillText(char, col.x, col.y);
+            // 移动星星 z 轴
+            star.z -= speed;
 
-            // 绘制尾迹（绿色渐变）
-            // 这里我们不存储复杂的尾迹数组，而是用简单的重绘技巧：
-            // 刚才的 rgba(0,0,0,0.08) 已经在帮我们做尾迹渐隐了。
-            // 我们只需要在头部后面补一刀绿色的，让它看起来不像头部那么白
+            // 复位：如果星星跑到背后去了，就从远处重新放回来
+            if (star.z <= 0) {
+                star.z = width;
+                star.x = (Math.random() - 0.5) * width;
+                star.y = (Math.random() - 0.5) * height;
+            }
 
-            // 为了让效果更好，我们还是得手动画几个上一帧的位置？
-            // 还是简单的：黑色蒙版法已经足够经典。
-            // 增强：每列不仅仅是画头，有概率重绘上面的字符成绿色，防止头部一直是白色拖尾
+            // 投影到 2D
+            // size = (focalLength / z)
+            // x2d = x * size + cx
 
-            ctx.shadowBlur = 0;
-            ctx.fillStyle = "#0f0";
-            // 在当前头部的上方一点点重绘成绿色，模拟"冷却"
-            ctx.fillText(chars[Math.floor(Math.random() * chars.length)], col.x, col.y - fontSize * 2);
+            const k = 250 / star.z; // 投影系数
+            const px = star.x * k + cx;
+            const py = star.y * k + cy;
 
-            // 移动
-            col.y += col.speed;
+            // 只有当点在屏幕内才绘制
+            if (px >= 0 && px <= width && py >= 0 && py <= height) {
+                // 大小随距离变化
+                const size = (1 - star.z / width) * 3;
 
-            // 循环
-            if (col.y > height && Math.random() > 0.98) {
-                col.y = -fontSize;
-                col.speed = 2 + Math.random() * 5;
+                // 颜色变化：Warp 状态下变蓝
+                let g = 255;
+                let b = 255;
+                if (warpState === 'warp') {
+                    // 它是条线
+                    const oldPx = star.x * (250 / (star.z + speed * 2)) + cx;
+                    const oldPy = star.y * (250 / (star.z + speed * 2)) + cy;
+
+                    ctx.beginPath();
+                    ctx.strokeStyle = `rgba(100, 200, 255, ${1 - star.z / width})`;
+                    ctx.lineWidth = size * 0.5;
+                    ctx.moveTo(px, py);
+                    ctx.lineTo(oldPx, oldPy);
+                    ctx.stroke();
+                } else {
+                    // 它是点
+                    const shade = Math.floor((1 - star.z / width) * 255);
+                    ctx.fillStyle = `rgb(${shade}, ${shade}, 255)`; // 稍带蓝色
+                    ctx.fillRect(px, py, size, size);
+                }
             }
         }
     }
 
-    // 60FPS 循环
     let animationId;
     function loop() {
-        drawMatrix();
+        drawWarp();
+
+        // 速度控制
+        if (warpState === 'acc') {
+            speed *= 1.05;
+            if (speed > 80) {
+                speed = 80;
+                warpState = 'warp';
+            }
+        }
+
         animationId = requestAnimationFrame(loop);
     }
     loop();
 
 
-    // --- 2. System Boot Logs ---
+    // --- 2. System Boot Logs (Simplified & Sci-Fi) ---
     const logs = [
-        { msg: "Wake up, Neo...", type: 'log-system', delay: 1000 }, // 致敬
-        { msg: "The Matrix has you...", delay: 1000 },
-        { msg: "Follow the white rabbit.", delay: 1000 },
-        { msg: "Knock, knock, Neo.", delay: 800 },
-        { msg: "Initializing NodeCrypt Kernel...", type: 'log-info', delay: 50 }, // 回到正题
-        { msg: "Loading decentralized ledger...", delay: 50 },
-        { msg: "Bypassing corporate firewalls...", delay: 50 },
-        { msg: "Mounting secure volumes...", delay: 50 },
-        { msg: "Injecting payload: client_bundle.js", delay: 100 },
-        { msg: "Establishing secure handshake...", delay: 100 },
-        { msg: "Access Granted. Level 9 Authorization.", type: 'log-success', delay: 200 },
-        { msg: "Loading 3D Environment...", delay: 100 },
-        { msg: "System Ready.", type: 'log-success', delay: 500 }
+        { msg: "Initializing kernel...", delay: 200 },
+        { msg: "Loading quantum modules...", delay: 100 },
+        { msg: "Decrypting neural networks...", delay: 100 },
+        { msg: "Establishing secure uplink...", delay: 100 },
+        { msg: "Verifying user biometrics...", type: 'log-info', delay: 300 },
+        { msg: "Identity confirmed: ACCESS GRANTED", type: 'log-success', delay: 200 },
+        { msg: "Engaging hyper-drive...", type: 'log-warn', delay: 50 }, // 触发加速
+        { msg: "Warp speed initialized.", delay: 50 },
+        { msg: "Approaching destination...", delay: 1000 }, // 保持飞行一会儿
+        { msg: "Dropping from hyperspace.", type: 'log-success', delay: 500 } // 结束
     ];
 
     let logIndex = 0;
@@ -152,58 +156,53 @@ export function initHackerIntro() {
         const div = document.createElement('div');
         div.className = `log-line ${log.type || ''}`;
 
-        // 时间戳
         const now = new Date();
-        const time = `${now.getHours().toString().padStart(2, '0')}:${now.getMinutes().toString().padStart(2, '0')}:${now.getSeconds().toString().padStart(2, '0')}`;
+        const time = `${now.getHours().toString().padStart(2, '0')}:${now.getMinutes().toString().padStart(2, '0')}:${now.getSeconds().toString().padStart(2, '0')}.${now.getMilliseconds().toString().padStart(3, '0')}`;
 
-        div.innerHTML = `<span class="log-time">[${time}]</span><span class="log-message">${log.msg}</span>`;
+        div.innerHTML = `<span class="log-time">${time}</span><span class="log-message">${log.msg}</span>`;
         terminal.appendChild(div);
 
-        // 保持只显示最后 12 行
-        if (terminal.children.length > 12) {
+        if (terminal.children.length > 8) {
             terminal.removeChild(terminal.children[0]);
         }
 
-        // 进度条
+        // 更新进度条
         const pct = Math.floor(((logIndex + 1) / logs.length) * 100);
         loadBar.style.width = pct + "%";
+        pctNum.innerText = pct + "%";
 
-        // 更新状态文字
-        statusText.innerText = `LOADING... ${pct}%`;
+        // 触发逻辑：当显示 "Engaging hyper-drive" 时，canvas 加速
+        if (log.msg.includes("Engaging")) {
+            warpState = 'acc'; // 开始加速
+            statusText.innerText = "ACCELERATING";
+            statusText.style.color = "#00d9ff";
+        }
 
         logIndex++;
-
-        // 只有前几行（黑客帝国台词）慢一点，后面飞快
-        let realDelay = log.delay;
-        if (logIndex > 4) realDelay = 30 + Math.random() * 50; // 极速刷屏
-
-        setTimeout(addLog, realDelay);
+        setTimeout(addLog, log.delay);
     }
 
-    setTimeout(addLog, 1000); // 1秒后开始出字
+    setTimeout(addLog, 500);
 
 
     // --- 3. Finish ---
     function finishBoot() {
-        statusText.innerText = "SYSTEM READY";
-        statusText.style.color = "#0f0";
-        statusText.style.textShadow = "0 0 10px #0f0";
+        statusText.innerText = "ARRIVAL COMPLETE";
+        statusText.style.color = "#00ffaa";
 
         loadBar.style.width = "100%";
-        loadBar.style.background = "#fff";
-        loadBar.style.boxShadow = "0 0 15px #fff";
+        pctNum.innerText = "100%";
 
         setTimeout(() => {
-            // 爆炸式淡出
-            introContainer.classList.add('fade-out');
+            // 结束动画
+            introContainer.classList.add('fade-out'); // 这个CSS类会让容器变大并透明，像穿过去一样
             document.body.classList.add('intro-finished');
 
-            // 2秒后彻底销毁，释放内存
             setTimeout(() => {
                 cancelAnimationFrame(animationId);
                 introContainer.remove();
-            }, 2000);
+            }, 1000);
 
-        }, 800);
+        }, 500);
     }
 }
