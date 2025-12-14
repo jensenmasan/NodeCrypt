@@ -79,7 +79,173 @@ const colorPalette = {
     7: { primary: new THREE.Color(0x8E2DE2), secondary: new THREE.Color(0x4A00E0), glow: new THREE.Color(0xaa00ff) }   // Mystic Violet
 };
 
-// ... (init3DGestureSystem 等函数保持不变，直到 updateTextShape) ...
+// --- 2. 初始化系统 ---
+function init3DGestureSystem() {
+    // 1. Scene & Camera
+    scene = new THREE.Scene();
+    // 稍微带一点迷雾，增强深邃感
+    scene.fog = new THREE.FogExp2(0x050505, 0.002);
+
+    camera = new THREE.PerspectiveCamera(75, window.innerWidth / window.innerHeight, 1, 3000);
+    camera.position.z = 1000;
+
+    // 2. Renderer
+    if (!renderer) {
+        renderer = new THREE.WebGLRenderer({ antialias: true, alpha: true });
+        renderer.setPixelRatio(window.devicePixelRatio);
+        renderer.setSize(window.innerWidth, window.innerHeight);
+
+        // 挂载到 body
+        renderer.domElement.id = 'three-canvas';
+        renderer.domElement.style.position = 'fixed';
+        renderer.domElement.style.top = '0';
+        renderer.domElement.style.left = '0';
+        renderer.domElement.style.zIndex = '-1'; // 确保在最底层
+        renderer.domElement.style.pointerEvents = 'none'; // 让鼠标穿透（除非有交互需求，后面再改）
+        document.body.appendChild(renderer.domElement);
+    } else {
+        // 如果已存在，确保它是可见的
+        document.body.appendChild(renderer.domElement);
+    }
+
+    // 3. Particles
+    if (!particles) {
+        geometry = new THREE.BufferGeometry();
+        const positions = new Float32Array(particleCount * 3);
+        const colors = new Float32Array(particleCount * 3);
+        const sizes = new Float32Array(particleCount);
+
+        for (let i = 0; i < particleCount; i++) {
+            positions[i * 3] = (Math.random() * 2 - 1) * 2000;
+            positions[i * 3 + 1] = (Math.random() * 2 - 1) * 2000;
+            positions[i * 3 + 2] = (Math.random() * 2 - 1) * 2000;
+
+            colors[i * 3] = 1;
+            colors[i * 3 + 1] = 1;
+            colors[i * 3 + 2] = 1;
+
+            sizes[i] = 2; // Initial size
+
+            // Init target positions
+            targetPositions[i] = new THREE.Vector3(positions[i * 3], positions[i * 3 + 1], positions[i * 3 + 2]);
+        }
+
+        geometry.setAttribute('position', new THREE.BufferAttribute(positions, 3));
+        geometry.setAttribute('color', new THREE.BufferAttribute(colors, 3));
+        // Use custom shader or simple points? Simple points for compatibility.
+        // Size attenuation enables 3D perspective size.
+
+        const material = new THREE.PointsMaterial({
+            size: 3,
+            vertexColors: true,
+            sizeAttenuation: true, // 关键：近大远小
+            blending: THREE.AdditiveBlending,
+            depthTest: false,
+            transparent: true,
+            opacity: 0.8
+        });
+
+        particles = new THREE.Points(geometry, material);
+        scene.add(particles);
+    }
+
+    // 4. Stars (Background depth)
+    if (!stars) {
+        const starGeo = new THREE.BufferGeometry();
+        const starCount = 2000;
+        const starPos = new Float32Array(starCount * 3);
+        for (let i = 0; i < starCount; i++) {
+            starPos[i * 3] = (Math.random() - 0.5) * 3000;
+            starPos[i * 3 + 1] = (Math.random() - 0.5) * 3000;
+            starPos[i * 3 + 2] = (Math.random() - 0.5) * 3000;
+        }
+        starGeo.setAttribute('position', new THREE.BufferAttribute(starPos, 3));
+        const starMat = new THREE.PointsMaterial({ color: 0xffffff, size: 1.5, transparent: true, opacity: 0.6 });
+        stars = new THREE.Points(starGeo, starMat);
+        scene.add(stars);
+    }
+
+    // 5. Connection Lines (Geometry only cache)
+    if (!lineGeometry) {
+        lineGeometry = new THREE.BufferGeometry();
+        const maxCon = 1000; // max lines
+        lineGeometry.setAttribute('position', new THREE.BufferAttribute(new Float32Array(maxCon * 2 * 3), 3));
+        lineGeometry.setAttribute('color', new THREE.BufferAttribute(new Float32Array(maxCon * 2 * 3), 3));
+        const lineMat = new THREE.LineBasicMaterial({ vertexColors: true, blending: THREE.AdditiveBlending, transparent: true, opacity: 0.3 });
+        connections = new THREE.LineSegments(lineGeometry, lineMat);
+        scene.add(connections);
+    }
+
+    // 6. Font Loader
+    // Try to load font, if fails, we fallback to particles only
+    try {
+        const loader = new THREE.FontLoader();
+        loader.load('https://threejs.org/examples/fonts/helvetiker_bold.typeface.json', (f) => {
+            font = f;
+            updateTextShape("NODECRYPT"); // Initial text
+        });
+    } catch (e) {
+        console.warn("Font loader failed", e);
+    }
+
+    // 7. Event Listeners
+    window.addEventListener('resize', onWindowResize, false);
+    document.addEventListener('mousemove', onDocumentMouseMove, false);
+    document.addEventListener('mousedown', () => isMouseDown = true, false);
+    document.addEventListener('mouseup', () => isMouseDown = false, false);
+    // Touch support
+    document.addEventListener('touchstart', (e) => { isMouseDown = true; onDocumentMouseMove(e.touches[0]); }, false);
+    document.addEventListener('touchend', () => isMouseDown = false, false);
+    document.addEventListener('touchmove', (e) => { onDocumentMouseMove(e.touches[0]); }, false);
+
+    // 8. Start Loop
+    isAutoMode = true; // Auto start
+    if (animationFrameId) cancelAnimationFrame(animationFrameId);
+    animate();
+}
+
+function cleanup3DGestureSystem() {
+    if (animationFrameId) cancelAnimationFrame(animationFrameId);
+
+    // Remove canvas
+    if (renderer && renderer.domElement && renderer.domElement.parentNode) {
+        renderer.domElement.parentNode.removeChild(renderer.domElement);
+    }
+
+    window.removeEventListener('resize', onWindowResize);
+    document.removeEventListener('mousemove', onDocumentMouseMove);
+    // Clean up Three.js objects to free memory
+    renderer = null;
+    // We keep scene/geometry data in memory for quick restart or null them?
+    // Let's null them to save RAM, re-init will recreate.
+    particles = null;
+    stars = null;
+    scene = null;
+    camera = null;
+    geometry = null;
+}
+
+function onWindowResize() {
+    if (!camera || !renderer) return;
+    windowHalfX = window.innerWidth / 2;
+    windowHalfY = window.innerHeight / 2;
+    camera.aspect = window.innerWidth / window.innerHeight;
+    camera.updateProjectionMatrix();
+    renderer.setSize(window.innerWidth, window.innerHeight);
+}
+
+function onDocumentMouseMove(event) {
+    if (!event) return;
+    // Normalize mouse position -1 to 1
+    mouse.x = (event.clientX - window.innerWidth / 2) / (window.innerWidth / 2);
+    mouse.y = (event.clientY - window.innerHeight / 2) / (window.innerHeight / 2);
+    lastMouseMoveTime = Date.now();
+    isAutoMode = false;
+
+    // Reset auto-mode logic delay
+    autoTimer = 0;
+}
+
 
 // --- 3. 字体生成逻辑 (升级版：支持心形) ---
 function updateTextShape(text) {
