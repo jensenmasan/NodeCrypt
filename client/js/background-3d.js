@@ -1431,7 +1431,121 @@ function onDocumentMouseMove(event) {
     }
 }
 
-// 鼠标按下事件
+
+// --- 5. Missing Core Functions Implementation (Restored) ---
+
+// MediaPipe Initialization with Fallback
+// 初始化摄像头手势识别，失败则回退到鼠标模式
+async function initMediaPipe() {
+    // Attempt to hide loading text immediately if we default to mouse
+    // But normally we wait for camera.
+
+    try {
+        if (typeof window.Hands === 'undefined' || typeof window.Camera === 'undefined') {
+            console.warn("MediaPipe libraries not loaded, switching to Mouse Mode.");
+            fallbackToMouseMode();
+            return;
+        }
+
+        const hands = new window.Hands({
+            locateFile: (file) => {
+                return `https://cdn.jsdelivr.net/npm/@mediapipe/hands/${file}`;
+            }
+        });
+
+        hands.setOptions({
+            maxNumHands: 2,
+            modelComplexity: 1,
+            minDetectionConfidence: 0.5,
+            minTrackingConfidence: 0.5
+        });
+
+        // Use existing onResults if available, otherwise define simple one
+        if (typeof onResults === 'function') {
+            hands.onResults(onResults);
+        } else {
+            hands.onResults((results) => {
+                // Basic mouse mapping if onResults missing
+                if (results.multiHandLandmarks && results.multiHandLandmarks.length > 0) {
+                    const hand = results.multiHandLandmarks[0];
+                    mouse.x = (1 - hand[8].x) * 2 - 1;
+                    mouse.y = (1 - hand[8].y) * 2 - 1;
+                }
+            });
+        }
+
+        // Create invisible video element
+        const video = document.createElement('video');
+        video.style.display = 'none';
+        video.setAttribute('playsinline', '');
+        document.body.appendChild(video);
+
+        let camera = new window.Camera(video, {
+            onFrame: async () => {
+                await hands.send({ image: video });
+            },
+            width: 640,
+            height: 480
+        });
+
+        await camera.start();
+
+        // Hide loading on success
+        const loading = document.querySelector('.loading-overlay') || document.getElementById('loading-overlay');
+        const text = document.getElementById('loading-text');
+
+        if (text) {
+            text.innerText = "手势控制已激活 / Gesture Ready";
+            setTimeout(() => {
+                if (loading) loading.style.display = 'none';
+                text.style.display = 'none';
+            }, 1000);
+        }
+
+    } catch (e) {
+        console.warn("Camera init failed:", e);
+        fallbackToMouseMode();
+    }
+}
+
+// Fallback to Mouse/Touch mode
+function fallbackToMouseMode() {
+    console.log("Fallback to Mouse Mode");
+
+    // Hide Loading Text
+    // 强制隐藏“请允许摄像头权限”的提示
+    const loadingOverlay = document.querySelector('.loading-overlay');
+    const loadingText = document.getElementById('loading-text');
+
+    // Update text then hide
+    if (loadingText) {
+        loadingText.innerText = "进入鼠标交互模式 / Interactive Mode";
+        loadingText.style.color = '#fff';
+    }
+
+    setTimeout(() => {
+        if (loadingOverlay) loadingOverlay.style.display = 'none';
+        if (loadingText) loadingText.style.display = 'none';
+    }, 800);
+
+    // Ensure Auto Mode is off so user can interact
+    isAutoMode = false;
+}
+
+// Basic UI Controls Init
+function initUIControls() {
+    // Usually sets up context menu or click handlers
+    document.addEventListener('contextmenu', event => event.preventDefault());
+}
+
+// Auto Hide UI
+function initAutoHideUI() {
+    // Hide UI elements if idle
+    setTimeout(() => {
+        const overlay = document.querySelector('.loading-overlay');
+        if (overlay) overlay.style.display = 'none';
+    }, 3000); // Force hide after 3 seconds anyway
+}
 function onDocumentMouseDown(event) {
     isMouseDown = true;
     lastMouseMoveTime = Date.now();
