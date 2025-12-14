@@ -1490,17 +1490,12 @@ async function initMediaPipe() {
 
         await camera.start();
 
-        // Hide loading on success
+        // 摄像头启动成功，直接隐藏加载提示
         const loading = document.querySelector('.loading-overlay') || document.getElementById('loading-overlay');
         const text = document.getElementById('loading-text');
 
-        if (text) {
-            text.innerText = "手势控制已激活 / Gesture Ready";
-            setTimeout(() => {
-                if (loading) loading.style.display = 'none';
-                text.style.display = 'none';
-            }, 1000);
-        }
+        if (loading) loading.style.display = 'none';
+        if (text) text.style.display = 'none';
 
     } catch (e) {
         console.warn("Camera init failed:", e);
@@ -1512,21 +1507,13 @@ async function initMediaPipe() {
 function fallbackToMouseMode() {
     console.log("Fallback to Mouse Mode");
 
-    // Hide Loading Text
-    // 强制隐藏“请允许摄像头权限”的提示
+    // 直接隐藏所有加载提示，不显示任何文本
     const loadingOverlay = document.querySelector('.loading-overlay');
     const loadingText = document.getElementById('loading-text');
 
-    // Update text then hide
-    if (loadingText) {
-        loadingText.innerText = "进入鼠标交互模式 / Interactive Mode";
-        loadingText.style.color = '#fff';
-    }
-
-    setTimeout(() => {
-        if (loadingOverlay) loadingOverlay.style.display = 'none';
-        if (loadingText) loadingText.style.display = 'none';
-    }, 800);
+    // 立即隐藏，不显示任何提示文本
+    if (loadingOverlay) loadingOverlay.style.display = 'none';
+    if (loadingText) loadingText.style.display = 'none';
 
     // Ensure Auto Mode is off so user can interact
     isAutoMode = false;
