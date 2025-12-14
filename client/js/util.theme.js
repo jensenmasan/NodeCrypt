@@ -49,7 +49,7 @@ export const THEMES = [
 	},
 	{
 		id: 'theme12',
-		background: 'linear-gradient(to bottom, #323232 0%, #3F3F3F 40%, #1C1C1C 150%), linear-gradient(to top, rgba(255,255,255,0.40) 0%, rgba(0,0,0,0.25) 200%) center bottom' // Metallic Dark
+		background: 'radial-gradient(circle at 50% 100%, #2b3595 0%, #101530 60%, #050710 100%)' // Warm Starry Night
 	},
 	{
 		id: 'theme13',

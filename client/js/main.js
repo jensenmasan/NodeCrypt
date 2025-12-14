@@ -659,43 +659,87 @@ document.addEventListener('dragover', (e) => {
 });
 
 
-// Import fireworks effect
-import { startFireworks } from './fireworks.js';
-window.startFireworks = startFireworks; // Expose to window
+// Import effects
+// 导入特效模块
+import { Effects } from './util.effects.js';
+window.startFireworks = Effects.startFireworks; // Expose as fallback
+window.startStarrySky = Effects.startStarrySky;
+window.startConfetti = Effects.startConfetti;
 
 // Listen for fireworks trigger event (from logo click)
 window.addEventListener('triggerFireworks', () => {
-	startFireworks(); // Trigger locally immediately
+	triggerEffect('fireworks');
+});
 
+// Helper to trigger effects locally and remotely
+// 触发本地特效并向远程发送信号
+function triggerEffect(effectName) {
+	// Local trigger
+	if (effectName === 'fireworks') Effects.startFireworks();
+	else if (effectName === 'starry_sky') Effects.startStarrySky();
+	else if (effectName === 'confetti') Effects.startConfetti();
+
+	// Send Signal
 	const rd = roomsData[activeRoomIndex];
 	if (rd && rd.chat) {
-		// Send signal to others
+		const signalType = effectName + '_signal'; // e.g. fireworks_signal
+
 		if (rd.privateChatTargetId) {
-			// Private fireworks? Maybe just text for now, or use same signal
-			// For now, let's just send to public if in public, private if in private
 			const targetClient = rd.chat.channel[rd.privateChatTargetId];
 			if (targetClient && targetClient.shared) {
-				const clientMessagePayload = {
-					a: 'm',
-					t: 'fireworks_signal',
-					d: {}
-				};
+				const clientMessagePayload = { a: 'm', t: signalType, d: {} };
+				// Encrypt for private
 				const encryptedClientMessage = rd.chat.encryptClientMessage(clientMessagePayload, targetClient.shared);
-				const serverRelayPayload = {
-					a: 'c',
-					p: encryptedClientMessage,
-					c: rd.privateChatTargetId
-				};
+				const serverRelayPayload = { a: 'c', p: encryptedClientMessage, c: rd.privateChatTargetId };
 				const encryptedMessageForServer = rd.chat.encryptServerMessage(serverRelayPayload, rd.chat.serverShared);
 				rd.chat.sendMessage(encryptedMessageForServer);
 			}
 		} else {
-			// Public fireworks
-			// We can use 'fireworks_signal' type
-			rd.chat.sendChannelMessage('fireworks_signal', {});
+			// Public
+			rd.chat.sendChannelMessage(signalType, {});
 		}
 	}
-});
+}
+
+// Effects Button Logic
+// 特效按钮逻辑
+const effectsBtn = $id('chat-effects-btn');
+if (effectsBtn) {
+	const effectsMenu = document.createElement('div');
+	effectsMenu.className = 'effects-menu';
+	// Menu content
+	effectsMenu.innerHTML = `
+        <div class="effect-item" data-effect="fireworks"><span class="effect-icon">🎆</span> Fireworks</div>
+        <div class="effect-item" data-effect="starry_sky"><span class="effect-icon">🌌</span> Starry Sky</div>
+        <div class="effect-item" data-effect="confetti"><span class="effect-icon">🎊</span> Celebrate</div>
+    `;
+	effectsBtn.parentElement.appendChild(effectsMenu);
+
+	effectsBtn.onclick = (e) => {
+		e.stopPropagation();
+		effectsMenu.classList.toggle('show');
+		effectsBtn.classList.toggle('active');
+	};
+
+	effectsMenu.addEventListener('click', (e) => {
+		e.stopPropagation();
+		const item = e.target.closest('.effect-item');
+		if (item) {
+			const effect = item.dataset.effect;
+			triggerEffect(effect);
+			effectsMenu.classList.remove('show');
+			effectsBtn.classList.remove('active');
+		}
+	});
+
+	// Close on click outside
+	document.addEventListener('click', (e) => {
+		if (!effectsMenu.contains(e.target) && e.target !== effectsBtn) {
+			effectsMenu.classList.remove('show');
+			effectsBtn.classList.remove('active');
+		}
+	});
+}
 
 document.addEventListener('drop', (e) => {
 	e.preventDefault();

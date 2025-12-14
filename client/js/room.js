@@ -256,19 +256,54 @@ export function handleClientMessage(idx, msg) {
 		return; // Signal messages are not displayed in chat
 	}
 
-	// Handle Fireworks Signal
-	if (msgType === 'fireworks_signal') {
-		if (window.startFireworks) {
-			window.startFireworks();
+	// Handle Effects Signals
+	if (msgType && msgType.endsWith('_signal') && !msgType.startsWith('call_')) {
+		// Identify effect
+		const effectType = msgType.replace('_signal', '');
+
+		let triggerFunc = null;
+		let effectName = '';
+		let icon = '';
+
+		if (effectType === 'fireworks') {
+			triggerFunc = window.startFireworks;
+			effectName = 'Fireworks';
+			icon = '🎆';
+		} else if (effectType === 'starry_sky') {
+			triggerFunc = window.startStarrySky;
+			effectName = 'Starry Sky';
+			icon = '🌌';
+		} else if (effectType === 'confetti') {
+			triggerFunc = window.startConfetti;
+			effectName = 'Celebration';
+			icon = '🎊';
+		}
+
+		if (triggerFunc) {
+			triggerFunc();
+
 			// Optional: Add a system message saying who sent it
 			let senderName = msg.userName;
 			if (!senderName && msg.clientId && newRd.userMap[msg.clientId]) {
 				senderName = newRd.userMap[msg.clientId].userName || 'Someone';
 			}
 			const lang = getCurrentLanguage() || 'en';
-			const text = lang === 'zh' ? `${senderName} 燃放了烟花！🎆` : `${senderName} ignited fireworks! 🎆`;
+			let actionText = '';
+			if (lang === 'zh') {
+				if (effectType === 'fireworks') actionText = '燃放了';
+				else if (effectType === 'starry_sky') actionText = '展示了';
+				else if (effectType === 'confetti') actionText = '开始了';
 
-			// Show as small system toast/msg (optional, reusing addSystemMsg but maybe too spammy if clicked often?)
+				// Simple mapping for now
+				if (effectType === 'fireworks') effectName = '烟花';
+				if (effectType === 'starry_sky') effectName = '星空';
+				if (effectType === 'confetti') effectName = '庆典';
+			} else {
+				actionText = 'triggered';
+			}
+
+			const text = `${senderName} ${actionText} ${effectName} ${icon}`;
+
 			// Let's add it locally only to the chat
 			if (activeRoomIndex === idx && window.addSystemMsg) {
 				window.addSystemMsg(text);

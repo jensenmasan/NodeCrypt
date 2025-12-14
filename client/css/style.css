@@ -2484,3 +2484,82 @@ h2 {
 	}
 }
 
+
+/* Effects Button and Menu */
+.chat-effects-btn {
+    background: none;
+    border: none;
+    cursor: pointer;
+    color: #808080;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    margin: 0 5px 3px 0;
+    padding: 0;
+    transition: all 0.2s ease;
+}
+
+.chat-effects-btn:hover, .chat-effects-btn.active {
+    background: #f5f5f5;
+    border-radius: 50%;
+    color: #f1c40f; /* Star color */
+}
+
+.chat-effects-btn:hover svg path, .chat-effects-btn.active svg path {
+    stroke: #f1c40f;
+    fill: #f1c40f; /* Filled star */
+}
+
+.effects-menu {
+    position: absolute;
+    bottom: 50px;
+    left: 50%; /* Approx center relative to button */
+    transform: translateX(-50%);
+    background: #fff;
+    border-radius: 12px;
+    box-shadow: 0 8px 24px rgba(0,0,0,0.2);
+    padding: 10px;
+    z-index: 200;
+    display: none;
+    flex-direction: column;
+    width: 140px;
+    border: 1px solid #eee;
+    animation: fadeInUp 0.2s cubic-bezier(0.34, 1.56, 0.64, 1);
+}
+
+.effects-menu.show {
+    display: flex;
+}
+
+.effect-item {
+    padding: 10px 12px;
+    font-size: 14px;
+    color: #333;
+    cursor: pointer;
+    display: flex;
+    align-items: center;
+    border-radius: 8px;
+    transition: background-color 0.2s;
+    font-weight: 500;
+}
+
+.effect-item:hover {
+    background: #f0f7ff;
+    color: #007bff;
+}
+
+.effect-icon {
+    margin-right: 10px;
+    font-size: 18px;
+}
+
+/* Mobile specific for effects menu */
+@media (max-width: 768px) {
+    .effects-menu {
+        left: auto;
+        right: 0;
+        bottom: 60px;
+        transform: none;
+    }
+}
+
