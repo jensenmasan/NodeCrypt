@@ -718,16 +718,19 @@ function startNewYear() {
         ctx.shadowColor = '#FFD700'; // Gold
 
         // Main Text
-        ctx.font = 'bold 8vmin "Microsoft YaHei", sans-serif';
+        // 动态调整字体大小以适应手机屏幕
+        const isMobile = width < 768;
+        const fontSize = isMobile ? '10vmin' : '8vmin';
+        ctx.font = `bold ${fontSize} "Microsoft YaHei", sans-serif`;
         const hue = (elapsed * 0.1) % 360;
         ctx.fillStyle = `hsl(${hue}, 100%, 60%)`;
-        ctx.fillText(cnText, 0, -50);
+        ctx.fillText(cnText, 0, 0); // Center vertically
 
-        // Sub Text
-        ctx.font = 'bold 15vmin "Arial", sans-serif';
-        ctx.fillStyle = '#ff4d4d'; // Red
-        ctx.shadowColor = '#ff0000';
-        ctx.fillText("2025", 0, 80);
+        // Sub Text Removed
+        // ctx.font = 'bold 15vmin "Arial", sans-serif';
+        // ctx.fillStyle = '#ff4d4d'; // Red
+        // ctx.shadowColor = '#ff0000';
+        // ctx.fillText("2025", 0, 80);
 
         ctx.restore();
     }
