@@ -2630,7 +2630,8 @@ h2 {
 /* Cosmic Theme Button Style - Enhanced Universe Effect */
 [data-theme='theme12'] .theme-toggle-btn {
 	position: relative;
-	background: linear-gradient(135deg, #1e3c72 0%, #2a5298 50%, #7e22ce 100%);
+	/* Deep space gradient base */
+	background: radial-gradient(ellipse at bottom, #1b2735 0%, #090a0f 100%);
 	background-size: 200% 200%;
 	box-shadow:
 		0 0 20px rgba(99, 164, 255, 0.9),
@@ -2761,4 +2762,57 @@ h2 {
 	to {
 		filter: drop-shadow(0 0 12px rgba(255, 255, 255, 1));
 	}
+}
+
+/* Nudge Shake Animation */
+@keyframes nudge-shake {
+	0% {
+		transform: translate(0, 0);
+	}
+
+	10% {
+		transform: translate(-5px, -5px);
+	}
+
+	20% {
+		transform: translate(5px, 5px);
+	}
+
+	30% {
+		transform: translate(-5px, 5px);
+	}
+
+	40% {
+		transform: translate(5px, -5px);
+	}
+
+	50% {
+		transform: translate(-3px, 0);
+	}
+
+	60% {
+		transform: translate(3px, 0);
+	}
+
+	70% {
+		transform: translate(-3px, 0);
+	}
+
+	80% {
+		transform: translate(3px, 0);
+	}
+
+	90% {
+		transform: translate(0, 0);
+	}
+
+	100% {
+		transform: translate(0, 0);
+	}
+}
+
+.nudge-shake {
+	animation: nudge-shake 0.5s cubic-bezier(.36, .07, .19, .97) both;
+	transform: translate3d(0, 0, 0);
+	backface-visibility: hidden;
 }

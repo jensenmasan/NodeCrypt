@@ -109,6 +109,7 @@ window.notifyMessage = notifyMessage;
 window.setupEmojiPicker = setupEmojiPicker;
 window.handleFileMessage = handleFileMessage;
 window.downloadFile = downloadFile;
+window.sendNudge = sendNudge;
 
 // Import WebRTC classes
 import { WebRTCManager } from './util.webrtc.js';
@@ -729,6 +730,53 @@ function triggerEffect(effectName) {
 			// Public
 			rd.chat.sendChannelMessage(signalType, {});
 		}
+	}
+}
+
+// Send "Nudge" (Pai Yi Pai)
+// 发送“拍一拍”
+function sendNudge(targetId, targetName) {
+	const rd = roomsData[activeRoomIndex];
+	if (!rd || !rd.chat) return;
+
+	// Local Nudge (My chat)
+	// 本地显示（我的聊天）
+	const nudgeText = `${t('action.nudge_you', 'You nudged')} ${targetName || 'User'}`;
+	addSystemMsg(nudgeText);
+
+	// Send Signal
+	if (rd.privateChatTargetId) {
+		// Private chat context
+		const targetClient = rd.chat.channel[rd.privateChatTargetId];
+		if (targetClient && targetClient.shared) {
+			const clientMessagePayload = {
+				a: 'm',
+				t: 'nudge_signal',
+				d: { from: rd.myUserName }
+			};
+			const encryptedClientMessage = rd.chat.encryptClientMessage(clientMessagePayload, targetClient.shared);
+			const serverRelayPayload = { a: 'c', p: encryptedClientMessage, c: rd.privateChatTargetId };
+			const encryptedMessageForServer = rd.chat.encryptServerMessage(serverRelayPayload, rd.chat.serverShared);
+			rd.chat.sendMessage(encryptedMessageForServer);
+		}
+	} else if (targetId) {
+		// Group context, nudge specific user
+		// Public channel but targeted nudge (everyone sees or just target? Let's make it public signal but targeted intent)
+		// For E2EE simplicity in public channel, we broadcast it as a special system event
+
+		// Actually, let's just send a text message or effect for now, 
+		// but since we want "A nudged B", let's use the 'effect' channel message
+
+		// Note: Public nudging in this system is tricky without a dedicated type.
+		// Let's use the 'nudge_signal' type which we will handle in room.js
+		rd.chat.sendChannelMessage('nudge_signal', { targetId: targetId, targetName: targetName });
+	}
+
+	// Trigger visual effect locally
+	const chatContainer = document.querySelector('.main');
+	if (chatContainer) {
+		chatContainer.classList.add('nudge-shake');
+		setTimeout(() => chatContainer.classList.remove('nudge-shake'), 500);
 	}
 }
 

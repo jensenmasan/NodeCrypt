@@ -303,7 +303,8 @@ export function handleClientMessage(idx, msg) {
 				lightning: ['Lightning', '闪电'],
 				matrix: ['Matrix', '代码雨'],
 				stress_relief: ['Destruction', '解压'],
-				new_year: ['Happy New Year', '新年快乐']
+				new_year: ['Happy New Year', '新年快乐'],
+				nudge: ['Nudged', '拍一拍']  // Add nudge mapping
 			};
 
 
@@ -313,14 +314,87 @@ export function handleClientMessage(idx, msg) {
 				if (effectType === 'lightning') actionText = '召唤了';
 				if (effectType === 'rain' || effectType === 'snow') actionText = '让天';
 
-				// Simple mapping for now
-				if (nameMap[effectType]) effectDisplayName = nameMap[effectType][1];
+				// Nudge handling
+				if (effectType === 'nudge') {
+					actionText = '拍了拍';
+					const targetId = msg.data ? msg.data.targetId : null;
+					const targetName = msg.data ? msg.data.targetName : null;
+					if (targetId === newRd.myId) {
+						effectDisplayName = '我';
+						// Trigger shake effect for me
+						setTimeout(() => {
+							const chatContainer = document.querySelector('.main');
+							if (chatContainer) {
+								chatContainer.classList.add('nudge-shake');
+								setTimeout(() => chatContainer.classList.remove('nudge-shake'), 500);
+							}
+						}, 100);
+					} else if (targetName) {
+						effectDisplayName = targetName;
+					} else {
+						effectDisplayName = '某人';
+					}
+					// Private chat special case
+					if (msg.data && msg.data.from) {
+						// It's a private nudge
+						effectDisplayName = '我';
+						setTimeout(() => {
+							const chatContainer = document.querySelector('.main');
+							if (chatContainer) {
+								chatContainer.classList.add('nudge-shake');
+								setTimeout(() => chatContainer.classList.remove('nudge-shake'), 500);
+							}
+						}, 100);
+					}
+					icon = '👋';
+				} else if (nameMap[effectType]) {
+					effectDisplayName = nameMap[effectType][1];
+				}
 			} else {
 				actionText = 'triggered';
-				if (nameMap[effectType]) effectDisplayName = nameMap[effectType][0];
+				if (effectType === 'nudge') {
+					actionText = 'nudged';
+					const targetId = msg.data ? msg.data.targetId : null;
+					const targetName = msg.data ? msg.data.targetName : null;
+					if (targetId === newRd.myId) {
+						effectDisplayName = 'me';
+						// Trigger shake
+						setTimeout(() => {
+							const chatContainer = document.querySelector('.main');
+							if (chatContainer) {
+								chatContainer.classList.add('nudge-shake');
+								setTimeout(() => chatContainer.classList.remove('nudge-shake'), 500);
+							}
+						}, 100);
+					} else if (targetName) {
+						effectDisplayName = targetName;
+					} else {
+						effectDisplayName = 'someone';
+					}
+					// Private chat special case
+					if (msg.data && msg.data.from) {
+						effectDisplayName = 'me';
+						// Trigger shake
+						setTimeout(() => {
+							const chatContainer = document.querySelector('.main');
+							if (chatContainer) {
+								chatContainer.classList.add('nudge-shake');
+								setTimeout(() => chatContainer.classList.remove('nudge-shake'), 500);
+							}
+						}, 100);
+					}
+					icon = '👋';
+				} else if (nameMap[effectType]) {
+					effectDisplayName = nameMap[effectType][0];
+				}
 			}
 
-			const text = `${senderName} ${actionText} ${effectDisplayName} ${icon}`;
+			let text = `${senderName} ${actionText} ${effectDisplayName} ${icon}`;
+
+			// If it's a nudge, format slightly differently
+			if (effectType === 'nudge') {
+				text = `${senderName} ${actionText} ${effectDisplayName} ${icon}`;
+			}
 
 			// Let's add it locally only to the chat
 			if (activeRoomIndex === idx && window.addSystemMsg) {

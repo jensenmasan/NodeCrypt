@@ -419,8 +419,30 @@ export function createUserItem(user, isMe) {
 		avatarEl.innerHTML = cleanSvg
 	}
 	if (!isMe) {
-		div.onclick = () => togglePrivateChat(user.clientId, safeUserName)
+		div.onclick = () => togglePrivateChat(user.clientId, safeUserName);
 	}
+
+	// Add "Nudge" (Pai Yi Pai) feature on double click
+	// 添加双击“拍一拍”功能
+	let lastTapTime = 0;
+	div.addEventListener('touchend', (e) => {
+		const currentTime = new Date().getTime();
+		const tapLength = currentTime - lastTapTime;
+		if (tapLength < 500 && tapLength > 0) {
+			// Double tap detected
+			e.preventDefault();
+			e.stopPropagation();
+			if (window.sendNudge) window.sendNudge(user.clientId, safeUserName);
+		}
+		lastTapTime = currentTime;
+	});
+
+	div.addEventListener('dblclick', (e) => {
+		e.preventDefault();
+		e.stopPropagation();
+		if (window.sendNudge) window.sendNudge(user.clientId, safeUserName);
+	});
+
 	return div
 }
 
