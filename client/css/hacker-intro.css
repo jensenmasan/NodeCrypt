@@ -1,4 +1,4 @@
-/* Hyperspace Intro Theme */
+/* Matrix Rain Intro Theme */
 #hacker-intro {
     position: fixed;
     top: 0;
@@ -7,22 +7,19 @@
     height: 100vh;
     background-color: #000;
     z-index: 99999;
-    color: #00d9ff;
-    /* 冰蓝色 */
-    font-family: 'Rajdhani', sans-serif;
+    color: #00ff41;
+    /* 经典黑客绿 */
+    font-family: 'Share Tech Mono', monospace;
+    /* 回归等宽字体 */
     overflow: hidden;
     display: flex;
     justify-content: center;
     align-items: center;
-    transition: opacity 1s ease-out, transform 1s ease-in;
-    /* 增加缩放消失效果 */
+    transition: opacity 1s ease-out;
 }
 
-/* 渐隐动画 */
 #hacker-intro.fade-out {
     opacity: 0;
-    transform: scale(2);
-    /* 就像穿过了屏幕 */
     pointer-events: none;
 }
 
@@ -33,99 +30,114 @@
     z-index: 1;
 }
 
-/* 居中的 HUD 界面 */
+/* 居中的 HUD 界面 - 绿色战术风格 */
 #terminal-wrapper {
     position: relative;
     z-index: 10;
     width: 600px;
-    background: rgba(0, 10, 30, 0.6);
-    /* 深蓝玻璃 */
-    border: 1px solid rgba(0, 217, 255, 0.3);
-    border-radius: 4px;
+    background: rgba(0, 10, 0, 0.85);
+    /* 深绿黑 */
+    border: 1px solid rgba(0, 255, 65, 0.4);
+    box-shadow: 0 0 30px rgba(0, 255, 65, 0.1);
+    backdrop-filter: blur(5px);
     padding: 20px;
-    box-shadow: 0 0 50px rgba(0, 217, 255, 0.1);
-    backdrop-filter: blur(10px);
+    /* 切角设计 */
+    clip-path: polygon(0 0,
+            100% 0,
+            100% calc(100% - 20px),
+            calc(100% - 20px) 100%,
+            0 100%);
 
     /* 入场动画 */
-    animation: hud-entry 0.8s cubic-bezier(0.23, 1, 0.32, 1);
+    animation: terminal-boot 0.5s cubic-bezier(0.23, 1, 0.32, 1);
 }
 
-@keyframes hud-entry {
+@keyframes terminal-boot {
     0% {
-        transform: scale(0.8);
+        transform: scaleY(0);
         opacity: 0;
-        filter: blur(20px);
     }
 
     100% {
-        transform: scale(1);
+        transform: scaleY(1);
         opacity: 1;
-        filter: blur(0);
     }
 }
 
 .terminal-header {
     display: flex;
     justify-content: space-between;
-    border-bottom: 1px solid rgba(0, 217, 255, 0.2);
+    border-bottom: 2px solid rgba(0, 255, 65, 0.3);
     padding-bottom: 10px;
     margin-bottom: 15px;
     font-size: 14px;
     letter-spacing: 2px;
-    color: rgba(0, 217, 255, 0.8);
+    color: rgba(0, 255, 65, 0.8);
     text-transform: uppercase;
 }
 
 #status-text {
     font-weight: bold;
-    color: #fff;
-    text-shadow: 0 0 10px #00d9ff;
+    color: #00ff41;
+    text-shadow: 0 0 5px #00ff41;
+    animation: blink 1s infinite;
+}
+
+@keyframes blink {
+
+    0%,
+    100% {
+        opacity: 1;
+    }
+
+    50% {
+        opacity: 0.5;
+    }
 }
 
 #terminal-content {
-    height: 150px;
+    height: 180px;
     overflow: hidden;
-    font-size: 16px;
-    line-height: 1.6;
+    font-size: 14px;
+    line-height: 1.5;
     margin-bottom: 20px;
 }
 
 .log-line {
-    margin-bottom: 5px;
+    margin-bottom: 4px;
     opacity: 0;
-    animation: slideIn 0.3s forwards;
+    animation: typeIn 0.2s forwards;
     white-space: nowrap;
-    text-overflow: ellipsis;
-    overflow: hidden;
+    font-family: 'Share Tech Mono', monospace;
 }
 
 .log-line.log-info {
-    color: #00d9ff;
+    color: #00ff41;
 }
 
-.log-line.log-success {
-    color: #00ffaa;
-    text-shadow: 0 0 5px #00ffaa;
+.log-line.log-root {
+    color: #fff;
+    text-shadow: 0 0 5px #fff;
 }
 
+/* 高亮重要信息 */
 .log-line.log-warn {
     color: #ff0055;
 }
 
 .log-time {
-    color: rgba(255, 255, 255, 0.4);
+    color: rgba(0, 255, 65, 0.5);
     margin-right: 15px;
     font-size: 12px;
 }
 
-@keyframes slideIn {
+@keyframes typeIn {
     from {
-        transform: translateX(-20px);
-        opacity: 0;
+        color: #fff;
     }
 
     to {
-        transform: translateX(0);
+        color: inherit;
         opacity: 1;
     }
 }
@@ -136,7 +148,7 @@
 
 .progress-label {
     font-size: 12px;
-    color: rgba(0, 217, 255, 0.6);
+    color: rgba(0, 255, 65, 0.7);
     margin-bottom: 5px;
     display: flex;
     justify-content: space-between;
@@ -144,56 +156,44 @@
 
 .hacker-progress {
     width: 100%;
-    height: 4px;
-    background: rgba(0, 217, 255, 0.1);
-    border-radius: 2px;
-    overflow: hidden;
+    height: 6px;
+    background: rgba(0, 50, 0, 0.5);
+    border: 1px solid rgba(0, 255, 65, 0.2);
     position: relative;
+    overflow: hidden;
 }
 
 .hacker-progress-bar {
     width: 0%;
     height: 100%;
-    background: #00d9ff;
-    box-shadow: 0 0 15px #00d9ff;
+    background: #00ff41;
+    box-shadow: 0 0 10px #00ff41;
     position: relative;
     transition: width 0.1s linear;
 }
 
-/* 进度条上的光斑 */
-.hacker-progress-bar::after {
-    content: '';
-    position: absolute;
-    top: 0;
-    right: 0;
-    width: 20px;
-    height: 100%;
-    background: #fff;
-    filter: blur(4px);
-}
-
-/* 扫描线效果 - 蓝色版 */
+/* 扫描线效果 */
 .scanlines {
     position: fixed;
     top: 0;
     left: 0;
     width: 100%;
     height: 100%;
-    background: linear-gradient(to bottom, rgba(255, 255, 255, 0), rgba(255, 255, 255, 0) 50%, rgba(0, 0, 0, 0.2) 50%, rgba(0, 0, 0, 0.2));
-    background-size: 100% 4px;
+    background: linear-gradient(to bottom, rgba(255, 255, 255, 0), rgba(255, 255, 255, 0) 50%, rgba(0, 0, 0, 0.3) 50%, rgba(0, 0, 0, 0.3));
+    background-size: 100% 3px;
     z-index: 50;
     pointer-events: none;
-    opacity: 0.3;
+    opacity: 0.2;
 }
 
-/* 晕映 */
+/* 晕映和噪点 */
 .crt-overlay {
     position: fixed;
     top: 0;
     left: 0;
     width: 100%;
     height: 100%;
-    background: radial-gradient(circle, transparent 50%, rgba(0, 10, 30, 0.8) 100%);
+    background: radial-gradient(circle, rgba(0, 255, 65, 0.02) 0%, rgba(0, 0, 0, 0.6) 100%);
     z-index: 51;
     pointer-events: none;
 }
