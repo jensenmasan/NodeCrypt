@@ -2847,7 +2847,96 @@ body.theme-3d-active canvas {
 	}
 }
 
-/* Ensure text is readable on dark background */
+
+/* --- Enhanced Dark Mode Full Coverage (Clean Starfield Support) --- */
+
+/* 1. Scrollbars */
+[data-theme='theme12'] ::-webkit-scrollbar {
+	width: 6px;
+	height: 6px;
+}
+
+[data-theme='theme12'] ::-webkit-scrollbar-track {
+	background: transparent;
+}
+
+[data-theme='theme12'] ::-webkit-scrollbar-thumb {
+	background: rgba(100, 100, 255, 0.3);
+	border-radius: 3px;
+}
+
+[data-theme='theme12'] ::-webkit-scrollbar-thumb:hover {
+	background: rgba(100, 100, 255, 0.6);
+}
+
+/* 2. Modals, Settings, Menus - Deep Glass */
+[data-theme='theme12'] .modal-content,
+[data-theme='theme12'] .settings-panel,
+[data-theme='theme12'] .context-menu,
+[data-theme='theme12'] .more-menu,
+[data-theme='theme12'] .effects-menu {
+	background-color: rgba(8, 12, 20, 0.90) !important;
+	backdrop-filter: blur(12px);
+	-webkit-backdrop-filter: blur(12px);
+	border: 1px solid rgba(100, 100, 255, 0.15);
+	color: #eee;
+	box-shadow: 0 8px 32px 0 rgba(0, 0, 0, 0.7);
+}
+
+/* 3. Inputs & Textareas */
+[data-theme='theme12'] input,
+[data-theme='theme12'] textarea {
+	background: rgba(0, 0, 0, 0.4) !important;
+	color: #fff !important;
+	border: 1px solid rgba(100, 100, 255, 0.2) !important;
+}
+
+[data-theme='theme12'] input::placeholder,
+[data-theme='theme12'] textarea::placeholder {
+	color: rgba(255, 255, 255, 0.5);
+}
+
+/* 4. Buttons */
+[data-theme='theme12'] button.btn-primary,
+[data-theme='theme12'] .login-btn,
+[data-theme='theme12'] .send-btn {
+	background: linear-gradient(135deg, #1e3c72 0%, #2a5298 100%);
+	box-shadow: 0 0 15px rgba(42, 82, 152, 0.4);
+	border: 1px solid rgba(255, 255, 255, 0.1);
+}
+
+/* 5. User List & Hover Effects */
+[data-theme='theme12'] .member {
+	transition: background-color 0.3s;
+}
+
+[data-theme='theme12'] .member:hover {
+	background-color: rgba(100, 150, 255, 0.15);
+}
+
+[data-theme='theme12'] .member.me {
+	background-color: rgba(100, 150, 255, 0.08);
+}
+
+[data-theme='theme12'] .nudge-pulse {
+	animation: nudge-anim 0.4s ease-in-out;
+	background-color: rgba(255, 200, 0, 0.3) !important;
+}
+
+@keyframes nudge-anim {
+	0% {
+		transform: scale(1);
+	}
+
+	50% {
+		transform: scale(1.05);
+	}
+
+	100% {
+		transform: scale(1);
+	}
+}
+
 [data-theme='theme12'] .main,
 [data-theme='theme12'] .sidebar,
 [data-theme='theme12'] .rightbar {
