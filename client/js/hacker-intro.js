@@ -1,171 +1,209 @@
 export function initHackerIntro() {
     const introContainer = document.getElementById('hacker-intro');
-    // 如果没有找到容器，说明没有加载对应HTML结构
     if (!introContainer) return;
 
-    // 清空现有的简单内容，构建新的 DOM 结构
+    // 清空并重建 DOM
     introContainer.innerHTML = `
         <canvas id="matrix-canvas"></canvas>
-        <div id="screen-container">
-            <div class="scanlines"></div>
-            <div class="noise-overlay"></div>
-            <div id="terminal-wrapper">
-                <div class="terminal-header">
-                    <div class="header-left">
-                        <span>NODECRYPT OS v3.0.1</span>
-                        <span>KERNEL: SECURE</span>
-                    </div>
-                    <div class="header-right">System Initializing...</div>
-                </div>
-                <div id="terminal-content"></div>
-                <div class="progress-area">
-                    <div class="progress-label">decrypting_core_assets...</div>
-                    <div class="hacker-progress">
-                        <div class="hacker-progress-bar" id="load-bar"></div>
-                    </div>
+        <div class="crt-overlay"></div>
+        <div class="scanlines"></div>
+        <div id="terminal-wrapper">
+            <div class="terminal-header">
+                <div>NodeCrypt OS v4.0 [SECURE]</div>
+                <div id="status-text">INITIALIZING...</div>
+            </div>
+            <div id="terminal-content"></div>
+            <div class="progress-area">
+                <div class="progress-label">decrypting_assets...</div>
+                <div class="hacker-progress">
+                    <div class="hacker-progress-bar" id="load-bar"></div>
                 </div>
             </div>
         </div>
     `;
 
-    const terminal = document.getElementById('terminal-content');
-    const loadBar = document.getElementById('load-bar');
-    const headerStatus = document.querySelector('.header-right');
-    const progressLabel = document.querySelector('.progress-label');
-
-    // --- 1. Matrix Rain Effect ---
     const canvas = document.getElementById('matrix-canvas');
     const ctx = canvas.getContext('2d');
+    const terminal = document.getElementById('terminal-content');
+    const loadBar = document.getElementById('load-bar');
+    const statusText = document.getElementById('status-text');
 
-    // 自适应 Canvas 大小
-    function resizeCanvas() {
-        canvas.width = window.innerWidth;
-        canvas.height = window.innerHeight;
+    // --- 终极代码雨引擎 ---
+    let width, height;
+    function resize() {
+        width = canvas.width = window.innerWidth;
+        height = canvas.height = window.innerHeight;
     }
-    resizeCanvas();
-    window.addEventListener('resize', resizeCanvas);
+    resize();
+    window.addEventListener('resize', resize);
 
-    const chars = "ABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789@#$%^&*ﾂdｸ";
-    const fontSize = 14;
-    const columns = canvas.width / fontSize;
-    const drops = [];
-    for (let x = 0; x < columns; x++) drops[x] = 1;
+    // 字符集：片假名 + 拉丁 + 数字
+    const chars = "ｱｲｳｴｵｶｷｸｹｺｻｼｽｾｿﾀﾁﾂﾃﾄﾅﾆﾇﾈﾉﾊﾋﾌﾍﾎﾏﾐﾑﾒﾓﾔﾕﾖﾗﾘﾙﾚﾛﾜﾝABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789";
 
-    let matrixInterval;
+    // 我们创建多层雨，每层有不同的属性
+    // Layer: { fontSize, speed, color_alpha, columns[] }
+    // column: { y, chars[], headChar }
+    const layers = [
+        { fontSize: 32, speed: 6, alpha: 0.15, blur: 4 },  // 远景（大而淡，模糊）-> 实际上如果要制造景深，远的应该小，近的大。反过来：小的在后面
+        { fontSize: 16, speed: 3, alpha: 0.3, blur: 2 },   // 中景
+        { fontSize: 24, speed: 7, alpha: 0.95, blur: 0 }   // 近景（大字，清晰，快速）
+    ];
+    // 修正策略：不管3D了，我们做那种满屏覆盖的密集感。
+    // 方案：单一强大的图层，但每列有独立速度。
+
+    const columns = [];
+    const fontSize = 16;
+    let colCount = 0;
+
+    function initMatrix() {
+        colCount = Math.floor(width / fontSize);
+        for (let i = 0; i < colCount; i++) {
+            columns[i] = {
+                x: i * fontSize,
+                y: Math.random() * -height, // 随机初始高度
+                speed: 2 + Math.random() * 5, // 随机速度
+                chars: [], // 存储这一列的尾迹字符
+                trailLen: 15 + Math.floor(Math.random() * 20), // 随机尾迹长度
+                changeRate: Math.random() * 0.1 // 字符变换概率
+            };
+        }
+    }
+    initMatrix();
 
     function drawMatrix() {
-        // 半透明黑色背景，形成拖尾效果
-        ctx.fillStyle = "rgba(0, 0, 0, 0.05)";
-        ctx.fillRect(0, 0, canvas.width, canvas.height);
+        // 拖尾效果：绘制半透明黑色矩形覆盖上一帧
+        ctx.fillStyle = "rgba(0, 0, 0, 0.08)";
+        ctx.fillRect(0, 0, width, height);
 
-        ctx.fillStyle = "#0F0"; // 矩阵雨绿色
-        ctx.font = fontSize + "px 'Courier New'";
+        ctx.font = "bold " + fontSize + "px 'Courier New'";
 
-        for (let i = 0; i < drops.length; i++) {
-            const text = chars[Math.floor(Math.random() * chars.length)];
-            ctx.fillText(text, i * fontSize, drops[i] * fontSize);
+        for (let i = 0; i < colCount; i++) {
+            const col = columns[i];
 
-            if (drops[i] * fontSize > canvas.height && Math.random() > 0.975)
-                drops[i] = 0;
+            // 产生新的头部字符
+            const char = chars[Math.floor(Math.random() * chars.length)];
 
-            drops[i]++;
+            // 绘制头部（高亮白）
+            ctx.fillStyle = "#fff";
+            ctx.shadowBlur = 10;
+            ctx.shadowColor = "#fff";
+            ctx.fillText(char, col.x, col.y);
+
+            // 绘制尾迹（绿色渐变）
+            // 这里我们不存储复杂的尾迹数组，而是用简单的重绘技巧：
+            // 刚才的 rgba(0,0,0,0.08) 已经在帮我们做尾迹渐隐了。
+            // 我们只需要在头部后面补一刀绿色的，让它看起来不像头部那么白
+
+            // 为了让效果更好，我们还是得手动画几个上一帧的位置？
+            // 还是简单的：黑色蒙版法已经足够经典。
+            // 增强：每列不仅仅是画头，有概率重绘上面的字符成绿色，防止头部一直是白色拖尾
+
+            ctx.shadowBlur = 0;
+            ctx.fillStyle = "#0f0";
+            // 在当前头部的上方一点点重绘成绿色，模拟"冷却"
+            ctx.fillText(chars[Math.floor(Math.random() * chars.length)], col.x, col.y - fontSize * 2);
+
+            // 移动
+            col.y += col.speed;
+
+            // 循环
+            if (col.y > height && Math.random() > 0.98) {
+                col.y = -fontSize;
+                col.speed = 2 + Math.random() * 5;
+            }
         }
     }
 
-    // 启动矩阵雨
-    matrixInterval = setInterval(drawMatrix, 33);
+    // 60FPS 循环
+    let animationId;
+    function loop() {
+        drawMatrix();
+        animationId = requestAnimationFrame(loop);
+    }
+    loop();
 
 
-    // --- 2. System Logs ---
+    // --- 2. System Boot Logs ---
     const logs = [
-        { msg: "Booting NodeCrypt Kernel...", type: 'log-system', delay: 200 },
-        { msg: "Mounting virtual file system...", delay: 50 },
-        { msg: "Loading security protocol: AES-256-GCM", delay: 80 },
-        { msg: "Loading security protocol: ECDH-P521", delay: 80 },
-        { msg: "Verifying integrity of local modules...", delay: 200 },
-        { msg: "[OK] Core integrity check passed.", type: 'log-success', delay: 50 },
-        { msg: "Initializing decentralized network interface...", type: 'log-info', delay: 150 },
-        { msg: "Scanning for nearby nodes...", delay: 100 },
-        { msg: "Found 0 peer(s)... switching to standalone mode.", type: 'log-warn', delay: 100 },
-        { msg: "Allocating 3D graphics memory (VRAM)...", delay: 120 },
-        { msg: "Compiling shaders for particle engine...", delay: 150 },
-        { msg: "Activating neural interface bridge...", delay: 100 },
-        { msg: "Calibrating 3D gesture sensors...", delay: 100 },
-        { msg: "Establishing secure tunnel to nowhere...", delay: 100 },
-        { msg: "Bypassing mainstream surveillance...", type: 'log-success', delay: 200 },
-        { msg: "System Ready. Welcome, User.", type: 'log-system', delay: 600 }
+        { msg: "Wake up, Neo...", type: 'log-system', delay: 1000 }, // 致敬
+        { msg: "The Matrix has you...", delay: 1000 },
+        { msg: "Follow the white rabbit.", delay: 1000 },
+        { msg: "Knock, knock, Neo.", delay: 800 },
+        { msg: "Initializing NodeCrypt Kernel...", type: 'log-info', delay: 50 }, // 回到正题
+        { msg: "Loading decentralized ledger...", delay: 50 },
+        { msg: "Bypassing corporate firewalls...", delay: 50 },
+        { msg: "Mounting secure volumes...", delay: 50 },
+        { msg: "Injecting payload: client_bundle.js", delay: 100 },
+        { msg: "Establishing secure handshake...", delay: 100 },
+        { msg: "Access Granted. Level 9 Authorization.", type: 'log-success', delay: 200 },
+        { msg: "Loading 3D Environment...", delay: 100 },
+        { msg: "System Ready.", type: 'log-success', delay: 500 }
     ];
 
     let logIndex = 0;
 
-    // 生成带时间戳的行
-    function createLogLine(log) {
-        const now = new Date();
-        const timeStr = `${now.getHours().toString().padStart(2, '0')}:${now.getMinutes().toString().padStart(2, '0')}:${now.getSeconds().toString().padStart(2, '0')}.${Math.floor(Math.random() * 999).toString().padStart(3, '0')}`;
-
-        const line = document.createElement('div');
-        line.className = `log-line ${log.type || ''}`;
-        line.innerHTML = `<span class="log-time">[${timeStr}]</span><span class="log-message">${log.msg}</span>`;
-        return line;
-    }
-
-    function processLog() {
+    function addLog() {
         if (logIndex >= logs.length) {
-            completeBoot();
+            finishBoot();
             return;
         }
 
         const log = logs[logIndex];
-        const lineElement = createLogLine(log);
-        terminal.appendChild(lineElement);
+        const div = document.createElement('div');
+        div.className = `log-line ${log.type || ''}`;
 
-        // 自动滚动
-        // 保持只显示最近几行，模拟真实终端刷新，防止DOM过多（虽然后面会销毁）
-        if (terminal.children.length > 15) {
+        // 时间戳
+        const now = new Date();
+        const time = `${now.getHours().toString().padStart(2, '0')}:${now.getMinutes().toString().padStart(2, '0')}:${now.getSeconds().toString().padStart(2, '0')}`;
+
+        div.innerHTML = `<span class="log-time">[${time}]</span><span class="log-message">${log.msg}</span>`;
+        terminal.appendChild(div);
+
+        // 保持只显示最后 12 行
+        if (terminal.children.length > 12) {
             terminal.removeChild(terminal.children[0]);
         }
 
-        // 更新进度条
-        const progress = Math.min(100, Math.floor(((logIndex + 1) / logs.length) * 100));
-        loadBar.style.width = `${progress}%`;
-        progressLabel.innerText = `LOADING SYSTEM MODULES... ${progress}%`;
+        // 进度条
+        const pct = Math.floor(((logIndex + 1) / logs.length) * 100);
+        loadBar.style.width = pct + "%";
 
-        // 随机停顿增加真实感
-        const randomDelay = log.delay + (Math.random() * 50 - 25);
+        // 更新状态文字
+        statusText.innerText = `LOADING... ${pct}%`;
 
         logIndex++;
-        setTimeout(processLog, randomDelay);
+
+        // 只有前几行（黑客帝国台词）慢一点，后面飞快
+        let realDelay = log.delay;
+        if (logIndex > 4) realDelay = 30 + Math.random() * 50; // 极速刷屏
+
+        setTimeout(addLog, realDelay);
     }
 
-    // --- 3. Completion & Transition ---
-    function completeBoot() {
-        headerStatus.innerText = "SYSTEM ONLINE";
-        headerStatus.style.color = "#0f0";
-        headerStatus.style.animation = "none";
-        loadBar.style.boxShadow = "0 0 20px #fff"; // 亮一下
+    setTimeout(addLog, 1000); // 1秒后开始出字
+
+
+    // --- 3. Finish ---
+    function finishBoot() {
+        statusText.innerText = "SYSTEM READY";
+        statusText.style.color = "#0f0";
+        statusText.style.textShadow = "0 0 10px #0f0";
+
+        loadBar.style.width = "100%";
         loadBar.style.background = "#fff";
+        loadBar.style.boxShadow = "0 0 15px #fff";
 
         setTimeout(() => {
-            // 开始淡出
+            // 爆炸式淡出
             introContainer.classList.add('fade-out');
-
-            // 通知 CSS 3D 粒子系统淡入
             document.body.classList.add('intro-finished');
 
-            // 停止矩阵雨以节省性能
+            // 2秒后彻底销毁，释放内存
             setTimeout(() => {
-                clearInterval(matrixInterval);
-                introContainer.style.display = 'none';
-                /*
-                 * 注意：这里我们移除了 DOM 元素，所以之后无法再次播放
-                 * 如果需要重新播放，可能需要 reload 页面
-                 */
-                introContainer.innerHTML = '';
-            }, 1500); // 等待淡出动画结束
+                cancelAnimationFrame(animationId);
+                introContainer.remove();
+            }, 2000);
 
         }, 800);
     }
-
-    // Start Sequence
-    setTimeout(processLog, 500);
 }
