@@ -49,8 +49,7 @@ export const THEMES = [
 	},
 	{
 		id: 'theme12',
-		background: 'url(https://images.unsplash.com/photo-1534796636912-3b95b3ab5986?ixlib=rb-1.2.1&auto=format&fit=crop&w=1920&q=80)' // Immersive Universe
-		// Fallback or if image fails: 'radial-gradient(circle at 50% 100%, #1b2735 0%, #090a0f 100%)'
+		background: 'rgba(10, 10, 16, 0.6)' // Transparent for 3D Background
 	},
 	{
 		id: 'theme13',
@@ -118,14 +117,33 @@ export function applyTheme(themeId) {
 		mainElement.style.backgroundImage = '';
 		mainElement.style.background = '';
 
-		// Apply new background
-		if (theme.background.startsWith('url(')) {
-			mainElement.style.backgroundImage = theme.background;
-			mainElement.style.backgroundSize = '100% 100%';
-			mainElement.style.backgroundRepeat = 'no-repeat';
-			mainElement.style.backgroundPosition = 'center';
+		// Handle Special 3D Background for Theme 12
+		if (themeId === 'theme12') {
+			if (typeof window.init3DGestureSystem === 'function') {
+				window.init3DGestureSystem();
+			}
+			// Make sure main element is translucent
+			mainElement.style.background = 'rgba(10, 10, 16, 0.4)'; // Ensure visibility of stars
+			mainElement.style.backgroundImage = '';
+
+			// Add helper class to body for global styles (like z-indexes)
+			document.body.classList.add('theme-3d-active');
 		} else {
-			mainElement.style.background = theme.background;
+			// Cleanup 3D background if leaving theme12
+			if (typeof window.cleanup3DGestureSystem === 'function') {
+				window.cleanup3DGestureSystem();
+			}
+			document.body.classList.remove('theme-3d-active');
+
+			// Apply new background
+			if (theme.background.startsWith('url(')) {
+				mainElement.style.backgroundImage = theme.background;
+				mainElement.style.backgroundSize = '100% 100%';
+				mainElement.style.backgroundRepeat = 'no-repeat';
+				mainElement.style.backgroundPosition = 'center';
+			} else {
+				mainElement.style.background = theme.background;
+			}
 		}
 		// Set data-theme attribute for CSS targeting
 		document.body.setAttribute('data-theme', themeId);

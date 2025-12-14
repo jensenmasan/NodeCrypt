@@ -2764,58 +2764,56 @@ h2 {
 	}
 }
 
-/* Global Dynamic Cosmic Background for Dark Mode (Theme 12) */
-/* 黑夜模式全局动态宇宙背景 */
+/* Global Dynamic Cosmic Background for Dark Mode (Theme 12) - 3D Particle Version */
 [data-theme='theme12'] body {
-	background: radial-gradient(ellipse at bottom, #090a0f 0%, #000000 100%);
-	/* Ensure animation container covers everything */
-	position: relative;
+	background: #050505;
+	/* Deep black backing for stars */
 	overflow-x: hidden;
-	/* Prevent horizontal scroll from stars */
 }
 
-/* Cosmic Stars Layer - Global */
-[data-theme='theme12'] body::before {
-	content: " ";
-	position: fixed;
-	/* Fixed position to stay while scrolling */
+/* Ensure 3D Canvas is visible */
+body.theme-3d-active canvas {
+	position: fixed !important;
 	top: 0;
 	left: 0;
-	width: 100%;
-	height: 100%;
-	background: transparent;
-	/* Procedural stars using box-shadow for performance vs many divs */
-	background-image:
-		radial-gradient(2px 2px at 20px 30px, #eee, rgba(0, 0, 0, 0)),
-		radial-gradient(2px 2px at 40px 70px, #fff, rgba(0, 0, 0, 0)),
-		radial-gradient(2px 2px at 50px 160px, #ddd, rgba(0, 0, 0, 0)),
-		radial-gradient(2px 2px at 90px 40px, #fff, rgba(0, 0, 0, 0)),
-		radial-gradient(2px 2px at 130px 80px, #fff, rgba(0, 0, 0, 0)),
-		radial-gradient(2px 2px at 160px 120px, #ddd, rgba(0, 0, 0, 0));
-	background-repeat: repeat;
-	background-size: 200px 200px;
-	animation: global-star-move 100s linear infinite;
-	opacity: 0.5;
-	z-index: -2;
-	pointer-events: none;
+	width: 100vw;
+	height: 100vh;
+	z-index: 0;
+	/* Lowest level */
+	display: block !important;
+	opacity: 1 !important;
+	pointer-events: auto;
+	/* Allow interaction with stars */
 }
 
-/* Nebula/Aurora Layer - Global */
+/* Ensure UI sits above canvas with glass effect */
+[data-theme='theme12'] .main,
+[data-theme='theme12'] .sidebar,
+[data-theme='theme12'] .rightbar {
+	background-color: rgba(10, 16, 25, 0.45) !important;
+	/* Semi-transparent glass */
+	backdrop-filter: blur(4px);
+	/* Slight blur to make text readable */
+	-webkit-backdrop-filter: blur(4px);
+	z-index: 10;
+	/* Above canvas */
+	position: relative;
+}
+
+[data-theme='theme12'] .message-text,
+[data-theme='theme12'] .group-title,
+[data-theme='theme12'] .member-name {
+	text-shadow: 0 0 4px rgba(0, 0, 0, 0.8);
+	/* Text shadow for legibility */
+}
+
+/* Remove CSS Stars if we are using JS 3D Stars */
+[data-theme='theme12'] body::before {
+	display: none;
+}
+
 [data-theme='theme12'] body::after {
-	content: " ";
-	position: fixed;
-	top: -50%;
-	left: -50%;
-	width: 200%;
-	height: 200%;
-	background:
-		radial-gradient(circle at 50% 50%, rgba(30, 60, 114, 0.15), transparent 50%),
-		radial-gradient(circle at 20% 80%, rgba(76, 29, 149, 0.1), transparent 40%),
-		radial-gradient(circle at 80% 20%, rgba(59, 130, 246, 0.1), transparent 40%);
-	filter: blur(60px);
-	animation: global-nebula-flow 30s ease-in-out infinite alternate;
-	z-index: -1;
-	pointer-events: none;
+	display: none;
 }
 
 @keyframes global-star-move {
