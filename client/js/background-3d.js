@@ -225,7 +225,7 @@ function cleanup3DGestureSystem_deprecated() {
     geometry = null;
 }
 
-function onWindowResize() {
+function onWindowResize_deprecated() {
     if (!camera || !renderer) return;
     windowHalfX = window.innerWidth / 2;
     windowHalfY = window.innerHeight / 2;
@@ -234,7 +234,7 @@ function onWindowResize() {
     renderer.setSize(window.innerWidth, window.innerHeight);
 }
 
-function onDocumentMouseMove(event) {
+function onDocumentMouseMove_deprecated(event) {
     if (!event) return;
     // Normalize mouse position -1 to 1
     mouse.x = (event.clientX - window.innerWidth / 2) / (window.innerWidth / 2);
