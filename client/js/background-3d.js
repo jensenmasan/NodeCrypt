@@ -80,7 +80,7 @@ const colorPalette = {
 };
 
 // --- 2. 初始化系统 ---
-function init3DGestureSystem_deprecated() {
+export function init3DGestureSystem() {
     // 1. Scene & Camera
     scene = new THREE.Scene();
     // 稍微带一点迷雾，增强深邃感
@@ -204,7 +204,7 @@ function init3DGestureSystem_deprecated() {
     animate();
 }
 
-function cleanup3DGestureSystem_deprecated() {
+export function cleanup3DGestureSystem() {
     if (animationFrameId) cancelAnimationFrame(animationFrameId);
 
     // Remove canvas
@@ -1145,17 +1145,7 @@ function createPointsFromCanvas(text, isPattern = false) {
 // 用于跟踪是否已初始化
 let isInitialized = false;
 
-export function init3DGestureSystem() {
-    if (isInitialized) return;
-    isInitialized = true;
 
-    initThree();
-    initMediaPipe();
-
-    initUIControls(); // 初始化UI事件
-    initAutoHideUI(); // 初始化自动隐藏逻辑
-    animate();
-}
 
 // 新增：UI自动隐藏逻辑
 function initAutoHideUI() {
