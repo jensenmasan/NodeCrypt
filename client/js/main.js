@@ -675,6 +675,7 @@ window.startSakura = Effects.startSakura;
 window.startLightning = Effects.startLightning;
 window.startMatrix = Effects.startMatrix;
 window.startStressRelief = Effects.startStressRelief;
+window.startNewYear = Effects.startNewYear;
 
 // Listen for fireworks trigger event (from logo click)
 window.addEventListener('triggerFireworks', () => {
@@ -685,14 +686,14 @@ window.addEventListener('triggerFireworks', () => {
 // 触发本地特效并向远程发送信号
 function triggerEffect(effectName) {
 	// Local trigger
-	const method = 'start' + effectName.charAt(0).toUpperCase() + effectName.slice(1).replace(/_([a-z])/g, (g) => g[1].toUpperCase());
+	// Convert snake_case to CamelCase
+	const method = 'start' + effectName.split('_').map(w => w.charAt(0).toUpperCase() + w.slice(1)).join('');
 
 	if (Effects[method]) {
 		Effects[method]();
 	} else {
-		// Fallback
+		// Fallback or explicit handling
 		if (effectName === 'fireworks') Effects.startFireworks();
-		if (effectName === 'matrix') Effects.startMatrix();
 	}
 
 	// Send Signal
@@ -725,6 +726,7 @@ if (effectsBtn) {
 	effectsMenu.className = 'effects-menu';
 	// Menu content
 	effectsMenu.innerHTML = `
+        <div class="effect-item" data-effect="new_year" style="color:#ff0; font-weight:bold;"><span class="effect-icon">🧧</span> Happy New Year</div>
         <div class="effect-item" data-effect="fireworks"><span class="effect-icon">🎆</span> Fireworks</div>
         <div class="effect-item" data-effect="starry_sky"><span class="effect-icon">🌌</span> Galaxy</div>
         <div class="effect-item" data-effect="confetti"><span class="effect-icon">🎊</span> Celebrate</div>
@@ -739,14 +741,33 @@ if (effectsBtn) {
     `;
 	effectsBtn.parentElement.appendChild(effectsMenu);
 
-	effectsBtn.onclick = (e) => {
+	const toggleMenu = (e) => {
+		e.preventDefault(); // Stop ghost clicks
 		e.stopPropagation();
 		effectsMenu.classList.toggle('show');
 		effectsBtn.classList.toggle('active');
 	};
 
-	effectsMenu.addEventListener('click', (e) => {
+	// Use touchstart/touchend for mobile responsiveness (faster than click)
+	// We bind both but manage defaults
+	effectsBtn.addEventListener('click', (e) => {
+		// Just rely on click for stability if preventing default on touch
 		e.stopPropagation();
+		effectsMenu.classList.toggle('show');
+		effectsBtn.classList.toggle('active');
+	});
+
+	// Add direct touchend handling for mobile if click is flaky
+	effectsBtn.addEventListener('touchend', (e) => {
+		// If we handle here, prevent click
+		e.preventDefault();
+		e.stopPropagation();
+		effectsMenu.classList.toggle('show');
+		effectsBtn.classList.toggle('active');
+	}, { passive: false });
+
+	const handleItemClick = (e) => {
+		e.stopPropagation(); // Stop bubbling
 		const item = e.target.closest('.effect-item');
 		if (item) {
 			const effect = item.dataset.effect;
@@ -754,7 +775,15 @@ if (effectsBtn) {
 			effectsMenu.classList.remove('show');
 			effectsBtn.classList.remove('active');
 		}
-	});
+	};
+
+	effectsMenu.addEventListener('click', handleItemClick);
+	// Explicit regular touch handling
+	effectsMenu.addEventListener('touchend', (e) => {
+		e.preventDefault();
+		handleItemClick(e);
+	}, { passive: false });
+
 
 	// Close on click outside
 	document.addEventListener('click', (e) => {

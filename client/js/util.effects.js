@@ -672,6 +672,68 @@ function startStressRelief() {
     loop();
 }
 
+// 12. Happy New Year 2025
+function startNewYear() {
+    startFireworks(); // Base fireworks
+
+    const id = 'new-year-canvas';
+    const canvas = createOverlayCanvas(id);
+    if (!canvas) return;
+    const ctx = canvas.getContext('2d');
+
+    let frameId;
+    const duration = 12000;
+    const startTime = Date.now();
+
+    // Text properties
+    const text = "HAPPY NEW YEAR";
+    const subText = "2025"; // Or "2024"? User said "Happy New Year", usually implies upcoming. Let's start with generic or 2025. 2025 is next.
+    // Use "祝大家新年快乐" as requested by user actually: "再加一个祝大家新年快乐特效"
+    const cnText = "祝大家新年快乐";
+
+    let scale = 0;
+
+    function loop() {
+        if (Date.now() - startTime > duration) {
+            cancelAnimationFrame(frameId);
+            canvas.remove();
+            return;
+        }
+        frameId = requestAnimationFrame(loop);
+        ctx.clearRect(0, 0, width, height);
+
+        const elapsed = Date.now() - startTime;
+        if (elapsed < 1000) scale = elapsed / 1000;
+        else scale = 1 + Math.sin(elapsed * 0.002) * 0.05;
+
+        ctx.save();
+        ctx.translate(width / 2, height / 2);
+        ctx.scale(scale, scale);
+
+        ctx.textAlign = 'center';
+        ctx.textBaseline = 'middle';
+
+        // Glow
+        ctx.shadowBlur = 20 + Math.abs(Math.sin(elapsed * 0.005)) * 20;
+        ctx.shadowColor = '#FFD700'; // Gold
+
+        // Main Text
+        ctx.font = 'bold 8vmin "Microsoft YaHei", sans-serif';
+        const hue = (elapsed * 0.1) % 360;
+        ctx.fillStyle = `hsl(${hue}, 100%, 60%)`;
+        ctx.fillText(cnText, 0, -50);
+
+        // Sub Text
+        ctx.font = 'bold 15vmin "Arial", sans-serif';
+        ctx.fillStyle = '#ff4d4d'; // Red
+        ctx.shadowColor = '#ff0000';
+        ctx.fillText("2025", 0, 80);
+
+        ctx.restore();
+    }
+    loop();
+}
+
 export const Effects = {
     startFireworks,
     startStarrySky,
@@ -683,5 +745,6 @@ export const Effects = {
     startSakura,
     startLightning,
     startMatrix,
-    startStressRelief
+    startStressRelief,
+    startNewYear
 };

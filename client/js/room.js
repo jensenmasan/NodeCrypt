@@ -286,7 +286,7 @@ export function handleClientMessage(idx, msg) {
 				fireworks: '🎆', starry_sky: '🌌', confetti: '🎊',
 				hearts: '❤', bubbles: '🫧', snow: '❄',
 				rain: '🌧', sakura: '🌸', lightning: '⚡', matrix: '💻',
-				stress_relief: '💥'
+				stress_relief: '💥', new_year: '🧧'
 			};
 			if (iconMap[effectType]) icon = iconMap[effectType];
 
@@ -303,6 +303,7 @@ export function handleClientMessage(idx, msg) {
 				lightning: ['Lightning', '闪电'],
 				matrix: ['Matrix', '代码雨'],
 				stress_relief: ['Destruction', '解压'],
+				new_year: ['Happy New Year', '新年快乐']
 			};
 
 

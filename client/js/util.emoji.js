@@ -54,14 +54,29 @@ export function setupEmojiPicker({
 
 		// Button click toggles picker
 		// 按钮点击切换选择器显示
-		on(btn, 'click', (ev) => {
+		const togglePicker = (ev) => {
+			ev.preventDefault();
 			ev.stopPropagation();
 			if (picker.style.display === 'none') {
 				showPickerWithAnimation();
 			} else {
 				hidePickerWithAnimation();
 			}
+		};
+
+		on(btn, 'click', (ev) => {
+			ev.stopPropagation();
+			if (picker.style.display === 'none') showPickerWithAnimation();
+			else hidePickerWithAnimation();
 		});
+
+		on(btn, 'touchend', (ev) => {
+			ev.preventDefault();
+			ev.stopPropagation();
+			if (picker.style.display === 'none') showPickerWithAnimation();
+			else hidePickerWithAnimation();
+		});
+
 		// Hide picker when clicking outside
 		// 点击外部隐藏选择器
 		on(document, 'click', (ev) => {
@@ -69,6 +84,12 @@ export function setupEmojiPicker({
 				hidePickerWithAnimation();
 			}
 		});
+		on(document, 'touchend', (ev) => {
+			if (!picker.contains(ev.target) && ev.target !== btn && !btn.contains(ev.target)) {
+				hidePickerWithAnimation();
+			}
+		});
+
 	} catch (error) {
 		console.error('Failed to initialize emoji picker:', error)
 	}
@@ -82,13 +103,15 @@ function insertEmoji(input, emoji) {
 		let inserted = false;
 		// Try execCommand first (best for preserving undo buffer and events)
 		if (document.queryCommandSupported('insertText')) {
-			inserted = document.execCommand('insertText', false, emoji);
+			try {
+				inserted = document.execCommand('insertText', false, emoji);
+			} catch (e) { }
 		}
 
 		if (!inserted) {
 			if (document.getSelection && window.getSelection) {
 				let sel = window.getSelection();
-				if (sel.rangeCount) {
+				if (sel.rangeCount > 0 && input.contains(sel.anchorNode)) {
 					let range = sel.getRangeAt(0);
 					range.deleteContents();
 					range.insertNode(document.createTextNode(emoji));
@@ -102,14 +125,17 @@ function insertEmoji(input, emoji) {
 
 		// Fallback: Append relative to cursor or end
 		if (!inserted) {
-			input.innerText += emoji;
+			// Check if input is empty and clear potential br tag? No, just append
+			input.innerHTML += emoji;
 			// Move cursor to end
-			const range = document.createRange();
-			const sel = window.getSelection();
-			range.selectNodeContents(input);
-			range.collapse(false);
-			sel.removeAllRanges();
-			sel.addRange(range);
+			try {
+				const range = document.createRange();
+				const sel = window.getSelection();
+				range.selectNodeContents(input);
+				range.collapse(false);
+				sel.removeAllRanges();
+				sel.addRange(range);
+			} catch (e) { }
 		}
 
 		input.dispatchEvent(new Event('input', { bubbles: true }));
