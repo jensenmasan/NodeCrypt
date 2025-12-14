@@ -39,7 +39,7 @@ const AUTO_SWITCH_INTERVAL = 300;
 // 终极自动轮播内容：30+ 惊艳场景自动循环
 // 终极自动轮播内容：30+ 惊艳场景自动循环
 const autoTexts = [
-    "CUSTOM:马老师祝您新年快乐", "HEART", "FIREWORKS", "2025",
+    "NEWYEAR_PREMIUM", "HEART", "FIREWORKS",
     "OLYMPIC", "CAT", "DOG", "UNIVERSE",
     "WORLD", "CHINA", "CHONGQING",
     "GALAXY", "DNA", "ATOM", "SPHERE", "WAVE", "BUTTERFLY", "TORNADO", "DIAMOND",
@@ -294,6 +294,44 @@ function updateTextShape(text) {
                     starA.x * (1 - t) + starB.x * t,
                     starA.y * (1 - t) + starB.y * t + curve,
                     starA.z * (1 - t) + starB.z * t
+                );
+            }
+        }
+    } else if (text === "NEWYEAR_PREMIUM") {
+        // 🧧 新年快乐 - 高级流光溢彩 3D 版
+        const points = createPointsFromCanvas("新年快乐");
+        const pLen = points.length;
+
+        // 创建多层 3D 效果
+        for (let i = 0; i < particleCount; i++) {
+            if (i < pLen * 3) {
+                // 复用点阵，创建 3 层深度
+                const layer = Math.floor(i / pLen); // 0, 1, 2
+                const pIndex = i % pLen;
+                const p = points[pIndex];
+
+                // 层级偏移 (前中后)
+                const zOffset = (layer - 1) * 15; // -15, 0, 15
+
+                // 每一层稍微放大一点点，形成透视感
+                const scale = 1.0 + Math.abs(layer - 1) * 0.1;
+
+                targetPositions[i] = new THREE.Vector3(
+                    p.x * scale,
+                    p.y * scale,
+                    p.z + zOffset
+                );
+            } else {
+                // 背景氛围粒子：金色流光
+                // 螺旋上升流场
+                const angle = Math.random() * Math.PI * 2;
+                const radius = 100 + Math.random() * 200;
+                const height = (Math.random() - 0.5) * 300;
+
+                targetPositions[i] = new THREE.Vector3(
+                    Math.cos(angle) * radius,
+                    height,
+                    Math.sin(angle) * radius
                 );
             }
         }
@@ -1756,11 +1794,11 @@ function animate() {
 
             // 智能颜色匹配 - Premium Loop Colors (Expanded)
             let colorKey = 0;
-            if (nextText.includes("马老师") || nextText.includes("新年") || nextText.includes("万事") || nextText.includes("财富")) {
+            if (nextText === "NEWYEAR_PREMIUM" || nextText.includes("马老师") || nextText.includes("新年") || nextText.includes("万事") || nextText.includes("财富")) {
                 colorKey = 6; // Premium Red/Gold
             } else if (nextText === "HEART" || nextText === "BUTTERFLY" || nextText === "FLOWER") {
                 colorKey = 4; // Neon Purple / Pink
-            } else if (nextText === "2025" || nextText === "FIREWORKS" || nextText === "DIAMOND" || nextText === "SPHERE") {
+            } else if (nextText === "FIREWORKS" || nextText === "DIAMOND" || nextText === "SPHERE") {
                 colorKey = 3; // Royal Gold
             } else if (nextText === "TECH" || nextText === "DNA" || nextText === "ATOM" || nextText === "NodeCrypt") {
                 colorKey = 1; // Cyber Green
@@ -1807,6 +1845,13 @@ function animate() {
             // Actually simplest is just rotate slightly and let particles shimmer.
             // We can animate the 'helmet' particles separately if we tracked them, but whole scene is easier.
             walkingOffset.set(0, 0, 0);
+        } else if (currentModel === "NEWYEAR_PREMIUM") {
+            // 🧧 新年快乐：流光溢彩旋转 + 波动
+            // 缓慢旋转展示3D厚度
+            scene.rotation.y = Math.sin(time * 0.5) * 0.3;
+            // 像波浪一样飘动
+            walkingOffset.x = Math.sin(time * 2) * 5;
+            walkingOffset.y = Math.cos(time * 1.5) * 5;
         } else {
             walkingOffset.set(0, 0, 0); // Reset
         }
@@ -2081,6 +2126,14 @@ function animate() {
     // Auto Mode 已经在上方逻辑中控制了 camera.position.z
     // 这里只把 LookAt 锁定中心，确保 "融入" 感
     camera.lookAt(0, 0, 0);
+
+    // 新增：手动滑动交互（针对 NEWYEAR_PREMIUM 和其他 3D 模型）
+    // 如果不在自动模式，允许用户水平滑动旋转场景
+    if (!isAutoMode && (currentText === "NEWYEAR_PREMIUM" || currentText === "HEART" || currentText === "SATURN")) {
+        // 使用鼠标/触摸的 X 轴偏移来控制场景旋转
+        // mouse.x 范围 -1 到 1
+        scene.rotation.y = mouse.x * 1.5; // 最大旋转约 90 度
+    }
 
     renderer.render(scene, camera);
 }
