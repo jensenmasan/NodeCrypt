@@ -285,7 +285,8 @@ export function handleClientMessage(idx, msg) {
 			const iconMap = {
 				fireworks: '🎆', starry_sky: '🌌', confetti: '🎊',
 				hearts: '❤', bubbles: '🫧', snow: '❄',
-				rain: '🌧', sakura: '🌸', lightning: '⚡', matrix: '💻'
+				rain: '🌧', sakura: '🌸', lightning: '⚡', matrix: '💻',
+				stress_relief: '💥'
 			};
 			if (iconMap[effectType]) icon = iconMap[effectType];
 
@@ -300,8 +301,10 @@ export function handleClientMessage(idx, msg) {
 				rain: ['Rain', '下雨'],
 				sakura: ['Sakura', '樱花'],
 				lightning: ['Lightning', '闪电'],
-				matrix: ['Matrix', '代码雨']
+				matrix: ['Matrix', '代码雨'],
+				stress_relief: ['Destruction', '解压'],
 			};
+
 
 			if (lang === 'zh') {
 				actionText = '展示了';

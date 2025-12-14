@@ -264,7 +264,7 @@ function startBubbles() {
     loop();
 }
 
-// 6. Snow
+// 6. Snow (Realistic)
 function startSnow() {
     const id = 'snow-canvas';
     const canvas = createOverlayCanvas(id);
@@ -272,19 +272,24 @@ function startSnow() {
     const ctx = canvas.getContext('2d');
 
     const particles = [];
-    for (let i = 0; i < 200; i++) {
+    const count = 300; // More snow
+
+    for (let i = 0; i < count; i++) {
         particles.push({
             x: Math.random() * width,
             y: Math.random() * height,
-            r: Math.random() * 3 + 1,
-            speed: Math.random() * 2 + 0.5,
-            drift: Math.random() * 0.5
+            r: Math.random() * 2 + 1, // Size
+            speed: Math.random() * 1 + 0.5, // Falling speed
+            drift: Math.random(), // Drifting offset
+            driftSpeed: Math.random() * 0.02 + 0.01,
+            opacity: Math.random() * 0.5 + 0.5
         });
     }
 
     let frameId;
-    const duration = 10000;
+    const duration = 15000; // Longer duration
     const startTime = Date.now();
+    let tick = 0;
 
     function loop() {
         if (Date.now() - startTime > duration) {
@@ -294,21 +299,29 @@ function startSnow() {
         }
         frameId = requestAnimationFrame(loop);
         ctx.clearRect(0, 0, width, height);
+        tick += 0.01;
 
         ctx.fillStyle = '#fff';
-        particles.forEach(p => {
-            p.y += p.speed;
-            p.x += Math.sin(p.y * 0.01) + p.drift;
 
+        particles.forEach(p => {
+            // Swaying motion
+            p.x += Math.sin(tick + p.drift) * 0.5;
+            p.y += p.speed;
+
+            ctx.globalAlpha = p.opacity;
             ctx.beginPath();
             ctx.arc(p.x, p.y, p.r, 0, Math.PI * 2);
             ctx.fill();
 
+            // Wrap around
             if (p.y > height) {
                 p.y = -5;
                 p.x = Math.random() * width;
             }
+            if (p.x > width) p.x = 0;
+            if (p.x < 0) p.x = width;
         });
+        ctx.globalAlpha = 1;
     }
     loop();
 }
@@ -369,8 +382,6 @@ function startSakura() {
     const ctx = canvas.getContext('2d');
 
     const petals = [];
-    const petalImg = new Image();
-    // Simple drawing fallback or use image? Let's simply draw shapes.
 
     for (let i = 0; i < 100; i++) {
         petals.push({
@@ -423,33 +434,50 @@ function startSakura() {
     loop();
 }
 
-// 9. Lightning
+// 9. Lightning (Realistic Recursive)
 function startLightning() {
     const id = 'lightning-canvas';
     const canvas = createOverlayCanvas(id);
     if (!canvas) return;
     const ctx = canvas.getContext('2d');
 
-    let flash = 0;
-
     let frameId;
-    const duration = 2000;
+    const duration = 3000; // Short bursts
     const startTime = Date.now();
+    let bolts = [];
 
-    function drawBolt(x, y) {
-        ctx.strokeStyle = '#fff';
-        ctx.lineWidth = 3;
-        ctx.beginPath();
-        ctx.moveTo(x, y);
+    // Create a lightning bolt with branches
+    function createBolt(x, y, length, angle) {
+        let segments = [];
+        let currentX = x;
+        let currentY = y;
+        let leftLength = length;
 
-        let currX = x;
-        let currY = y;
-        while (currY < height) {
-            currY += Math.random() * 50;
-            currX += (Math.random() - 0.5) * 50;
-            ctx.lineTo(currX, currY);
+        while (leftLength > 0 && currentY < height) {
+            const segmentLen = Math.random() * 20 + 10;
+            const angleVar = (Math.random() - 0.5) * 1; // Jitter
+            const newAngle = angle + angleVar;
+
+            const nextX = currentX + Math.cos(newAngle) * segmentLen;
+            const nextY = currentY + Math.sin(newAngle) * segmentLen; // Mostly down
+
+            segments.push({ x1: currentX, y1: currentY, x2: nextX, y2: nextY });
+
+            // Branch change
+            if (Math.random() < 0.2 && length > 50) {
+                // Recursively create smaller bolt
+                bolts.push({
+                    segments: createBolt(currentX, currentY, length * 0.5, newAngle + (Math.random() > 0.5 ? 0.5 : -0.5)).segments,
+                    alpha: 1,
+                    life: 10
+                });
+            }
+
+            currentX = nextX;
+            currentY = nextY;
+            leftLength -= segmentLen;
         }
-        ctx.stroke();
+        return { segments, alpha: 1, life: 10 + Math.random() * 10 };
     }
 
     function loop() {
@@ -461,23 +489,44 @@ function startLightning() {
         frameId = requestAnimationFrame(loop);
         ctx.clearRect(0, 0, width, height);
 
-        // Random Flash
+        // Randomly spawn main bolts
         if (Math.random() < 0.05) {
-            flash = 20;
-            drawBolt(Math.random() * width, 0);
+            const startX = Math.random() * width;
+            bolts.push(createBolt(startX, 0, height, Math.PI / 2));
+            // Flash screen
+            ctx.fillStyle = `rgba(255, 255, 255, 0.1)`;
+            ctx.fillRect(0, 0, width, height);
         }
 
-        if (flash > 0) {
-            ctx.fillStyle = `rgba(255, 255, 255, ${flash / 40})`;
-            ctx.fillRect(0, 0, width, height);
-            flash--;
+        // Draw and update bolts
+        for (let i = bolts.length - 1; i >= 0; i--) {
+            const bolt = bolts[i];
+            bolt.alpha -= 0.05;
+            bolt.life--;
+
+            if (bolt.life <= 0 || bolt.alpha <= 0) {
+                bolts.splice(i, 1);
+                continue;
+            }
+
+            ctx.strokeStyle = `rgba(255, 255, 255, ${bolt.alpha})`;
+            ctx.lineWidth = 2;
+            ctx.shadowBlur = 10;
+            ctx.shadowColor = '#fff';
+
+            ctx.beginPath();
+            bolt.segments.forEach(seg => {
+                ctx.moveTo(seg.x1, seg.y1);
+                ctx.lineTo(seg.x2, seg.y2);
+            });
+            ctx.stroke();
+            ctx.shadowBlur = 0;
         }
     }
     loop();
 }
 
-// 10. Cube (Geometrical shapes) - Replaced "Spiral" with something cooler: 3D Cubes/Matrix?
-// Let's do "Matrix" (Green Code Rain)
+// 10. Matrix (Green Code Rain)
 function startMatrix() {
     const id = 'matrix-canvas';
     const canvas = createOverlayCanvas(id);
@@ -526,6 +575,103 @@ function startMatrix() {
     loop();
 }
 
+// 11. Stress Relief (Explosive Shockwaves)
+function startStressRelief() {
+    const id = 'stress-relief-canvas';
+    const canvas = createOverlayCanvas(id);
+    if (!canvas) return;
+    const ctx = canvas.getContext('2d');
+    canvas.style.pointerEvents = 'auto'; // Block clicks to capture them for explosion
+
+    const explosions = [];
+
+    canvas.addEventListener('mousedown', (e) => {
+        createExplosion(e.clientX, e.clientY);
+        // Add screen shake
+        document.body.style.transform = `translate(${Math.random() * 10 - 5}px, ${Math.random() * 10 - 5}px)`;
+        setTimeout(() => document.body.style.transform = '', 50);
+    });
+
+    // Auto remove after 20s
+    let frameId;
+    const duration = 20000;
+    const startTime = Date.now();
+
+    // Add visual hint
+    const hint = document.createElement('div');
+    hint.textContent = "CLICK TO DESTROY!";
+    hint.style.position = 'fixed';
+    hint.style.top = '20%';
+    hint.style.left = '50%';
+    hint.style.transform = 'translate(-50%, -50%)';
+    hint.style.color = '#ff0000';
+    hint.style.fontSize = '3rem';
+    hint.style.fontWeight = 'bold';
+    hint.style.pointerEvents = 'none';
+    hint.style.zIndex = '100001';
+    hint.style.fontFamily = 'Impact, sans-serif';
+    hint.style.textShadow = '0 0 10px #000';
+    document.body.appendChild(hint);
+    setTimeout(() => hint.remove(), 2000);
+
+    function createExplosion(x, y) {
+        explosions.push({
+            x: x, y: y, radius: 0, opacity: 1, type: 'shockwave'
+        });
+        // Particles
+        for (let i = 0; i < 20; i++) {
+            explosions.push({
+                x: x, y: y,
+                vx: (Math.random() - 0.5) * 20, vy: (Math.random() - 0.5) * 20,
+                life: 1, type: 'particle', color: `hsl(${Math.random() * 60}, 100%, 50%)`
+            });
+        }
+    }
+
+    function loop() {
+        if (Date.now() - startTime > duration) {
+            cancelAnimationFrame(frameId);
+            canvas.remove();
+            return;
+        }
+        frameId = requestAnimationFrame(loop);
+        ctx.clearRect(0, 0, width, height);
+
+        for (let i = explosions.length - 1; i >= 0; i--) {
+            let e = explosions[i];
+            if (e.type === 'shockwave') {
+                e.radius += 15; // Expand fast
+                e.opacity -= 0.05;
+                if (e.opacity <= 0) {
+                    explosions.splice(i, 1);
+                    continue;
+                }
+                ctx.beginPath();
+                ctx.arc(e.x, e.y, e.radius, 0, Math.PI * 2);
+                ctx.strokeStyle = `rgba(255, 50, 50, ${e.opacity})`;
+                ctx.lineWidth = 5;
+                ctx.stroke();
+            } else {
+                // Particle
+                e.x += e.vx;
+                e.y += e.vy;
+                e.life -= 0.05;
+                if (e.life <= 0) {
+                    explosions.splice(i, 1);
+                    continue;
+                }
+                ctx.fillStyle = e.color;
+                ctx.globalAlpha = e.life;
+                ctx.beginPath();
+                ctx.arc(e.x, e.y, 5, 0, Math.PI * 2);
+                ctx.fill();
+                ctx.globalAlpha = 1;
+            }
+        }
+    }
+    loop();
+}
+
 export const Effects = {
     startFireworks,
     startStarrySky,
@@ -536,5 +682,6 @@ export const Effects = {
     startRain,
     startSakura,
     startLightning,
-    startMatrix
+    startMatrix,
+    startStressRelief
 };

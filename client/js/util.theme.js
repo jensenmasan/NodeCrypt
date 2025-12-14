@@ -54,6 +54,26 @@ export const THEMES = [
 	{
 		id: 'theme13',
 		background: 'linear-gradient(to top, #c79081 0%, #dfa579 100%)' // Soft Earth
+	},
+	{
+		id: 'theme14', // Sakura
+		background: 'linear-gradient(120deg, #fccb90 0%, #d57eeb 100%)'
+	},
+	{
+		id: 'theme15', // Snow / Ice
+		background: 'linear-gradient(to top, #e6e9f0 0%, #eef1f5 100%)'
+	},
+	{
+		id: 'theme16', // Matrix / Hacker
+		background: '#000000'
+	},
+	{
+		id: 'theme17', // Rain / Storm
+		background: 'linear-gradient(to bottom, #203a43, #2c5364)'
+	},
+	{
+		id: 'theme18', // Love / Hearts
+		background: 'linear-gradient(to top, #ff9a9e 0%, #fecfef 99%, #fecfef 100%)'
 	}
 ];
 

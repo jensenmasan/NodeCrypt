@@ -674,6 +674,7 @@ window.startRain = Effects.startRain;
 window.startSakura = Effects.startSakura;
 window.startLightning = Effects.startLightning;
 window.startMatrix = Effects.startMatrix;
+window.startStressRelief = Effects.startStressRelief;
 
 // Listen for fireworks trigger event (from logo click)
 window.addEventListener('triggerFireworks', () => {
@@ -734,6 +735,7 @@ if (effectsBtn) {
         <div class="effect-item" data-effect="sakura"><span class="effect-icon">🌸</span> Sakura</div>
         <div class="effect-item" data-effect="lightning"><span class="effect-icon">⚡</span> Lightning</div>
         <div class="effect-item" data-effect="matrix"><span class="effect-icon">💻</span> Matrix</div>
+        <div class="effect-item" data-effect="stress_relief"><span class="effect-icon">💥</span> Destroy</div>
     `;
 	effectsBtn.parentElement.appendChild(effectsMenu);
 
