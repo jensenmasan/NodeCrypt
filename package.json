@@ -5,10 +5,12 @@
   "main": "worker/index.js",
   "scripts": {
     "build": "vite build",
-    "dev": " wrangler dev",
-    "deploy": " wrangler deploy",
-    "publish": " wrangler publish",
-    "build:docker": "vite build"
+    "pages:build": "npm install --legacy-peer-deps && vite build",
+    "dev": "wrangler dev",
+    "deploy": "wrangler deploy",
+    "publish": "wrangler publish",
+    "build:docker": "vite build",
+    "postinstall": "echo 'Dependencies installed successfully'"
   },
   "repository": {
     "type": "git",

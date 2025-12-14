@@ -1,0 +1,27 @@
+{
+    "$schema": "https://developers.cloudflare.com/pages/platform/build-configuration/",
+    "version": 1,
+    "build": {
+        "command": "npm run build",
+        "cwd": "./",
+        "watchPaths": [
+            "client/**/*",
+            "package.json",
+            "vite.config.js"
+        ]
+    },
+    "deploy": {
+        "command": "echo 'Deploy completed'",
+        "cwd": "./"
+    },
+    "env": {
+        "production": {
+            "NODE_VERSION": "18",
+            "NPM_FLAGS": "--legacy-peer-deps"
+        },
+        "preview": {
+            "NODE_VERSION": "18",
+            "NPM_FLAGS": "--legacy-peer-deps"
+        }
+    }
+}
