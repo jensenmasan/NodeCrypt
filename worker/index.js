@@ -238,7 +238,7 @@ export class ChatRoom {  constructor(state, env) {
 
       // Handle encrypted messages
       if (this.clients[clientId].shared && message.length <= (8 * 1024 * 1024)) {
-        this.processEncryptedMessage(clientId, message);
+        await this.processEncryptedMessage(clientId, message);
       }
     });    // Handle connection close
     connection.addEventListener('close', async (event) => {
@@ -256,13 +256,15 @@ export class ChatRoom {  constructor(state, env) {
             const members = this.channels[channel];
 
             for (const member of members) {
-              const client = this.clients[member];              if (this.isClientInChannel(client, channel)) {
-                this.sendMessage(client.connection, encryptMessage({
+              const client = this.clients[member];
+              if (this.isClientInChannel(client, channel)) {
+                const encrypted = await encryptMessage({
                   a: 'l',
                   p: members.filter((value) => {
                     return (value !== member ? true : false);
                   })
-                }, client.shared));
+                }, client.shared);
+                this.sendMessage(client.connection, encrypted);
               }
             }
 
@@ -278,11 +280,11 @@ export class ChatRoom {  constructor(state, env) {
     });
   }
   // Process encrypted messages
-  processEncryptedMessage(clientId, message) {
+  async processEncryptedMessage(clientId, message) {
     let decrypted = null;
 
     try {
-      decrypted = decryptMessage(message, this.clients[clientId].shared);
+      decrypted = await decryptMessage(message, this.clients[clientId].shared);
 
       logEvent('message-decrypted', [clientId, decrypted], 'debug');
 
@@ -293,11 +295,11 @@ export class ChatRoom {  constructor(state, env) {
       const action = decrypted.a;
 
       if (action === 'j') {
-        this.handleJoinChannel(clientId, decrypted);
+        await this.handleJoinChannel(clientId, decrypted);
       } else if (action === 'c') {
-        this.handleClientMessage(clientId, decrypted);
+        await this.handleClientMessage(clientId, decrypted);
       } else if (action === 'w') {
-        this.handleChannelMessage(clientId, decrypted);
+        await this.handleChannelMessage(clientId, decrypted);
       }
 
     } catch (error) {
@@ -307,7 +309,7 @@ export class ChatRoom {  constructor(state, env) {
     }
   }
   // Handle channel join requests
-  handleJoinChannel(clientId, decrypted) {
+  async handleJoinChannel(clientId, decrypted) {
     if (!isString(decrypted.p) || this.clients[clientId].channel) {
       return;
     }
@@ -323,14 +325,14 @@ export class ChatRoom {  constructor(state, env) {
         this.channels[channel].push(clientId);
       }
 
-      this.broadcastMemberList(channel);
+      await this.broadcastMemberList(channel);
 
     } catch (error) {
       logEvent('message-join', [clientId, error], 'error');
     }
   }
   // Handle client messages
-  handleClientMessage(clientId, decrypted) {
+  async handleClientMessage(clientId, decrypted) {
     if (!isString(decrypted.p) || !isString(decrypted.c) || !this.clients[clientId].channel) {
       return;
     }
@@ -346,7 +348,7 @@ export class ChatRoom {  constructor(state, env) {
           c: clientId
         };
 
-        const encrypted = encryptMessage(messageObj, targetClient.shared);
+        const encrypted = await encryptMessage(messageObj, targetClient.shared);
         this.sendMessage(targetClient.connection, encrypted);
 
         messageObj.p = null;
@@ -356,7 +358,7 @@ export class ChatRoom {  constructor(state, env) {
       logEvent('message-client', [clientId, error], 'error');
     }
   }  // Handle channel messages
-  handleChannelMessage(clientId, decrypted) {
+  async handleChannelMessage(clientId, decrypted) {
     if (!isObject(decrypted.p) || !this.clients[clientId].channel) {
       return;
     }
@@ -376,7 +378,8 @@ export class ChatRoom {  constructor(state, env) {
           a: 'c',
           p: decrypted.p[member],
           c: clientId
-        };        const encrypted = encryptMessage(messageObj, targetClient.shared);
+        };        
+        const encrypted = await encryptMessage(messageObj, targetClient.shared);
         this.sendMessage(targetClient.connection, encrypted);
 
         messageObj.p = null;
@@ -387,7 +390,7 @@ export class ChatRoom {  constructor(state, env) {
     }
   }
   // Broadcast member list to channel
-  broadcastMemberList(channel) {
+  async broadcastMemberList(channel) {
     try {
       const members = this.channels[channel];
 
@@ -402,7 +405,7 @@ export class ChatRoom {  constructor(state, env) {
             })
           };
 
-          const encrypted = encryptMessage(messageObj, client.shared);
+          const encrypted = await encryptMessage(messageObj, client.shared);
           this.sendMessage(client.connection, encrypted);
 
           messageObj.p = null;

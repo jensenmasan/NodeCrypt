@@ -1,104 +1,86 @@
-import crypto from 'node:crypto';
+// Web Crypto API utilities for Cloudflare Workers
 
-// Generate a new RSA key pair using Node.js crypto API
-export const generateRSAKeyPair = async () => {
-  try {
-    console.log('Generating new RSA keypair...');
-
-    return new Promise((resolve, reject) => {
-      crypto.generateKeyPair('rsa', {
-        modulusLength: 2048,
-        publicKeyEncoding: {
-          type: 'spki',
-          format: 'pem'
-        },
-        privateKeyEncoding: {
-          type: 'pkcs8',
-          format: 'pem'
-        }
-      }, (err, publicKey, privateKey) => {
-        if (err) {
-          reject(err);
-        } else {
-          // Convert PEM to base64 (remove headers and newlines)
-          const rsaPublic = publicKey
-            .replace(/-----BEGIN PUBLIC KEY-----/, '')
-            .replace(/-----END PUBLIC KEY-----/, '')
-            .replace(/\n/g, '');
-          
-          resolve({
-            rsaPublic,
-            rsaPrivate: privateKey
-          });
-        }
-      });
-    });
-  } catch (error) {
-    console.error('Error generating RSA key pair:', error);
-    throw error;
-  }
-};
-
+// Generate a random client ID
 export const generateClientId = () => {
   try {
-    return (crypto.randomBytes(8).toString('hex'));
+    const array = new Uint8Array(8);
+    crypto.getRandomValues(array);
+    return Array.from(array).map(b => b.toString(16).padStart(2, '0')).join('');
   } catch (error) {
     logEvent('generateClientId', error, 'error');
-    return (null);
+    return null;
   }
 };
 
-export const encryptMessage = (message, key) => {
-
+export const encryptMessage = async (message, key) => {
   let encrypted = '';
 
   try {
-
-    const messageBuffer = Buffer.from(JSON.stringify(message), 'utf8');
+    const messageBuffer = new TextEncoder().encode(JSON.stringify(message));
     
     // Match server.js padding logic exactly
-    const paddedBuffer = (messageBuffer.length % 16) !== 0 ?
-      Buffer.concat([messageBuffer, Buffer.alloc(16 - (messageBuffer.length % 16))]) :
-      messageBuffer;
+    const paddedLength = Math.ceil(messageBuffer.length / 16) * 16;
+    const paddedBuffer = new Uint8Array(paddedLength);
+    paddedBuffer.set(messageBuffer);
 
-    const iv = crypto.randomBytes(16);
-    const cipher = crypto.createCipheriv('aes-256-cbc', key, iv);
-    cipher.setAutoPadding(false);
+    const iv = crypto.getRandomValues(new Uint8Array(16));
+    
+    const cryptoKey = await crypto.subtle.importKey(
+      'raw',
+      key,
+      { name: 'AES-CBC' },
+      false,
+      ['encrypt']
+    );
 
-    encrypted = iv.toString('base64') + '|' + cipher.update(paddedBuffer, '', 'base64') + cipher.final('base64');
+    const encryptedBuffer = await crypto.subtle.encrypt(
+      { name: 'AES-CBC', iv: iv },
+      cryptoKey,
+      paddedBuffer
+    );
+
+    const ivBase64 = btoa(String.fromCharCode(...iv));
+    const encryptedBase64 = btoa(String.fromCharCode(...new Uint8Array(encryptedBuffer)));
+    
+    encrypted = ivBase64 + '|' + encryptedBase64;
 
   } catch (error) {
     logEvent('encryptMessage', error, 'error');
   }
 
-  return (encrypted);
-
+  return encrypted;
 };
 
-export const decryptMessage = (message, key) => {
-
+export const decryptMessage = async (message, key) => {
   let decrypted = {};
 
   try {
-
     const parts = message.split('|');
-    const decipher = crypto.createDecipheriv(
-      'aes-256-cbc',
+    const iv = new Uint8Array(atob(parts[0]).split('').map(c => c.charCodeAt(0)));
+    const encryptedData = new Uint8Array(atob(parts[1]).split('').map(c => c.charCodeAt(0)));
+    
+    const cryptoKey = await crypto.subtle.importKey(
+      'raw',
       key,
-      Buffer.from(parts[0], 'base64')
+      { name: 'AES-CBC' },
+      false,
+      ['decrypt']
     );
 
-    decipher.setAutoPadding(false);
+    const decryptedBuffer = await crypto.subtle.decrypt(
+      { name: 'AES-CBC', iv: iv },
+      cryptoKey,
+      encryptedData
+    );
 
-    const decryptedText = decipher.update(parts[1], 'base64', 'utf8') + decipher.final('utf8');
+    const decryptedText = new TextDecoder().decode(decryptedBuffer);
     decrypted = JSON.parse(decryptedText.replace(/\0+$/, ''));
 
   } catch (error) {
     logEvent('decryptMessage', error, 'error');
   }
 
-  return (decrypted);
-
+  return decrypted;
 };
 
 export const logEvent = (source, message, level) => {
