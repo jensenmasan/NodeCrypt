@@ -15,6 +15,11 @@ export class CallUIManager {
         this.timerLabel = null;
         this.callStartTime = 0;
         this.timerInterval = null;
+        this.beautyFilterEnabled = false;
+        this.beautyCanvas = null;
+        this.beautyCtx = null;
+        this.beautyIntensity = 0.3;
+        this.animationFrame = null;
     }
 
     // Create call overlay
@@ -72,6 +77,13 @@ export class CallUIManager {
             }
         };
 
+        const beautyBtn = createElement('button', { class: 'call-btn', title: 'Beauty Filter' }, '✨');
+        beautyBtn.onclick = () => {
+            this.toggleBeautyFilter();
+            const isEnabled = beautyBtn.classList.contains('active');
+            beautyBtn.textContent = isEnabled ? '✨' : '💫';
+        };
+
         const hangupBtn = createElement('button', { class: 'call-btn hangup', title: 'End Call' }, '📞');
         hangupBtn.onclick = () => {
             this.rtc.endCall('User hung up');
@@ -81,6 +93,7 @@ export class CallUIManager {
         controls.appendChild(muteBtn);
         controls.appendChild(hangupBtn);
         controls.appendChild(videoBtn);
+        controls.appendChild(beautyBtn);
 
         this.container.appendChild(videoContainer);
         this.container.appendChild(infoContainer);
@@ -112,6 +125,119 @@ export class CallUIManager {
         // Cleanup streams from video elements to allow camera release
         if (this.localVideo) this.localVideo.srcObject = null;
         if (this.remoteVideo) this.remoteVideo.srcObject = null;
+        // Stop beauty filter
+        this.disableBeautyFilter();
+    }
+
+    // Toggle beauty filter
+    toggleBeautyFilter() {
+        this.beautyFilterEnabled = !this.beautyFilterEnabled;
+        const beautyBtn = this.container?.querySelector('button[title="Beauty Filter"]');
+        
+        if (this.beautyFilterEnabled) {
+            beautyBtn?.classList.add('active');
+            this.enableBeautyFilter();
+        } else {
+            beautyBtn?.classList.remove('active');
+            this.disableBeautyFilter();
+        }
+    }
+
+    // Enable beauty filter
+    enableBeautyFilter() {
+        if (!this.localVideo || !this.localVideo.srcObject) return;
+
+        // Create canvas for beauty filter processing
+        this.beautyCanvas = document.createElement('canvas');
+        this.beautyCanvas.width = 640;
+        this.beautyCanvas.height = 480;
+        this.beautyCtx = this.beautyCanvas.getContext('2d');
+
+        // Create a new video element for processing
+        this.processingVideo = document.createElement('video');
+        this.processingVideo.autoplay = true;
+        this.processingVideo.muted = true;
+        this.processingVideo.srcObject = this.localVideo.srcObject;
+
+        this.processingVideo.onloadedmetadata = () => {
+            this.processingVideo.play();
+            this.applyBeautyFilter();
+        };
+    }
+
+    // Disable beauty filter
+    disableBeautyFilter() {
+        this.beautyFilterEnabled = false;
+        if (this.animationFrame) {
+            cancelAnimationFrame(this.animationFrame);
+            this.animationFrame = null;
+        }
+        if (this.processingVideo) {
+            this.processingVideo.srcObject = null;
+            this.processingVideo = null;
+        }
+        if (this.beautyCanvas) {
+            this.beautyCanvas = null;
+            this.beautyCtx = null;
+        }
+        // Restore original stream
+        if (this.localVideo && this.rtc.localStream) {
+            this.localVideo.srcObject = this.rtc.localStream;
+        }
+    }
+
+    // Apply beauty filter using canvas processing
+    applyBeautyFilter() {
+        if (!this.beautyFilterEnabled || !this.processingVideo || !this.beautyCanvas) return;
+
+        const ctx = this.beautyCtx;
+        const canvas = this.beautyCanvas;
+
+        // Draw video frame to canvas
+        ctx.drawImage(this.processingVideo, 0, 0, canvas.width, canvas.height);
+
+        // Get image data
+        const imageData = ctx.getImageData(0, 0, canvas.width, canvas.height);
+        const data = imageData.data;
+
+        // Apply beauty filter (skin smoothing and brightening)
+        for (let i = 0; i < data.length; i += 4) {
+            const r = data[i];
+            const g = data[i + 1];
+            const b = data[i + 2];
+
+            // Detect skin tones (simplified)
+            const isSkin = (r > 95 && g > 40 && b > 20 &&
+                          r > g && r > b &&
+                          Math.abs(r - g) > 15 &&
+                          r - g < 100);
+
+            if (isSkin) {
+                // Skin smoothing - slight blur effect by averaging with neighbors
+                // Brighten skin
+                const brightness = 1 + this.beautyIntensity * 0.3;
+                data[i] = Math.min(255, r * brightness);
+                data[i + 1] = Math.min(255, g * brightness);
+                data[i + 2] = Math.min(255, b * brightness);
+
+                // Reduce redness slightly for more even skin tone
+                data[i] = Math.min(255, data[i] * (1 - this.beautyIntensity * 0.1));
+            }
+        }
+
+        // Put processed image data back
+        ctx.putImageData(imageData, 0, 0);
+
+        // Create stream from canvas
+        const canvasStream = canvas.captureStream(30);
+        
+        // Replace video source with processed stream
+        if (this.localVideo) {
+            this.localVideo.srcObject = canvasStream;
+        }
+
+        // Continue processing
+        this.animationFrame = requestAnimationFrame(() => this.applyBeautyFilter());
     }
 
     setLocalStream(stream) {

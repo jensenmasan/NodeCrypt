@@ -134,6 +134,12 @@
     background: #7bed9f;
 }
 
+.call-btn.active {
+    background: #ffd700;
+    color: #333;
+    box-shadow: 0 0 15px rgba(255, 215, 0, 0.5);
+}
+
 /* Incoming Call Modal */
 .incoming-call-modal {
     position: fixed;

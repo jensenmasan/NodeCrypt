@@ -1798,6 +1798,373 @@ npx browserify ChatCrypt.cjs -o ChatCrypt.js .language-current {
 	overflow: hidden;
 }
 
+/* Avatar Upload Modal Styles */
+.avatar-upload-modal {
+	position: fixed;
+	top: 0;
+	left: 0;
+	width: 100%;
+	height: 100%;
+	z-index: 3000;
+	display: flex;
+	align-items: center;
+	justify-content: center;
+}
+
+.avatar-upload-overlay {
+	position: absolute;
+	top: 0;
+	left: 0;
+	width: 100%;
+	height: 100%;
+	background: rgba(0, 0, 0, 0.7);
+	backdrop-filter: blur(5px);
+}
+
+.avatar-upload-content {
+	position: relative;
+	background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+	border-radius: 20px;
+	padding: 30px;
+	width: 90%;
+	max-width: 400px;
+	box-shadow: 0 20px 60px rgba(0, 0, 0, 0.3);
+	animation: modalSlideIn 0.3s ease;
+}
+
+@keyframes modalSlideIn {
+	from {
+		transform: translateY(-50px);
+		opacity: 0;
+	}
+	to {
+		transform: translateY(0);
+		opacity: 1;
+	}
+}
+
+.avatar-upload-close {
+	position: absolute;
+	top: 15px;
+	right: 15px;
+	background: rgba(255, 255, 255, 0.2);
+	border: none;
+	border-radius: 50%;
+	width: 35px;
+	height: 35px;
+	font-size: 24px;
+	color: white;
+	cursor: pointer;
+	transition: all 0.2s;
+	display: flex;
+	align-items: center;
+	justify-content: center;
+}
+
+.avatar-upload-close:hover {
+	background: rgba(255, 255, 255, 0.3);
+	transform: rotate(90deg);
+}
+
+.avatar-upload-content h2 {
+	color: white;
+	text-align: center;
+	margin: 0 0 20px 0;
+	font-size: 24px;
+}
+
+.avatar-preview {
+	display: flex;
+	justify-content: center;
+	margin-bottom: 25px;
+}
+
+.current-avatar {
+	width: 120px;
+	height: 120px;
+	border-radius: 50%;
+	border: 4px solid white;
+	overflow: hidden;
+	background: rgba(255, 255, 255, 0.2);
+	box-shadow: 0 8px 20px rgba(0, 0, 0, 0.2);
+}
+
+.current-avatar img,
+.current-avatar svg {
+	width: 100%;
+	height: 100%;
+	object-fit: cover;
+}
+
+.avatar-upload-options {
+	display: flex;
+	flex-direction: column;
+	gap: 15px;
+	margin-bottom: 25px;
+}
+
+.upload-btn {
+	background: rgba(255, 255, 255, 0.2);
+	border: 2px dashed rgba(255, 255, 255, 0.5);
+	border-radius: 12px;
+	padding: 15px;
+	text-align: center;
+	cursor: pointer;
+	transition: all 0.2s;
+	color: white;
+	font-size: 16px;
+}
+
+.upload-btn:hover {
+	background: rgba(255, 255, 255, 0.3);
+	border-color: white;
+}
+
+.reset-btn {
+	background: rgba(255, 255, 255, 0.1);
+	border: 2px solid rgba(255, 255, 255, 0.3);
+	border-radius: 12px;
+	padding: 12px;
+	color: white;
+	font-size: 15px;
+	cursor: pointer;
+	transition: all 0.2s;
+}
+
+.reset-btn:hover {
+	background: rgba(255, 255, 255, 0.2);
+	border-color: white;
+}
+
+.avatar-upload-actions {
+	display: flex;
+	gap: 15px;
+}
+
+.cancel-btn,
+.save-btn {
+	flex: 1;
+	padding: 12px;
+	border: none;
+	border-radius: 10px;
+	font-size: 16px;
+	cursor: pointer;
+	transition: all 0.2s;
+}
+
+.cancel-btn {
+	background: rgba(255, 255, 255, 0.2);
+	color: white;
+}
+
+.cancel-btn:hover {
+	background: rgba(255, 255, 255, 0.3);
+}
+
+.save-btn {
+	background: white;
+	color: #667eea;
+	font-weight: bold;
+}
+
+.save-btn:hover {
+	background: #f0f0f0;
+	transform: translateY(-2px);
+	box-shadow: 0 4px 12px rgba(0, 0, 0, 0.2);
+}
+
+/* Message Reactions Styles */
+.message-reactions {
+	display: flex;
+	flex-wrap: wrap;
+	gap: 6px;
+	margin-top: 8px;
+	padding-top: 8px;
+	border-top: 1px solid rgba(128, 128, 128, 0.2);
+}
+
+.reaction-btn {
+	background: rgba(128, 128, 128, 0.1);
+	border: 1px solid rgba(128, 128, 128, 0.3);
+	border-radius: 16px;
+	padding: 4px 10px;
+	font-size: 14px;
+	cursor: pointer;
+	transition: all 0.2s;
+	display: flex;
+	align-items: center;
+	gap: 4px;
+}
+
+.reaction-btn:hover {
+	background: rgba(128, 128, 128, 0.2);
+	transform: scale(1.05);
+}
+
+.reaction-btn.reacted {
+	background: rgba(102, 126, 234, 0.2);
+	border-color: rgba(102, 126, 234, 0.5);
+}
+
+.reaction-count {
+	font-size: 12px;
+	font-weight: bold;
+	color: #666;
+}
+
+.reaction-btn.reacted .reaction-count {
+	color: #667eea;
+}
+
+/* Reaction Picker */
+.reaction-picker {
+	position: absolute;
+	background: white;
+	border-radius: 12px;
+	padding: 8px;
+	box-shadow: 0 4px 20px rgba(0, 0, 0, 0.2);
+	display: flex;
+	gap: 4px;
+	animation: fadeIn 0.2s ease;
+	z-index: 1000;
+}
+
+@keyframes fadeIn {
+	from {
+		opacity: 0;
+		transform: scale(0.9);
+	}
+	to {
+		opacity: 1;
+		transform: scale(1);
+	}
+}
+
+.reaction-emoji {
+	background: none;
+	border: none;
+	font-size: 24px;
+	padding: 8px;
+	cursor: pointer;
+	border-radius: 8px;
+	transition: all 0.2s;
+}
+
+.reaction-emoji:hover {
+	background: rgba(128, 128, 128, 0.1);
+	transform: scale(1.2);
+}
+
+/* Message Action Bar */
+.message-action-bar {
+	display: flex;
+	gap: 8px;
+	margin-top: 8px;
+}
+
+.message-action-btn {
+	background: none;
+	border: none;
+	font-size: 16px;
+	cursor: pointer;
+	opacity: 0.6;
+	transition: opacity 0.2s;
+	padding: 4px;
+}
+
+.message-action-btn:hover {
+	opacity: 1;
+}
+
+/* Reply Preview Styles */
+.reply-preview {
+	background: rgba(102, 126, 234, 0.1);
+	border-left: 3px solid #667eea;
+	border-radius: 8px;
+	padding: 10px 15px;
+	margin-bottom: 10px;
+	display: flex;
+	justify-content: space-between;
+	align-items: center;
+	animation: slideDown 0.3s ease;
+}
+
+@keyframes slideDown {
+	from {
+		opacity: 0;
+		transform: translateY(-10px);
+	}
+	to {
+		opacity: 1;
+		transform: translateY(0);
+	}
+}
+
+.reply-preview-content {
+	flex: 1;
+}
+
+.reply-preview-sender {
+	font-weight: bold;
+	color: #667eea;
+	font-size: 13px;
+	margin-right: 8px;
+}
+
+.reply-preview-text {
+	color: #666;
+	font-size: 13px;
+}
+
+.reply-preview-close {
+	background: none;
+	border: none;
+	font-size: 20px;
+	color: #999;
+	cursor: pointer;
+	padding: 0 5px;
+	transition: color 0.2s;
+}
+
+.reply-preview-close:hover {
+	color: #666;
+}
+
+/* Reply Indicator in Message */
+.reply-indicator {
+	background: rgba(102, 126, 234, 0.05);
+	border-radius: 8px;
+	padding: 8px 12px;
+	margin-bottom: 8px;
+	display: flex;
+	align-items: flex-start;
+	gap: 10px;
+}
+
+.reply-indicator-bar {
+	width: 3px;
+	background: #667eea;
+	border-radius: 2px;
+	min-height: 30px;
+}
+
+.reply-indicator-content {
+	flex: 1;
+}
+
+.reply-indicator-sender {
+	font-weight: bold;
+	color: #667eea;
+	font-size: 12px;
+	margin-bottom: 2px;
+}
+
+.reply-indicator-message {
+	color: #666;
+	font-size: 13px;
+	line-height: 1.4;
+}
+
 .file-download-btn::before {
 	content: '';
 	position: absolute;

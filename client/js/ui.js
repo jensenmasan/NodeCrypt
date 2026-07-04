@@ -2,8 +2,18 @@
 // NodeCrypt 网页客户端的 UI 逻辑
 
 import {
-	createAvatarSVG
+	createAvatarSVG,
+	getAvatar,
+	showAvatarUploadModal
 } from './util.avatar.js';
+import {
+	showReactionPicker,
+	updateMessageReactions
+} from './util.reactions.js';
+import {
+	showReplyPreview,
+	removeReplyPreview
+} from './util.reply.js';
 import {
 	roomsData,
 	activeRoomIndex,
@@ -413,10 +423,28 @@ export function createUserItem(user, isMe) {
 
 	const avatarEl = div.querySelector('.avatar');
 	if (avatarEl) {
-		// Special avatar for admin? Or just standard one
-		const svg = createAvatarSVG(rawName);
-		const cleanSvg = svg.replace(/<script\b[^<]*(?:(?!<\/script>)<[^<]*)*<\/script>/gi, '');
-		avatarEl.innerHTML = cleanSvg
+		// Use getAvatar to support custom avatars
+		const avatarContent = getAvatar(rawName);
+		const cleanAvatar = avatarContent.replace(/<script\b[^<]*(?:(?!<\/script>)<[^<]*)*<\/script>/gi, '');
+		avatarEl.innerHTML = cleanAvatar;
+		
+		// Add click handler for avatar upload (only for own avatar)
+		if (isMe) {
+			avatarEl.style.cursor = 'pointer';
+			avatarEl.title = '点击更换头像';
+			avatarEl.addEventListener('click', (e) => {
+				e.stopPropagation();
+				showAvatarUploadModal(rawName, () => {
+					// Refresh avatar after save
+					avatarEl.innerHTML = getAvatar(rawName).replace(/<script\b[^<]*(?:(?!<\/script>)<[^<]*)*<\/script>/gi, '');
+					// Update sidebar avatar too
+					const sidebarAvatar = document.getElementById('sidebar-user-avatar');
+					if (sidebarAvatar) {
+						sidebarAvatar.innerHTML = getAvatar(rawName).replace(/<script\b[^<]*(?:(?!<\/script>)<[^<]*)*<\/script>/gi, '');
+					}
+				});
+			});
+		}
 	}
 
 	// Intelligent Click Handling (Single Tap vs Double Tap)
@@ -867,6 +895,7 @@ export function setupContextMenu() {
 	let longPressTimer;
 	let selectedMessageText = '';
 	let selectedMessageElement = null;
+	let selectedMessageId = null;
 
 	// Show menu function
 	function showMenu(x, y, text, element) {
@@ -875,6 +904,7 @@ export function setupContextMenu() {
 
 		selectedMessageText = text || '';
 		selectedMessageElement = element;
+		selectedMessageId = element?.dataset?.messageId || Date.now().toString();
 
 		const menuWidth = 160;
 		// Initial height might be 0 if hidden, estimate or measure
@@ -962,7 +992,22 @@ export function setupContextMenu() {
 	});
 
 	function handleMenuAction(action) {
+		const rd = roomsData[activeRoomIndex];
+		const myUserName = rd?.myName || 'Me';
+
 		switch (action) {
+			case 'reaction':
+				if (selectedMessageElement) {
+					showReactionPicker(selectedMessageElement, selectedMessageId, myUserName);
+				}
+				break;
+			case 'reply':
+				if (selectedMessageElement) {
+					// Get sender name from message
+					const senderName = selectedMessageElement.querySelector('.bubble-name')?.textContent || 'Unknown';
+					showReplyPreview(selectedMessageText, senderName, selectedMessageId);
+				}
+				break;
 			case 'copy':
 				copyToClipboard(selectedMessageText);
 				break;
